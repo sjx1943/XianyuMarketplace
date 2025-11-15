@@ -29,11 +29,53 @@ body {
 }
 
 /* 头部 */
-.welcome-msg {
-    text-align: center;
-    padding: 15px;
+.user-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
     background-color: var(--secondary-color);
     border-bottom: 1px solid var(--border-color);
+}
+
+.welcome-msg {
+    margin: 0;
+    flex: 1;
+}
+
+.logout-btn {
+    text-decoration: none;
+    color: white;
+    background-color: var(--primary-color);
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s;
+    white-space: nowrap;
+}
+
+.logout-btn:hover {
+    background-color: #e55a2a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 107, 53, 0.3);
+}
+
+@media (max-width: 768px) {
+    .user-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .welcome-msg {
+        text-align: center;
+    }
+    
+    .logout-btn {
+        width: 100%;
+        display: inline-block;
+    }
 }
 
 /* 搜索栏 */

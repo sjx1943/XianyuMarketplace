@@ -11,7 +11,7 @@ from tornado.web import Application, RequestHandler, UIModule, StaticFileHandler
 # from controllers.search_controller import AIQueryHandler
 from controllers.main_controller import MainHandler, MyStaticFileHandler
 # from controllers.message_details_controller import MessageDetailsHandler
-from controllers.auth_controller import LoginHandler, RegisterHandler, ForgotPasswordHandler, ResetPasswordHandler, Loginmodule, Registmodule, Forgotmodule
+from controllers.auth_controller import LoginHandler, RegisterHandler, ForgotPasswordHandler, ResetPasswordHandler, LogoutHandler, Loginmodule, Registmodule, Forgotmodule
 from controllers.product_controller import ProductUploadHandler, HomePageHandler, ProductDetailHandler, ProductListHandler, ElseHomePageHandler, UpdateProductStatusHandler, DeleteProductHandler, PhysicalDeleteProductHandler, AdminDashboardHandler, ProductEditHandler
 from controllers.chat_controller import ChatWebSocketHandler, ChatHandler, MessageAPIHandler, SendMessageAPIHandler, MarkMessagesReadHandler, DeleteMessagesHandler, UnreadCountHandler
 from controllers.friend_profile_controller import FriendProfileHandler, DeleteFriendHandler, InitiateChatHandler, BlockFriendHandler
@@ -66,6 +66,7 @@ def make_app():
         (r"/profile/([0-9]+)", FriendProfileHandler, dict(mongo=mongo)),
 
         (r"/login", LoginHandler),
+        (r"/logout", LogoutHandler),
         (r"/register", RegisterHandler),
         (r"/regist", RegisterHandler),
         (r"/forgot_password", ForgotPasswordHandler),

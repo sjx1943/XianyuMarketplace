@@ -30,7 +30,8 @@ class LoginHandler(tornado.web.RequestHandler):
         self.session.close()  # 关闭会话
 
     def get(self):
-        self.render("login.html", message="", result=None)
+        message = self.get_argument("message", None)
+        self.render("login.html", message="", result=message)
 
     def post(self):
         username = self.get_argument("username")
@@ -180,6 +181,19 @@ class RegisterHandler(tornado.web.RequestHandler):
                 self.session.rollback()
                 self.render("reg.html", result="Registration failed: " + str(e))
 
+
+
+class LogoutHandler(tornado.web.RequestHandler):
+    """处理用户登出"""
+    def get(self):
+        self.clear_cookie("user_id")
+        self.clear_cookie("username")
+        self.redirect("/login?message=已成功登出")
+    
+    def post(self):
+        self.clear_cookie("user_id")
+        self.clear_cookie("username")
+        self.redirect("/login?message=已成功登出")
 
 
 class ChatHandler(tornado.web.RequestHandler):

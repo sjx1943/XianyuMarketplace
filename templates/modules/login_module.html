@@ -19,7 +19,7 @@
                 <a href="/forgot_password">忘记密码</a>
             </div>
             {% if result %}
-            <div class="error-message">{{ result }}</div>
+            <div class="{% if '成功' in result or '登出' in result %}success-message{% else %}error-message{% end %}">{{ result }}</div>
             {% end %}
         </form>
     </div>
@@ -99,9 +99,21 @@
     }
 
     .error-message {
-        color: red;
+        color: #f44336;
         text-align: center;
         margin-top: 10px;
+        padding: 10px;
+        background-color: #ffebee;
+        border-radius: 4px;
+    }
+
+    .success-message {
+        color: #4CAF50;
+        text-align: center;
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #e8f5e9;
+        border-radius: 4px;
     }
 
     .footer-info {
