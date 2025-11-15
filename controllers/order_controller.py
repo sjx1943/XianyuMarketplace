@@ -4,6 +4,8 @@ import tornado.web
 import json
 import sys
 import os
+import datetime
+from datetime import datetime as dt_class
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlalchemy.orm import Session, sessionmaker
@@ -12,9 +14,17 @@ from models.user import User
 from models.product import Product
 from base.base import engine
 from sqlalchemy import desc, or_, and_, func
-from datetime import datetime
+from motor import motor_tornado
+from tornado.ioloop import IOLoop
 
 Session = sessionmaker(bind=engine)
+
+# MongoDB连接配置（用于存储通知）
+mongo_host = os.getenv('MONGO_HOST', 'localhost')
+mongo_port = int(os.getenv('MONGO_PORT', '27017'))
+mongo_db = os.getenv('MONGO_DB', 'marketplace_chat')
+mongo_client = motor_tornado.MotorClient(f'mongodb://{mongo_host}:{mongo_port}')
+mongo_database = mongo_client[mongo_db]
 
 
 class OrderHandler(tornado.web.RequestHandler):
@@ -121,7 +131,7 @@ class OrderHandler(tornado.web.RequestHandler):
                 # 根据日期搜索
                 if date_str:
                     try:
-                        search_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                        search_date = dt_class.strptime(date_str, '%Y-%m-%d').date()
                         query = query.filter(func.date(Order.created_at) == search_date)
                     except ValueError:
                         pass  # 忽略无效的日期格式
@@ -205,6 +215,9 @@ class OrderHandler(tornado.web.RequestHandler):
             
             self.session.commit()
             
+            # 发送通知给卖家（异步执行，不阻塞订单创建响应）
+            IOLoop.current().spawn_callback(self._send_seller_notification, product, user, quantity, new_order.id)
+            
             self.write(json.dumps({
                 'success': True, 
                 'message': '订单创建成功',
@@ -214,6 +227,47 @@ class OrderHandler(tornado.web.RequestHandler):
         except Exception as e:
             self.session.rollback()
             self.write(json.dumps({'success': False, 'error': str(e)}))
+
+    async def _send_seller_notification(self, product, buyer, quantity, order_id):
+        """发送订单通知给卖家（异步）"""
+        try:
+            from controllers.chat_controller import connections
+            
+            seller_id = product.user_id
+            china_tz = datetime.timezone(datetime.timedelta(hours=8))
+            timestamp = datetime.datetime.now(china_tz).strftime("%Y-%m-%d %H:%M:%S")
+            
+            # 构建系统通知消息
+            notification_data = {
+                "from_user_id": 0,  # 0表示系统消息
+                "from_username": "系统通知",
+                "to_user_id": seller_id,
+                "message": f"🔔 您有新订单！买家 {buyer.username} 购买了您的商品《{product.name}》，数量：{quantity}件。<a href='/orders'>查看订单详情</a>",
+                "product_id": product.id,
+                "product_name": product.name,
+                "timestamp": timestamp,
+                "status": "unread",
+                "type": "order_notification",  # 标记为订单通知
+                "order_id": order_id
+            }
+            
+            # 保存到MongoDB（持久化，供离线用户查看）
+            try:
+                await mongo_database.chat_messages.insert_one(notification_data)
+                print(f"订单通知已保存到数据库")
+            except Exception as db_error:
+                print(f"保存通知到数据库失败: {str(db_error)}")
+            
+            # 如果卖家在线，立即推送通知
+            if seller_id in connections:
+                connections[seller_id].write_message(json.dumps(notification_data))
+                print(f"成功发送实时通知给在线卖家 {seller_id}")
+            else:
+                print(f"卖家 {seller_id} 不在线，通知已保存，将在下次登录时显示")
+                
+        except Exception as notif_error:
+            # 即使通知失败，订单创建也应该成功
+            print(f"发送卖家通知失败: {str(notif_error)}")
 
     def put(self, order_id):
         """更新订单状态"""
@@ -383,7 +437,7 @@ class ConfirmTransactionHandler(tornado.web.RequestHandler):
                 return
 
             order.status = 'completed'
-            order.completed_at = datetime.now()
+            order.completed_at = dt_class.now()
 
             # 更新商品库存
             product = self.session.query(Product).filter_by(id=order.product_id).first()
