@@ -208,10 +208,10 @@ class OrderHandler(tornado.web.RequestHandler):
             
             self.session.add(new_order)
             
-            # # 更新商品库存 - 逻辑移至确认收货步骤
-            # product.quantity -= quantity
-            # if product.quantity == 0:
-            #     product.status = "已售完"
+            # 更新商品库存（订单创建时立即减少库存）
+            product.quantity -= quantity
+            if product.quantity <= 0:
+                product.status = "已售完"
             
             self.session.commit()
             
@@ -439,13 +439,9 @@ class ConfirmTransactionHandler(tornado.web.RequestHandler):
             order.status = 'completed'
             order.completed_at = dt_class.now()
 
-            # 更新商品库存
-            product = self.session.query(Product).filter_by(id=order.product_id).first()
-            if product:
-                product.quantity -= order.quantity
-                if product.quantity <= 0:
-                    product.status = "已下架"
-
+            # 注意：商品库存已经在创建订单时减少，确认收货时不需要再次减少
+            # 只需要更新订单状态即可
+            
             self.session.commit()
 
             self.write(json.dumps({'success': True, 'message': '交易确认成功'}))
