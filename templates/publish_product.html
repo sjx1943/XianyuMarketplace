@@ -207,11 +207,23 @@
         // 存储新选择的文件
         let selectedFiles = [];
         
-        // 获取已有图片的文件名（用于重复检测）
+        // 获取已有图片的原始文件名（用于重复检测）
+        // 文件名格式：{product_id}_{index}_{original_filename}
         const existingFilenames = new Set();
         document.querySelectorAll('.existing-image').forEach(item => {
             const filename = item.dataset.filename;
-            if (filename) existingFilenames.add(filename);
+            if (filename) {
+                // 从 "12_0_photo.jpg" 提取 "photo.jpg"
+                const parts = filename.split('_');
+                if (parts.length >= 3) {
+                    // 跳过前两部分（product_id和index），保留原始文件名
+                    const originalFilename = parts.slice(2).join('_');
+                    existingFilenames.add(originalFilename);
+                } else {
+                    // 如果格式不符合预期（如新上传的商品没有前缀），直接使用
+                    existingFilenames.add(filename);
+                }
+            }
         });
 
         // 计算当前图片总数
@@ -341,12 +353,19 @@
                 checkbox.checked = !isMarkedForDeletion;
                 
                 // 更新existingFilenames集合以支持图片替换场景
+                // 需要提取原始文件名（去掉前缀）
+                let originalFilename = filename;
+                const parts = filename.split('_');
+                if (parts.length >= 3) {
+                    originalFilename = parts.slice(2).join('_');
+                }
+                
                 if (!isMarkedForDeletion) {
-                    // 现在标记为删除，从集合中移除文件名，允许上传同名新图片
-                    existingFilenames.delete(filename);
+                    // 现在标记为删除，从集合中移除原始文件名，允许上传同名新图片
+                    existingFilenames.delete(originalFilename);
                 } else {
-                    // 取消删除标记，重新添加文件名到集合
-                    existingFilenames.add(filename);
+                    // 取消删除标记，重新添加原始文件名到集合
+                    existingFilenames.add(originalFilename);
                 }
                 
                 updateCountDisplay();
