@@ -11,7 +11,7 @@ from models.order import Order
 from models.user import User
 from models.product import Product
 from base.base import engine
-from sqlalchemy import desc, or_, and_
+from sqlalchemy import desc, or_, and_, func
 from datetime import datetime
 
 Session = sessionmaker(bind=engine)
@@ -47,12 +47,17 @@ class OrderHandler(tornado.web.RequestHandler):
                 
                 order, product, buyer = order_details
                 seller = None
-                if product:
+                if order.seller_id:
+                    seller = self.session.query(User).filter_by(id=order.seller_id).first()
+                elif product:
+                    # 降级方案：如果没有seller_id快照，从product获取
                     seller = self.session.query(User).filter_by(id=product.user_id).first()
 
                 # 检查权限（只有买家或卖家能查看）
                 can_view = False
                 if user.id == buyer.id:
+                    can_view = True
+                elif order.seller_id and user.id == order.seller_id:
                     can_view = True
                 elif seller and user.id == seller.id:
                     can_view = True
@@ -80,11 +85,34 @@ class OrderHandler(tornado.web.RequestHandler):
                 if order_type == "buying":
                     query = query.filter(Order.user_id == user.id, Order.status != 'cancelled')
                 elif order_type == "selling":
-                    query = query.filter(Product.user_id == user.id, Order.status != 'cancelled')
+                    # 使用seller_id快照筛选，降级使用Product.user_id支持老数据
+                    query = query.filter(
+                        or_(
+                            Order.seller_id == user.id,
+                            and_(Order.seller_id == None, Product.user_id == user.id)
+                        ),
+                        Order.status != 'cancelled'
+                    )
                 elif order_type == "cancelled":
-                    query = query.filter(or_(Order.user_id == user.id, Product.user_id == user.id), Order.status == 'cancelled')
+                    # 获取用户作为买家或卖家的所有已取消订单
+                    query = query.filter(
+                        or_(
+                            Order.user_id == user.id,
+                            Order.seller_id == user.id,
+                            and_(Order.seller_id == None, Product.user_id == user.id)
+                        ),
+                        Order.status == 'cancelled'
+                    )
                 else: # "all"
-                    query = query.filter(or_(Order.user_id == user.id, Product.user_id == user.id), Order.status != 'cancelled')
+                    # 获取用户作为买家或卖家的所有未取消订单
+                    query = query.filter(
+                        or_(
+                            Order.user_id == user.id,
+                            Order.seller_id == user.id,
+                            and_(Order.seller_id == None, Product.user_id == user.id)
+                        ),
+                        Order.status != 'cancelled'
+                    )
 
                 # 根据关键词搜索
                 if keyword:
@@ -103,7 +131,12 @@ class OrderHandler(tornado.web.RequestHandler):
                 # 获取订单相关信息
                 orders_data = []
                 for order, product, buyer in orders_result:
-                    seller = self.session.query(User).filter_by(id=product.user_id).first()
+                    seller = None
+                    if order.seller_id:
+                        seller = self.session.query(User).filter_by(id=order.seller_id).first()
+                    elif product:
+                        # 降级方案：如果没有seller_id快照，从product获取
+                        seller = self.session.query(User).filter_by(id=product.user_id).first()
                     
                     orders_data.append({
                         'order': order,
@@ -159,6 +192,7 @@ class OrderHandler(tornado.web.RequestHandler):
                 user_id=user.id,
                 quantity=quantity,
                 product_name=product.name,  # 保存当前商品名称快照
+                seller_id=product.user_id,  # 保存卖家ID快照
                 order_note=order_note
             )
             
@@ -195,8 +229,16 @@ class OrderHandler(tornado.web.RequestHandler):
                 return
 
             # 只有卖家可以更新订单状态
-            product = self.session.query(Product).filter_by(id=order.product_id).first()
-            if not product or product.user_id != user.id:
+            is_seller = False
+            if order.seller_id and order.seller_id == user.id:
+                is_seller = True
+            elif not order.seller_id:
+                # 降级方案：对于老数据，从Product表查询
+                product = self.session.query(Product).filter_by(id=order.product_id).first()
+                if product and product.user_id == user.id:
+                    is_seller = True
+            
+            if not is_seller:
                 self.write(json.dumps({'success': False, 'error': '只有卖家可以更新订单状态'}))
                 return
 

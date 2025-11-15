@@ -18,6 +18,8 @@
 3. ✅ 优化注册页面UI - 全新现代化设计，响应式布局
 4. ✅ 数据库迁移 - 从MySQL成功迁移到PostgreSQL
 5. ✅ 环境配置 - 安装所有依赖并配置Replit工作流
+6. ✅ 用户登出功能 - 实现完整的登出逻辑，包括清除cookies、重定向和成功消息显示
+7. ✅ 订单页面NoneType错误修复 - 实现order-snapshot策略，添加seller_id快照字段，支持已删除商品的订单管理
 
 ### 环境变量
 项目使用以下环境变量（由Replit自动配置）:
@@ -50,7 +52,14 @@
 
 ## 启动命令
 ```bash
-python init_db.py && python app.py --port=5000
+# 初始化数据库表
+python init_db.py
+
+# 可选：迁移现有订单数据（添加seller_id快照）
+python migrate_orders_seller_id.py
+
+# 启动服务器
+python app.py --port=5000
 ```
 
 ## 项目结构
