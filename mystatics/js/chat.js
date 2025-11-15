@@ -79,7 +79,10 @@ function initEventListeners() {
     });
 
     document.getElementById('toggle-friend-list')?.addEventListener('click', () => {
-        document.getElementById('friend-list-container').classList.toggle('collapsed');
+        const friendList = document.getElementById('friend-list-container');
+        friendList.classList.toggle('collapsed');
+        // 保存用户的侧边栏偏好设置
+        localStorage.setItem('friendListCollapsed', friendList.classList.contains('collapsed'));
     });
 
     const container = document.getElementById('message-content-container');
@@ -110,11 +113,24 @@ function initAutoResizeAndDrag() {
         };
     }
 
-    // Auto-collapse based on window size
+    // Auto-collapse based on window size and user preference
     const handleResize = () => {
         if (window.innerWidth < BREAKPOINT) {
-            friendList.classList.add('collapsed');
+            // 在移动端，检查用户是否有保存的偏好设置
+            const savedPreference = localStorage.getItem('friendListCollapsed');
+            if (savedPreference !== null) {
+                // 如果用户有保存的偏好，使用保存的设置
+                if (savedPreference === 'true') {
+                    friendList.classList.add('collapsed');
+                } else {
+                    friendList.classList.remove('collapsed');
+                }
+            } else {
+                // 如果没有保存的偏好，默认展开（改善首次访问体验）
+                friendList.classList.remove('collapsed');
+            }
         } else {
+            // 桌面端始终展开
             friendList.classList.remove('collapsed');
         }
     };
@@ -217,6 +233,44 @@ function loadMessages(friendId) {
         });
 }
 
+/**
+ * 格式化消息时间戳，支持跨日期显示
+ * @param {Date} messageDate - 消息的日期对象
+ * @returns {string} 格式化后的时间字符串
+ */
+function formatMessageTime(messageDate) {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const msgDate = new Date(messageDate.getFullYear(), messageDate.getMonth(), messageDate.getDate());
+    const time = messageDate.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+    
+    // 今天的消息：只显示时间
+    if (msgDate.getTime() === today.getTime()) {
+        return time;
+    }
+    
+    // 昨天的消息：显示"昨天 HH:mm"
+    if (msgDate.getTime() === yesterday.getTime()) {
+        return `昨天 ${time}`;
+    }
+    
+    // 今年的消息：显示"MM-DD HH:mm"
+    if (messageDate.getFullYear() === now.getFullYear()) {
+        const month = String(messageDate.getMonth() + 1).padStart(2, '0');
+        const day = String(messageDate.getDate()).padStart(2, '0');
+        return `${month}-${day} ${time}`;
+    }
+    
+    // 更早的消息：显示"YYYY-MM-DD HH:mm"
+    const year = messageDate.getFullYear();
+    const month = String(messageDate.getMonth() + 1).padStart(2, '0');
+    const day = String(messageDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day} ${time}`;
+}
+
 function appendMessage(sender, content, isSelf, timestamp, messageId) {
     const messageContent = document.getElementById('message-content');
     // 如果消息已经存在，则不重复添加
@@ -242,11 +296,11 @@ function appendMessage(sender, content, isSelf, timestamp, messageId) {
     // 创建时间戳
     const timeSpan = document.createElement('span');
     timeSpan.className = 'message-time';
-    // 格式化时间戳，只显示时和分
+    // 格式化时间戳，支持跨日期显示
     try {
         const date = new Date(timestamp);
         if (!isNaN(date)) {
-            timeSpan.textContent = date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            timeSpan.textContent = formatMessageTime(date);
         } else {
             timeSpan.textContent = timestamp; // 如果格式不对，显示原始字符串
         }
@@ -313,29 +367,36 @@ function initMessageContextMenu() {
             e.preventDefault();
             targetMessage.classList.toggle('selected');
             
+            // 先显示菜单以获取正确的尺寸
+            contextMenu.style.display = 'block';
+            contextMenu.style.visibility = 'hidden'; // 先隐藏视觉上，但仍然占据空间以便测量
+            
             // Calculate menu position based on message element and container boundaries
             const messageRect = targetMessage.getBoundingClientRect();
             const containerRect = messageContent.getBoundingClientRect();
+            const menuWidth = contextMenu.offsetWidth;
+            const menuHeight = contextMenu.offsetHeight;
             
             // Default to right side of message
             let menuLeft = messageRect.right + 5;
             
             // Check if menu would go beyond right boundary
-            if (menuLeft + contextMenu.offsetWidth > containerRect.right) {
+            if (menuLeft + menuWidth > containerRect.right) {
                 // Position menu to the left of message instead
-                menuLeft = messageRect.left - contextMenu.offsetWidth - 5;
+                menuLeft = messageRect.left - menuWidth - 5;
             }
             
             // Ensure menu stays within container horizontally
-            menuLeft = Math.max(containerRect.left, Math.min(menuLeft, containerRect.right - contextMenu.offsetWidth));
+            menuLeft = Math.max(containerRect.left, Math.min(menuLeft, containerRect.right - menuWidth));
             
             // Position menu vertically at center of message
-            let menuTop = messageRect.top + (messageRect.height / 2) - (contextMenu.offsetHeight / 2);
+            let menuTop = messageRect.top + (messageRect.height / 2) - (menuHeight / 2);
             
             // Ensure menu stays within container vertically
-            menuTop = Math.max(containerRect.top, Math.min(menuTop, containerRect.bottom - contextMenu.offsetHeight));
+            menuTop = Math.max(containerRect.top, Math.min(menuTop, containerRect.bottom - menuHeight));
             
-            contextMenu.style.display = 'block';
+            // 设置位置后再显示
+            contextMenu.style.visibility = 'visible';
             contextMenu.style.left = `${menuLeft}px`;
             contextMenu.style.top = `${menuTop}px`;
         }
@@ -364,8 +425,33 @@ function initFriendListContextMenu() {
         blockOption.textContent = status === 'blocked' ? '取消拉黑' : '拉黑';
 
         contextMenu.style.display = 'block';
-        contextMenu.style.left = `${e.pageX}px`;
-        contextMenu.style.top = `${e.pageY}px`;
+        
+        // 计算菜单位置，防止超出屏幕边界
+        const menuWidth = contextMenu.offsetWidth || 150; // 默认宽度
+        const menuHeight = contextMenu.offsetHeight || 100; // 默认高度
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        // 计算水平位置
+        let menuLeft = e.pageX;
+        if (menuLeft + menuWidth > viewportWidth) {
+            // 如果右侧超出，则显示在鼠标左侧
+            menuLeft = e.pageX - menuWidth;
+        }
+        // 确保不会超出左边界
+        menuLeft = Math.max(0, menuLeft);
+        
+        // 计算垂直位置
+        let menuTop = e.pageY;
+        if (menuTop + menuHeight > viewportHeight) {
+            // 如果下方超出，则显示在鼠标上方
+            menuTop = e.pageY - menuHeight;
+        }
+        // 确保不会超出上边界
+        menuTop = Math.max(0, menuTop);
+        
+        contextMenu.style.left = `${menuLeft}px`;
+        contextMenu.style.top = `${menuTop}px`;
     };
 
     friendListContainer.addEventListener('contextmenu', showMenu);

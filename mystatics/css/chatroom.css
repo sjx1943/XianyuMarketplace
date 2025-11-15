@@ -187,17 +187,98 @@ body.is-resizing {
     align-self: flex-end;
 }
 
-.no-chat-selected, .no-messages {
+.no-chat-selected {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 30px 20px;
+    overflow-y: auto;
+}
+
+.no-messages {
     text-align: center;
     margin-top: 50px;
     color: #666;
     font-size: 16px;
 }
 
+.welcome-message {
+    font-size: 18px;
+    color: #999;
+    margin-bottom: 40px;
+    font-weight: 500;
+}
+
+/* 中心区域的广播消息样式 */
+.broadcast-messages-center {
+    width: 100%;
+    max-width: 600px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.broadcast-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f2f5;
+}
+
+.broadcast-item-center {
+    padding: 12px 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    transition: background-color 0.2s ease;
+}
+
+.broadcast-item-center:hover {
+    background: #e9ecef;
+}
+
+.broadcast-item-center:last-child {
+    margin-bottom: 0;
+}
+
+.broadcast-item-center a {
+    text-decoration: none;
+    color: #333;
+    font-size: 14px;
+    line-height: 1.6;
+    display: block;
+}
+
+.broadcast-user {
+    font-weight: 600;
+    color: #007bff;
+}
+
+.broadcast-time {
+    color: #666;
+    font-size: 13px;
+}
+
+.broadcast-product {
+    font-weight: 500;
+    color: #28a745;
+}
+
+.no-broadcasts {
+    text-align: center;
+    padding: 20px;
+    color: #999;
+    font-size: 14px;
+}
+
 /* --- Input Area --- */
 #message-input-area {
     flex-shrink: 0;
-    padding: 10px 15px;
+    padding: 10px 15px 8px 15px; /* 减少底部内边距，使输入框更贴近底部边缘 */
     background-color: #f0f2f5;
     border-top: 1px solid #d1d7de;
     display: flex;
@@ -300,8 +381,8 @@ body.is-resizing {
 
 /* Context Menu Styles */
 .context-menu {
-    position: absolute;
-    z-index: 1010;
+    position: fixed; /* 使用fixed定位避免被overflow:hidden裁剪 */
+    z-index: 10000; /* 提高z-index确保在最上层，不被底部容器遮挡 */
     background-color: #fff;
     border: 1px solid #ccc;
     box-shadow: 0 2px 5px rgba(0,0,0,0.15);
@@ -320,37 +401,6 @@ body.is-resizing {
 }
 .context-menu li:hover {
     background-color: #f0f0f0;
-}
-.message.selected {
-    outline: 2px solid #007bff;
-}
-
-/* Context Menu Styles */
-.context-menu {
-    position: absolute;
-    z-index: 1010;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-    border-radius: 5px;
-    display: none;
-    padding: 5px 0;
-}
-.context-menu ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-.context-menu li {
-    padding: 8px 15px;
-    cursor: pointer;
-}
-.context-menu li:hover {
-    background-color: #f0f0f0;
-}
-.message.selected {
-    outline: 2px solid #007bff;
-}
 }
 .message.selected {
     outline: 2px solid #007bff;

@@ -15,21 +15,6 @@
     <div class="top-section">
         <input type="text" class="search-bar" placeholder="搜索聊天记录/联系人/服务号">
         <a href="/main" class="return-home-link">返回首页</a>
-        <div class="broadcast-messages">
-            {% if broadcasts and len(broadcasts) > 0 %}
-            {% for broadcast in broadcasts %}
-            <div class="broadcast-item">
-                <a href="/product/detail/{{ broadcast.get('product_id', '') }}">
-                    {{ broadcast.get('uploader', '未知用户') }}
-                    于 {{ broadcast.get('time', '未知时间') }}
-                    上传了 {{ broadcast.get('product_name', '未知商品') }}
-                </a>
-            </div>
-            {% end %}
-            {% else %}
-            <div class="broadcast-item">暂无系统广播</div>
-            {% end %}
-        </div>
     </div>
 
     <!-- 中间区域 -->
@@ -74,7 +59,26 @@
                 </ul>
             </div>
 
-            <div id="no-chat-message" class="no-chat-selected">未选择聊天</div>
+            <div id="no-chat-message" class="no-chat-selected">
+                <div class="welcome-message">未选择聊天</div>
+                <!-- 系统广播消息区域 -->
+                <div class="broadcast-messages-center">
+                    <h3 class="broadcast-title">📢 系统广播</h3>
+                    {% if broadcasts and len(broadcasts) > 0 %}
+                    {% for broadcast in broadcasts %}
+                    <div class="broadcast-item-center">
+                        <a href="/product/detail/{{ broadcast.get('product_id', '') }}">
+                            <span class="broadcast-user">{{ broadcast.get('uploader', '未知用户') }}</span>
+                            于 <span class="broadcast-time">{{ broadcast.get('time', '未知时间') }}</span>
+                            上传了 <span class="broadcast-product">{{ broadcast.get('product_name', '未知商品') }}</span>
+                        </a>
+                    </div>
+                    {% end %}
+                    {% else %}
+                    <div class="no-broadcasts">暂无系统广播</div>
+                    {% end %}
+                </div>
+            </div>
             <div id="message-content-container" class="message-content-container">
                 <div id="message-content" class="message-content"></div>
             </div>
