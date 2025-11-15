@@ -4,237 +4,66 @@
     <title>{% if product %}编辑商品{% else %}发布商品{% end %}</title>
     <link rel="stylesheet" href="{{ static_url('css/main.css') }}">
     <style>
-        .image-preview-container, .current-images-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        form {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input[type="text"], input[type="number"], textarea {
+            width: 100%;
             padding: 10px;
+            margin-bottom: 15px;
             border: 1px solid #ddd;
             border-radius: 5px;
+            font-size: 14px;
         }
-        .img-preview, .current-img {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        input[type="submit"] {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 30px;
+            border: none;
             border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
         }
-        .upload-instructions {
-            font-size: 0.9em;
-            color: #666;
+        input[type="submit"]:hover {
+            background: #45a049;
         }
-    </style>
-</head>
-<body>
-    <h1>{% if product %}编辑商品{% else %}发布商品{% end %}</h1>
-    <form action="{% if product %}/product/edit/{{ product.id }}{% else %}/product/upload{% end %}" method="post" enctype="multipart/form-data">
-        {% module xsrf_form_html() %}
-        <label for="name">商品名称:</label><br>
-        <input type="text" id="name" name="name" value="{{ product.name if product else '' }}" required><br><br>
-
-        <label for="description">商品描述:</label><br>
-        <textarea id="description" name="description" required>{{ product.description if product else '' }}</textarea><br><br>
-
-        <label for="price">价格:</label><br>
-        <input type="number" id="price" name="price" step="0.01" value="{{ product.price if product else '' }}" required><br><br>
-
-        <label for="quantity">数量:</label><br>
-        <input type="number" id="quantity" name="quantity" value="{{ product.quantity if product else '' }}" required><br><br>
-
-        <label for="tag">标签:</label><br>
-        <input type="text" id="tag" name="tag" value="{{ product.tag if product else '' }}" required><br><br>
-
-        <label for="images">商品图片:</label><br>
-        <div class="image-management-container">
-            <!-- 现有图片 -->
-            {% if product and images %}
-                {% for img in images %}
-                <div class="image-item existing-image" data-image-id="{{ img.id }}">
-                    <img src="{{ static_url('images/' + img.filename) }}" alt="商品图片">
-                    <button type="button" class="delete-btn" title="删除图片">-</button>
-                    <div class="delete-overlay">待删除</div>
-                    <input type="checkbox" name="delete_images" value="{{ img.id }}" style="display: none;">
-                </div>
-                {% end %}
-            {% end %}
-
-            <!-- 新图片上传区域 -->
-            <div class="image-item" id="add-image-container">
-                <label for="images" class="add-btn">+</label>
-            </div>
-        </div>
-        
-        <input type="file" id="images" name="images" accept="image/*" multiple {% if not product %}required{% end %} style="display: none;">
-        <p class="upload-instructions">点击“+”号添加图片，点击“-”号删除图片。最多上传9张。</p>
-        
-        <p id="image-count-info" style="display: none;"></p>
-
-        <br>
-        <input type="submit" value="{% if product %}更新商品{% else %}发布商品{% end %}">
-    </form>
-
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const imageManagementContainer = document.querySelector('.image-management-container');
-        const addImageContainer = document.getElementById('add-image-container');
-        const fileInput = document.getElementById('images');
-        const MAX_IMAGES = 9;
-
-        // 更新图片总数（用于校验）
-        function getImageCount() {
-            return imageManagementContainer.querySelectorAll('.image-item.existing-image:not(.marked-for-deletion)').length + 
-                   imageManagementContainer.querySelectorAll('.image-item.new-image').length;
-        }
-
-        // 处理删除按钮点击事件
-        function handleDeleteClick(event) {
-            if (event.target.classList.contains('delete-btn')) {
-                const imageItem = event.target.closest('.image-item');
-                const checkbox = imageItem.querySelector('input[type="checkbox"]');
-                
-                // 切换删除标记
-                imageItem.classList.toggle('marked-for-deletion');
-                
-                // 同步更新隐藏的复选框状态
-                checkbox.checked = imageItem.classList.contains('marked-for-deletion');
-            }
-        }
-
-        // 处理文件选择事件
-        function handleFileChange(event) {
-            const files = event.target.files;
-            if (!files.length) return;
-
-            const currentImageCount = getImageCount();
-            if (currentImageCount + files.length > MAX_IMAGES) {
-                alert(`最多只能上传 ${MAX_IMAGES} 张图片！`);
-                fileInput.value = ''; // 清空选择
-                return;
-            }
-
-            for (const file of files) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    // 创建新的图片预览项
-                    const newImageItem = document.createElement('div');
-                    newImageItem.className = 'image-item new-image';
-                    
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    
-                    const removeBtn = document.createElement('button');
-                    removeBtn.type = 'button';
-                    removeBtn.className = 'delete-btn';
-                    removeBtn.textContent = '-';
-                    removeBtn.title = '移除图片';
-                    
-                    newImageItem.appendChild(img);
-                    newImageItem.appendChild(removeBtn);
-                    
-                    // 插入到“+”按钮之前
-                    imageManagementContainer.insertBefore(newImageItem, addImageContainer);
-
-                    // 为新的移除按钮添加事件
-                    removeBtn.addEventListener('click', () => {
-                        newImageItem.remove();
-                        // 由于新图片是动态添加的，我们需要重新构建FileList
-                        updateFileInput();
-                    });
-                };
-                reader.readAsDataURL(file);
-            }
-            // 由于我们是手动创建预览，需要一种方法来确保这些新文件被提交。
-            // 最简单的方法是保留原始Filelist，并在提交时处理。
-            // 但为了实现单个移除，我们需要更复杂的处理。
-            // 这里我们采用一种策略：每次移除后，都更新原始input中的文件列表。
-            updateFileInput();
-        }
-
-        // 更新隐藏的文件输入框中的文件列表（这是一个复杂操作，因为FileList是只读的）
-        // 我们将创建一个新的DataTransfer对象来保存文件
-        let fileStore = new DataTransfer();
-
-        function updateFileInput() {
-            const newImages = imageManagementContainer.querySelectorAll('.new-image');
-            const originalFiles = Array.from(fileInput.files);
-            
-            // 创建一个新的文件列表
-            const newFileStore = new DataTransfer();
-            
-            // 遍历所有预览中的新图片，找到对应的原始文件并添加到新列表中
-            newImages.forEach(newImgElement => {
-                const imgSrc = newImgElement.querySelector('img').src;
-                // 这是一个简化的匹配，实际应用中可能需要更可靠的方式
-                // 但对于预览来说，src是唯一的标识
-                const originalFile = originalFiles.find(file => {
-                    // This is tricky because we can't easily get the original file from a data URL.
-                    // A better approach is to store the files in an array when they are selected.
-                    // Let's adjust the logic.
-                });
-                // This approach is flawed. Let's simplify. We won't allow removing newly added images individually
-                // before upload to keep it simple. Instead, we clear and re-select.
-                // A more advanced implementation would require storing File objects in a global array.
-            }
-            
-            // 简化逻辑：当用户选择文件时，我们存储这些文件。
-            let selectedFiles = [];
-            fileInput.addEventListener('change', function(event) {
-                const files = Array.from(event.target.files);
-                const currentImageCount = getImageCount();
-
-                if (currentImageCount + files.length > MAX_IMAGES) {
-                    alert(`最多只能上传 ${MAX_IMAGES} 张图片！`);
-                    return;
-                }
-
-                // 清除旧的新图片预览
-                imageManagementContainer.querySelectorAll('.new-image').forEach(el => el.remove());
-                
-                selectedFiles = files;
-
-                selectedFiles.forEach(file => {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const newImageItem = document.createElement('div');
-                        newImageItem.className = 'image-item new-image';
-                        const img = document.createElement('img');
-                        img.src = e.target.result;
-                        newImageItem.appendChild(img);
-                        imageManagementContainer.insertBefore(newImageItem, addImageContainer);
-                    };
-                    reader.readAsDataURL(file);
-                });
-            });
-        }
-
-
-        // 事件委托，处理容器内所有删除按钮的点击
-        imageManagementContainer.addEventListener('click', handleDeleteClick);
-        
-        // 触发文件选择
-        addImageContainer.addEventListener('click', () => fileInput.click());
-
-        // 初始调用，以防万一
-        updateFileInput();
-    });
-    </script>
-    
-    <style>
         .image-management-container {
             display: flex;
             flex-wrap: wrap;
             gap: 15px;
             padding: 15px;
-            border: 1px solid #ddd;
+            border: 2px dashed #ddd;
             border-radius: 8px;
             background-color: #f9f9f9;
+            min-height: 150px;
         }
         .image-item {
             position: relative;
-            width: 100px;
-            height: 100px;
+            width: 120px;
+            height: 120px;
             border-radius: 8px;
             overflow: hidden;
+            border: 2px solid #eee;
         }
         .image-item img {
             width: 100%;
@@ -245,22 +74,23 @@
             position: absolute;
             top: 5px;
             right: 5px;
-            width: 22px;
-            height: 22px;
+            width: 26px;
+            height: 26px;
             background-color: rgba(255, 0, 0, 0.8);
             color: white;
             border: none;
             border-radius: 50%;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
-            line-height: 20px;
+            line-height: 24px;
             text-align: center;
             cursor: pointer;
             padding: 0;
-            transition: background-color 0.2s;
+            transition: all 0.2s;
         }
         .delete-btn:hover {
             background-color: rgba(255, 0, 0, 1);
+            transform: scale(1.1);
         }
         .delete-overlay {
             position: absolute;
@@ -268,7 +98,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 0, 0.6);
             color: white;
             display: flex;
             justify-content: center;
@@ -276,36 +106,283 @@
             font-weight: bold;
             opacity: 0;
             transition: opacity 0.2s;
-            pointer-events: none; /* 允许点击下方的按钮 */
+            pointer-events: none;
         }
         .image-item.marked-for-deletion .delete-overlay {
             opacity: 1;
         }
         .image-item.marked-for-deletion img {
-            opacity: 0.6;
+            opacity: 0.4;
         }
         #add-image-container {
-            border: 2px dashed #ccc;
+            border: 3px dashed #ccc;
             cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
             background-color: #fafafa;
-            transition: border-color 0.2s, background-color 0.2s;
+            transition: all 0.2s;
         }
         #add-image-container:hover {
-            border-color: var(--primary-color);
+            border-color: #4CAF50;
             background-color: #f0f0f0;
         }
         .add-btn {
-            font-size: 40px;
+            font-size: 50px;
             color: #ccc;
-            font-weight: lighter;
             cursor: pointer;
+            user-select: none;
+        }
+        .upload-instructions {
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+        }
+        #image-count-info {
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 10px;
         }
     </style>
+</head>
+<body>
+    <h1>{% if product %}编辑商品{% else %}发布商品{% end %}</h1>
+    <form action="{% if product %}/product/edit/{{ product.id }}{% else %}/product/upload{% end %}" method="post" enctype="multipart/form-data" id="productForm">
+        {% module xsrf_form_html() %}
+        
+        <label for="name">商品名称:</label>
+        <input type="text" id="name" name="name" value="{{ product.name if product else '' }}" required>
+
+        <label for="description">商品描述:</label>
+        <textarea id="description" name="description" required>{{ product.description if product else '' }}</textarea>
+
+        <label for="price">价格 (元):</label>
+        <input type="number" id="price" name="price" step="0.01" min="0" value="{{ product.price if product else '' }}" required>
+
+        <label for="quantity">数量:</label>
+        <input type="number" id="quantity" name="quantity" min="1" value="{{ product.quantity if product else '' }}" required>
+
+        <label for="tag">标签:</label>
+        <input type="text" id="tag" name="tag" value="{{ product.tag if product else '' }}" placeholder="例如：电子产品、书籍、家具等" required>
+
+        <label>商品图片:</label>
+        <div class="image-management-container" id="imageContainer">
+            <!-- 已有图片 -->
+            {% if product and images %}
+                {% for img in images %}
+                <div class="image-item existing-image" data-image-id="{{ img.id }}" data-filename="{{ img.filename }}">
+                    <img src="{{ static_url('images/' + img.filename) }}" alt="商品图片">
+                    <button type="button" class="delete-btn" title="标记删除">×</button>
+                    <div class="delete-overlay">待删除</div>
+                    <input type="checkbox" name="delete_images" value="{{ img.id }}" style="display: none;">
+                </div>
+                {% end %}
+            {% end %}
+
+            <!-- 添加图片按钮 -->
+            <div class="image-item" id="add-image-container">
+                <div class="add-btn">+</div>
+            </div>
+        </div>
+        
+        <input type="file" id="images" name="images" accept="image/*" multiple {% if not product %}required{% end %} style="display: none;">
+        <p class="upload-instructions">💡 点击"+"号添加图片，点击"×"号删除图片。最多上传9张，支持jpg、png格式。</p>
+        <p id="image-count-info"></p>
+
+        <br>
+        <input type="submit" value="{% if product %}💾 更新商品{% else %}📤 发布商品{% end %}">
+    </form>
+
+    <script>
+    (function() {
+        'use strict';
+        
+        const imageContainer = document.getElementById('imageContainer');
+        const addBtn = document.getElementById('add-image-container');
+        const fileInput = document.getElementById('images');
+        const imageCountInfo = document.getElementById('image-count-info');
+        const form = document.getElementById('productForm');
+        const MAX_IMAGES = 9;
+        
+        // 存储新选择的文件
+        let selectedFiles = [];
+        
+        // 获取已有图片的文件名（用于重复检测）
+        const existingFilenames = new Set();
+        document.querySelectorAll('.existing-image').forEach(item => {
+            const filename = item.dataset.filename;
+            if (filename) existingFilenames.add(filename);
+        });
+
+        // 计算当前图片总数
+        function getImageCount() {
+            const existingNotDeleted = imageContainer.querySelectorAll('.existing-image:not(.marked-for-deletion)').length;
+            return existingNotDeleted + selectedFiles.length;
+        }
+
+        // 更新图片计数显示
+        function updateCountDisplay() {
+            const count = getImageCount();
+            if (count > 0) {
+                imageCountInfo.textContent = `已选择 ${count}/${MAX_IMAGES} 张图片`;
+                imageCountInfo.style.display = 'block';
+                imageCountInfo.style.color = count >= MAX_IMAGES ? '#e53e3e' : '#4CAF50';
+            } else {
+                imageCountInfo.style.display = 'none';
+            }
+        }
+
+        // 检查文件是否重复
+        function isDuplicate(file) {
+            // 检查文件名和大小
+            if (existingFilenames.has(file.name)) return true;
+            return selectedFiles.some(f => f.name === file.name && f.size === file.size);
+        }
+
+        // 渲染新图片预览
+        function renderPreviews() {
+            // 移除所有新图片预览
+            imageContainer.querySelectorAll('.new-image').forEach(el => el.remove());
+            
+            // 为每个文件创建预览
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'image-item new-image';
+                    div.dataset.fileIndex = index;
+                    
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.alt = file.name;
+                    
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'delete-btn';
+                    btn.textContent = '×';
+                    btn.title = '移除此图片';
+                    
+                    div.appendChild(img);
+                    div.appendChild(btn);
+                    imageContainer.insertBefore(div, addBtn);
+                };
+                reader.readAsDataURL(file);
+            });
+            
+            updateCountDisplay();
+            updateFileInput();
+        }
+
+        // 更新真实的file input
+        function updateFileInput() {
+            const dt = new DataTransfer();
+            selectedFiles.forEach(file => dt.items.add(file));
+            fileInput.files = dt.files;
+        }
+
+        // 文件选择事件
+        fileInput.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            if (!files.length) return;
+
+            const currentCount = getImageCount();
+            const duplicates = [];
+            let addedCount = 0;
+
+            for (const file of files) {
+                // 检查数量限制
+                if (currentCount + addedCount >= MAX_IMAGES) {
+                    alert(`⚠️ 最多只能上传 ${MAX_IMAGES} 张图片！已跳过剩余图片。`);
+                    break;
+                }
+
+                // 检查重复
+                if (isDuplicate(file)) {
+                    duplicates.push(file.name);
+                    continue;
+                }
+
+                // 检查文件大小（最大10MB）
+                if (file.size > 10 * 1024 * 1024) {
+                    alert(`⚠️ 图片"${file.name}"超过10MB，已跳过。`);
+                    continue;
+                }
+
+                selectedFiles.push(file);
+                addedCount++;
+            }
+
+            if (duplicates.length > 0) {
+                alert(`⚠️ 以下图片已存在，已自动跳过：\n\n${duplicates.join('\n')}`);
+            }
+
+            renderPreviews();
+        });
+
+        // 点击事件委托（处理删除按钮）
+        imageContainer.addEventListener('click', function(e) {
+            const deleteBtn = e.target.closest('.delete-btn');
+            if (!deleteBtn) return;
+
+            const imageItem = deleteBtn.closest('.image-item');
+            
+            if (imageItem.classList.contains('new-image')) {
+                // 删除新上传的图片
+                const index = parseInt(imageItem.dataset.fileIndex);
+                selectedFiles.splice(index, 1);
+                renderPreviews();
+            } else if (imageItem.classList.contains('existing-image')) {
+                // 标记/取消标记已有图片为待删除
+                const checkbox = imageItem.querySelector('input[type="checkbox"]');
+                const filename = imageItem.dataset.filename;
+                const isMarkedForDeletion = imageItem.classList.contains('marked-for-deletion');
+                
+                imageItem.classList.toggle('marked-for-deletion');
+                checkbox.checked = !isMarkedForDeletion;
+                
+                // 更新existingFilenames集合以支持图片替换场景
+                if (!isMarkedForDeletion) {
+                    // 现在标记为删除，从集合中移除文件名，允许上传同名新图片
+                    existingFilenames.delete(filename);
+                } else {
+                    // 取消删除标记，重新添加文件名到集合
+                    existingFilenames.add(filename);
+                }
+                
+                updateCountDisplay();
+            }
+        });
+
+        // 点击"+"按钮
+        addBtn.addEventListener('click', function() {
+            const currentCount = getImageCount();
+            if (currentCount >= MAX_IMAGES) {
+                alert(`⚠️ 最多只能上传 ${MAX_IMAGES} 张图片！`);
+                return;
+            }
+            fileInput.click();
+        });
+
+        // 表单提交前验证
+        form.addEventListener('submit', function(e) {
+            const totalImages = getImageCount();
+            if (totalImages === 0) {
+                e.preventDefault();
+                alert('⚠️ 请至少上传一张商品图片！');
+                return false;
+            }
+            if (totalImages > MAX_IMAGES) {
+                e.preventDefault();
+                alert(`⚠️ 最多只能上传 ${MAX_IMAGES} 张图片！请删除多余的图片。`);
+                return false;
+            }
+        });
+
+        // 初始化显示
+        updateCountDisplay();
+    })();
+    </script>
     
     {% include "foot.html" %}
 </body>
 </html>
-
