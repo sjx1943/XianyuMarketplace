@@ -18,11 +18,13 @@ class User(Base):
     password = Column(String(255), nullable=False)
     email = Column(String(255), unique=True, nullable=False)
     reset_token = Column(String(255))
+    room_number = Column(String(50), unique=True, nullable=True)
 
-    def __init__(self, username, password, email):
+    def __init__(self, username, password, email, room_number=None):
         self.username = username
         self.password = password
         self.email = email
+        self.room_number = room_number
 
 
     def __repr__(self):

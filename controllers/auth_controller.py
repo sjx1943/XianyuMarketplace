@@ -45,8 +45,16 @@ class LoginHandler(tornado.web.RequestHandler):
             if user and bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
                 # logging.info("Password is correct.")
                 self.set_secure_cookie("user_id", str(user.id), expires_days=1)
-                self.set_secure_cookie("username", user.username, expires_days=1)
-                self.redirect("/main")
+                
+                # 检查用户是否已设置房间号
+                if not user.room_number:
+                    # 未设置房间号，跳转到设置页面
+                    self.set_secure_cookie("username", user.username, expires_days=1)
+                    self.redirect("/set_room_number")
+                else:
+                    # 已设置房间号，使用房间号作为显示名称
+                    self.set_secure_cookie("username", user.room_number, expires_days=1)
+                    self.redirect("/main")
             else:
                 # logging.warning("Invalid username or password.")
                 self.render("login.html", message="Invalid username or password", result="用户名或密码错误")
@@ -181,6 +189,58 @@ class RegisterHandler(tornado.web.RequestHandler):
                 self.session.rollback()
                 self.render("reg.html", result="Registration failed: " + str(e))
 
+
+
+class SetRoomNumberHandler(tornado.web.RequestHandler):
+    """处理用户设置房间号"""
+    def initialize(self):
+        self.session = Session()
+    
+    def on_finish(self):
+        self.session.close()
+    
+    def get(self):
+        user_id = self.get_secure_cookie("user_id")
+        if not user_id:
+            self.redirect("/login")
+            return
+        self.render("set_room_number.html", result="")
+    
+    def post(self):
+        import re
+        user_id = self.get_secure_cookie("user_id")
+        if not user_id:
+            self.redirect("/login")
+            return
+        
+        room_number = self.get_argument("room_number").strip()
+        
+        # 验证房间号格式：楼号-单元号-房间号（如'3-1-801'）
+        pattern = r'^\d{1,3}-\d{1,2}-\d{1,4}$'
+        if not re.match(pattern, room_number):
+            self.render("set_room_number.html", result="房间号格式不正确，请按照'楼号-单元号-房间号'格式输入，例如：3-1-801")
+            return
+        
+        # 检查房间号是否已被使用
+        existing_room = self.session.query(User).filter_by(room_number=room_number).first()
+        if existing_room:
+            self.render("set_room_number.html", result="该房间号已被占用，如有疑问请联系管理员")
+            return
+        
+        # 更新用户房间号
+        user = self.session.query(User).filter_by(id=int(user_id.decode('utf-8'))).first()
+        if user:
+            user.room_number = room_number
+            try:
+                self.session.commit()
+                # 更新cookie中的username为room_number
+                self.set_secure_cookie("username", room_number, expires_days=1)
+                self.redirect("/main")
+            except Exception as e:
+                self.session.rollback()
+                self.render("set_room_number.html", result=f"设置失败：{str(e)}")
+        else:
+            self.render("set_room_number.html", result="用户不存在")
 
 
 class LogoutHandler(tornado.web.RequestHandler):
