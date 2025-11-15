@@ -2,7 +2,7 @@
     <div class="register-form">
         <h2>注册账号</h2>
         <form method="post" action="/regist" enctype="multipart/form-data">
-            {% raw xsrf_form_html() %} <!-- 防跨域攻击 -->
+            {% module xsrf_form_html() %}
             <div class="form-group">
                 <label for="username">用户名 <span class="required">*</span></label>
                 <input type="text" id="username" name="username" placeholder="请输入用户名" required>

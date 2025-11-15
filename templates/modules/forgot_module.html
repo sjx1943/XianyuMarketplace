@@ -1,5 +1,5 @@
 <form method="post" action="/forgot" >
-        {% raw xsrf_form_html() %} <!-- 防跨域攻击 -->
+        {% module xsrf_form_html() %}
         <input type="email" name="email" placeholder="Email" required>
         <button type="submit">Reset Password</button>
     </form>

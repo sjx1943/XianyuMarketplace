@@ -2,7 +2,7 @@
     <div class="login-form">
         <h2>登录</h2>
         <form method="post" action="/login">
-            {% raw xsrf_form_html() %} <!-- 防跨域攻击 -->
+            {% module xsrf_form_html() %}
             <div class="form-group">
                 <label for="username">用户名</label>
                 <input type="text" id="username" name="username" placeholder="请输入用户名" required>
