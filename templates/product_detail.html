@@ -261,7 +261,8 @@
                 </div>
                 {% elif product.user_id == user_id %}
                 <div class="action-buttons">
-                    <button class="btn btn-secondary" disabled>这是您的商品</button>
+                    <a href="/product/edit/{{ product.id }}" class="btn btn-primary">编辑商品</a>
+                    <span style="color: #666; align-self: center;">这是您发布的商品</span>
                 </div>
                 {% else %}
                 <div class="action-buttons">
