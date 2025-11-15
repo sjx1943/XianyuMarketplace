@@ -202,6 +202,7 @@
         {% end %}
 
         <form method="post" action="/set_room_number">
+            {% module xsrf_form_html() %}
             <div class="form-group">
                 <label for="room_number">房间号 *</label>
                 <input 
