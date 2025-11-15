@@ -74,7 +74,7 @@ python app.py --port=5000
 ```
 .
 ├── app.py                  # 主应用入口
-├── init_db.py             # 数据库初始化脚本
+├── init_db.py             # 数据库的初始化脚本
 ├── config.ini             # 配置文件
 ├── base/                  # 数据库基础配置
 ├── models/                # 数据模型
