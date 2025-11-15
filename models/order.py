@@ -26,7 +26,8 @@ class Order(Base):
     completed_at = Column(DateTime, nullable=True)  # 完成时间
 
     product = relationship("Product")
-    user = relationship("User")
+    buyer = relationship("User", foreign_keys=[user_id])
+    seller = relationship("User", foreign_keys=[seller_id])
 
     def __init__(self, product_id, user_id, quantity, product_name, seller_id=None, order_note=None):
         self.product_id = product_id
