@@ -1,0 +1,117 @@
+<div class="login-container">
+    <div class="login-form">
+        <h2>登录</h2>
+        <form method="post" action="/login">
+            {% raw xsrf_form_html() %} <!-- 防跨域攻击 -->
+            <div class="form-group">
+                <label for="username">用户名</label>
+                <input type="text" id="username" name="username" placeholder="请输入用户名" required>
+            </div>
+            <div class="form-group">
+                <label for="password">密码</label>
+                <input type="password" id="password" name="password" placeholder="请输入密码" required>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn-login">登录</button>
+            </div>
+            <div class="links">
+                <a href="/register">注册账号</a>
+                <a href="/forgot_password">忘记密码</a>
+            </div>
+            {% if result %}
+            <div class="error-message">{{ result }}</div>
+            {% end %}
+        </form>
+    </div>
+</div>
+
+<style>
+    .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh;
+    }
+
+    .login-form {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        padding: 30px;
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .login-form h2 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #555;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 16px;
+    }
+
+    .btn-login {
+        width: 100%;
+        padding: 12px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .btn-login:hover {
+        background-color: #45a049;
+    }
+
+    .links {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 15px;
+    }
+
+    .links a {
+        color: #4CAF50;
+        text-decoration: none;
+    }
+
+    .links a:hover {
+        text-decoration: underline;
+    }
+
+    .error-message {
+        color: red;
+        text-align: center;
+        margin-top: 10px;
+    }
+
+    .footer-info {
+        text-align: center;
+        margin-top: 30px;
+        color: #777;
+        font-size: 14px;
+    }
+</style>
+
+<div class="footer-info">
+    <p>版权所有 &copy; 2025 小区二手交易平台</p>
+</div>

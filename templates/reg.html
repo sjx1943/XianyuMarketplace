@@ -1,0 +1,14 @@
+{%extends base.html%}
+{%block title%}注册 - 小区二手交易平台{%end%}
+{%block body%}
+{%module registmodule() %}
+
+{% if result %}
+    <div style="max-width: 450px; margin: 20px auto;">
+        <div class="{% if '成功' in result %}success-message{% else %}error-message{% end %}">
+            {{ result }}
+        </div>
+    </div>
+{% end %}
+
+{%end%}

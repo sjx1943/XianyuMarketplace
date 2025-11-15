@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>邮箱验证码输入</title>
+</head>
+<body>
+    <h1>请输入您的邮箱中的验证码和新密码</h1>
+    <form action="/reset" method="post">
+        {% raw xsrf_form_html() %} <!-- 防跨域攻击 -->
+        <label for="reset_token">邮箱验证码:</label><br>
+        <input type="text" id="reset_token" name="reset_token"><br>
+        <label for="new_password">新密码:</label><br>
+        <input type="password" id="new_password" name="new_password"><br>
+        <input type="submit" value="提交">
+    </form>
+    {% if result %}
+        <p style="color: aqua;">{{ result }}</p>
+    {% end %}
+</body>
+</html>

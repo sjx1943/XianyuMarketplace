@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>我的订单</title>
+    <link rel="stylesheet" href="{{ static_url('css/main.css') }}">
+    <style>
+        .search-form {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>我的订单</h1>
+    <div class="container">
+        <div class="tabs">
+            <a href="/orders?type=all" class="{{ 'active' if order_type == 'all' else '' }}">全部订单</a>
+            <a href="/orders?type=buying" class="{{ 'active' if order_type == 'buying' else '' }}">我购买的</a>
+            <a href="/orders?type=selling" class="{{ 'active' if order_type == 'selling' else '' }}">我卖出的</a>
+            <a href="/orders?type=cancelled" class="{{ 'active' if order_type == 'cancelled' else '' }}">已取消的</a>
+        </div>
+
+        <!-- 搜索栏 -->
+        <form action="/orders" method="get" class="search-form">
+            <input type="hidden" name="type" value="{{ order_type }}">
+            <input type="text" name="keyword" placeholder="商品关键词" value="{{ keyword or '' }}">
+            <input type="date" name="date" value="{{ date or '' }}">
+            <button type="submit" class="btn btn-primary">搜索</button>
+        </form>
+
+        <div class="order-list">
+            {% if not orders %}
+                <p>暂无订单</p>
+            {% else %}
+                {% for item in orders %}
+                    <div class="order-item">
+                        <div class="order-header">
+                            <span>订单号: <a href="/orders/{{ item['order'].id }}">{{ item['order'].id }}</a></span>
+                            {% set status_map = {'pending': '待处理', 'confirmed': '已确认', 'shipped': '已发货', 'completed': '已完成', 'cancelled': '已取消'} %}
+                            <span>状态: {{ status_map.get(item['order'].status, item['order'].status) }}</span>
+                        </div>
+                        <div class="order-body">
+                            {% if item['product'] %}
+                                <img src="{{ static_url('images/' + item['product'].image) }}" alt="{{ item['product'].name }}">
+                                <div class="product-info">
+                                    <a href="/orders/{{ item['order'].id }}">{{ item['product'].name }}</a>
+                                    <p>价格: ¥{{ item['product'].price }}</p>
+                                    <p>数量: {{ item['order'].quantity }}</p>
+                                </div>
+                            {% else %}
+                                <img src="{{ static_url('images/placeholder.png') }}" alt="商品已下架">
+                                <div class="product-info">
+                                    <a href="/orders/{{ item['order'].id }}">{{ item['order'].product_name }} (商品已下架)</a>
+                                    <p>价格: N/A</p>
+                                    <p>数量: {{ item['order'].quantity }}</p>
+                                </div>
+                            {% end %}
+                            <div class="order-actions">
+                                <!-- 买家操作 -->
+                                {% if item['is_buyer'] %}
+                                    {% if item['order'].status == 'pending' %}
+                                        <button class="btn btn-danger cancel-btn" data-order-id="{{ item['order'].id }}">取消订单</button>
+                                    {% elif item['order'].status == 'shipped' %}
+                                        <button class="btn btn-primary confirm-btn" data-order-id="{{ item['order'].id }}">确认收货</button>
+                                    {% end %}
+                                <!-- 卖家操作 -->
+                                {% else %}
+                                    {% if item['order'].status == 'pending' %}
+                                        <button class="btn btn-success update-status-btn" data-order-id="{{ item['order'].id }}" data-status="confirmed">确认订单</button>
+                                    {% elif item['order'].status == 'confirmed' %}
+                                        <button class="btn btn-info update-status-btn" data-order-id="{{ item['order'].id }}" data-status="shipped">发货</button>
+                                    {% end %}
+                                {% end %}
+                            </div>
+                        </div>
+                    </div>
+                {% end %}
+            {% end %}
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 通用函数：获取 CSRF token
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
+            // 处理买家确认收货
+            document.querySelectorAll('.confirm-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const orderId = this.dataset.orderId;
+                    if (confirm('您确定要确认收货吗？')) {
+                        fetch(`/api/order/${orderId}/confirm`, {
+                            method: 'POST',
+                            headers: { 'X-XSRFToken': getCookie('_xsrf') }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert('操作成功');
+                                location.reload();
+                            } else {
+                                alert('操作失败：' + data.error);
+                            }
+                        })
+                        .catch(error => console.error('Error:', error));
+                    }
+                });
+            });
+
+            // 处理卖家更新订单状态（确认订单、发货）
+            document.querySelectorAll('.update-status-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const orderId = this.dataset.orderId;
+                    const newStatus = this.dataset.status;
+                    const actionText = newStatus === 'confirmed' ? '确认订单' : '发货';
+                    
+                    if (confirm(`您确定要${actionText}吗？`)) {
+                        fetch(`/orders/${orderId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-XSRFToken': getCookie('_xsrf')
+                            },
+                            body: `status=${newStatus}`
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert('操作成功');
+                                location.reload();
+                            } else {
+                                alert('操作失败：' + data.error);
+                            }
+                        })
+                        .catch(error => console.error('Error:', error));
+                    }
+                });
+            });
+
+            // 处理买家取消订单
+            document.querySelectorAll('.cancel-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const orderId = this.dataset.orderId;
+                    if (confirm('您确定要取消此订单吗？')) {
+                        fetch(`/orders/${orderId}`, {
+                            method: 'DELETE',
+                            headers: { 'X-XSRFToken': getCookie('_xsrf') }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert('订单已取消');
+                                location.reload();
+                            } else {
+                                alert('操作失败：' + data.error);
+                            }
+                        })
+                        .catch(error => console.error('Error:', error));
+                    }
+                });
+            });
+        });
+    </script>
+    <!-- 引入底部导航栏 -->
+    {% include "foot.html" %}
+</body>
+</html>

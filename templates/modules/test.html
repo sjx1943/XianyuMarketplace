@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket聊天室</title>
+    <style>
+        /* 在这里添加CSS样式 */
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #chat-container {
+            width: 800px;
+            margin: 0 auto;
+            border: 1px solid #ccc;
+        }
+        #chat-messages {
+            height: 400px;
+            overflow-y: scroll;
+            padding: 10px;
+        }
+        #user-list {
+            float: right;
+            width: 200px;
+            border-left: 1px solid #ccc;
+            padding: 10px;
+        }
+        #message-input {
+            width: 100%;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div id="chat-header">
+            <h2>聊天室</h2>
+            <p>当前用户：<span id="current-user"></span></p>
+        </div>
+        <div id="chat-body">
+            <div id="chat-messages"></div>
+            <div id="user-list">
+                <h3>在线用户</h3>
+                <ul id="online-users"></ul>
+            </div>
+        </div>
+        <div id="chat-footer">
+            <input type="text" id="message-input" placeholder="输入消息...">
+            <button id="send-button">发送</button>
+        </div>
+    </div>
+
+    <script>
+        // 在这里添加WebSocket相关的JavaScript代码
+        // 例如：建立连接、发送消息、接收消息等
+    </script>
+</body>
+</html>

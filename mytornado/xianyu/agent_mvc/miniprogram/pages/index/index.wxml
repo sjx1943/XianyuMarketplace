@@ -1,0 +1,154 @@
+<!--pages/index/index.wxml-->
+<view class="container">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <view class="search-input-container">
+      <input
+        class="search-input"
+        placeholder="搜索商品"
+        value="{{searchValue}}"
+        bindinput="onSearchInput"
+        bindconfirm="onSearch"
+      />
+      <view class="search-btn" bindtap="onSearch">
+        <text class="iconfont icon-search">🔍</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 分类导航 -->
+  <view class="categories">
+    <scroll-view class="categories-scroll" scroll-x="true">
+      <view class="category-list">
+        <view
+          class="category-item"
+          wx:for="{{categories}}"
+          wx:key="id"
+          data-category="{{item}}"
+          bindtap="onCategoryTap"
+        >
+          <view class="category-icon">{{item.icon}}</view>
+          <view class="category-name">{{item.name}}</view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 轮播图 -->
+  <view class="banner-section">
+    <swiper
+      class="banner-swiper"
+      indicator-dots="{{true}}"
+      autoplay="{{true}}"
+      interval="3000"
+      duration="500"
+    >
+      <swiper-item
+        wx:for="{{banners}}"
+        wx:key="id"
+        data-banner="{{item}}"
+        bindtap="onBannerTap"
+      >
+        <image class="banner-image" src="{{item.image}}" mode="aspectFill" />
+        <view class="banner-title">{{item.title}}</view>
+      </swiper-item>
+    </swiper>
+  </view>
+
+  <!-- 热门商品 -->
+  <view class="section" wx:if="{{hotProducts.length > 0}}">
+    <view class="section-header">
+      <view class="section-title">🔥 热门商品</view>
+      <view class="section-more" bindtap="onMoreHotTap">更多</view>
+    </view>
+    <view class="hot-products">
+      <view class="hot-grid">
+        <view
+          class="hot-product-item"
+          wx:for="{{hotProducts}}"
+          wx:key="id"
+          data-product="{{item}}"
+          bindtap="onProductTap"
+        >
+          <image class="hot-product-image" src="{{item.image}}" mode="aspectFill" />
+          <view class="hot-product-info">
+            <view class="hot-product-name">{{item.name}}</view>
+            <view class="hot-product-price">¥{{item.price}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 最新商品 -->
+  <view class="section">
+    <view class="section-header">
+      <view class="section-title">🆕 最新发布</view>
+      <view class="publish-btn" bindtap="onPublishTap">
+        <text class="iconfont">+</text> 发布
+      </view>
+    </view>
+    
+    <view class="product-list" wx:if="{{recentProducts.length > 0}}">
+      <view
+        class="product-item"
+        wx:for="{{recentProducts}}"
+        wx:key="id"
+        data-product="{{item}}"
+        bindtap="onProductTap"
+      >
+        <image class="product-image" src="{{item.image}}" mode="aspectFill" />
+        <view class="product-info">
+          <view class="product-name">{{item.name}}</view>
+          <view class="product-desc">{{item.description}}</view>
+          <view class="product-meta">
+            <view class="product-price">¥{{item.price}}</view>
+            <view class="product-location">{{item.location || '本地'}}</view>
+          </view>
+          <view class="product-tags">
+            <view class="tag">{{item.tag}}</view>
+            <view class="product-time">{{item.timeAgo}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{!loading && recentProducts.length === 0}}">
+      <view class="empty-icon">📦</view>
+      <view class="empty-text">暂无商品</view>
+      <view class="empty-action">
+        <button class="btn btn-primary" bindtap="onPublishTap">发布第一个商品</button>
+      </view>
+    </view>
+
+    <!-- 加载状态 -->
+    <view class="loading" wx:if="{{loading}}">
+      <view class="loading-spinner"></view>
+      <view>加载中...</view>
+    </view>
+  </view>
+
+  <!-- 用户信息授权 -->
+  <view class="auth-section" wx:if="{{!hasUserInfo}}">
+    <view class="auth-card">
+      <view class="auth-title">完善个人信息</view>
+      <view class="auth-desc">获取您的头像和昵称，提供更好的服务</view>
+      <button
+        wx:if="{{canIUseGetUserProfile}}"
+        class="btn btn-primary btn-block"
+        bindtap="getUserProfile"
+      >
+        授权登录
+      </button>
+      <button
+        wx:else
+        class="btn btn-primary btn-block"
+        open-type="getUserInfo"
+        bindgetuserinfo="getUserInfo"
+      >
+        授权登录
+      </button>
+    </view>
+  </view>
+</view>

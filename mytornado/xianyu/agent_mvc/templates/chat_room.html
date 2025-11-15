@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>消息</title>
+    <link rel="stylesheet" href="{{ static_url('css/chatroom.css') }}">
+    <link rel="stylesheet" href="{{ static_url('css/main.css') }}">
+</head>
+<!-- 在body标签添加data-user-id属性 -->
+<body data-user-id="{{ user_id }}">
+<input type="hidden" id="logged-in-user-id" value="{{ user_id }}">
+<div class="container">
+    <!-- 顶部区域 -->
+    <div class="top-section">
+        <input type="text" class="search-bar" placeholder="搜索聊天记录/联系人/服务号">
+        <a href="/main" class="return-home-link">返回首页</a>
+        <div class="broadcast-messages">
+            {% if broadcasts and len(broadcasts) > 0 %}
+            {% for broadcast in broadcasts %}
+            <div class="broadcast-item">
+                <a href="/product/detail/{{ broadcast.get('product_id', '') }}">
+                    {{ broadcast.get('uploader', '未知用户') }}
+                    于 {{ broadcast.get('time', '未知时间') }}
+                    上传了 {{ broadcast.get('product_name', '未知商品') }}
+                </a>
+            </div>
+            {% end %}
+            {% else %}
+            <div class="broadcast-item">暂无系统广播</div>
+            {% end %}
+        </div>
+    </div>
+
+    <!-- 中间区域 -->
+    <div class="middle-section">
+        <button id="toggle-friend-list" title="切换好友列表">‹</button>
+        <!-- 好友列表 -->
+        <div class="friend-list" id="friend-list-container">
+            <div class="friend-list-header">
+                <span>我的好友</span>
+            </div>
+            <div class="friend-list-content">
+                {% if friends %}
+                {% for friend in friends %}
+                <div class="friend-item" data-friend-id="{{ friend['id'] }}" data-status="{{ friend['status'] }}">
+                    <span class="friend-name">{{ friend['username'] }}</span>
+                    <span class="red-dot"></span>
+                </div>
+                {% end %}
+                {% else %}
+                <div class="no-friends-message">暂无好友</div>
+                {% end %}
+            </div>
+        </div>
+
+        <!-- 消息区域 -->
+        <div class="resizer" id="drag-handle"></div>
+        <div class="message-area" id="chat-messages">
+            <!-- 消息右键菜单 -->
+            <div id="message-context-menu" class="context-menu">
+                <ul>
+                    <li id="delete-selected">删除选中消息</li>
+                    <li id="delete-all">删除所有消息</li>
+                </ul>
+            </div>
+            
+            <!-- 好友列表右键菜单 -->
+            <div id="friend-context-menu" class="context-menu">
+                <ul>
+                    <li id="friend-menu-profile">查看主页</li>
+                    <li id="friend-menu-block">拉黑</li>
+                    <li id="friend-menu-delete">删除好友</li>
+                </ul>
+            </div>
+
+            <div id="no-chat-message" class="no-chat-selected">未选择聊天</div>
+            <div id="message-content-container" class="message-content-container">
+                <div id="message-content" class="message-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 消息输入区域现在是独立的底部容器 -->
+    <div id="message-input-area" class="message-input-area" style="display: none;">
+        <input type="text" id="message-input" class="message-input" placeholder="输入消息...">
+        <button id="send-button" class="send-button">发送</button>
+    </div>
+
+</div>
+
+{% module xsrf_form_html() %}
+<script src="{{ static_url('js/chat.js') }}"></script>
+<script type="module" src="{{ static_url('js/main.js') }}"></script>
+</body>
+</html>

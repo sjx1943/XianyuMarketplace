@@ -1,0 +1,8 @@
+{%extends base.html%}
+{%block title%}logintest{%end%}
+{%block body%}
+{%module loginmodule()%}
+{% if result %}
+    <p style="color: aqua;">{{ result }}</p>
+{% end %}
+{%end%}

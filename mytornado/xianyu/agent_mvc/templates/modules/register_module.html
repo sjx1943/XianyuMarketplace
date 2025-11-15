@@ -1,0 +1,42 @@
+<form method="post" action="/regist" enctype="multipart/form-data">
+    {% raw xsrf_form_html() %} <!-- 防跨域攻击 -->
+        <tr>
+            <td>
+                <input type="text" name="username" placeholder="用户名"><br>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                 <input type="password" name="password" placeholder="密码"><br><br>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <input type="text" name="email" placeholder="Email"><br>
+            </td>
+        </tr>
+
+        <tr>
+            <td>头像</td>
+            <td><input type="file" name="avatar"></td><br>
+        </tr>
+        <tr>
+            <td>城市:</td>
+            <td>
+                <select name="city">
+                    <option value="beijing">北京</option>
+                    <option value="shanghai">上海</option>
+                    <option value="guangzhou">广州</option>
+                    <option value="hangzhou">杭州</option>
+                </select><br>
+            </td>
+        </tr>
+
+        </tr>
+        <tr>
+            <td>
+                <input type="submit" value="注册">&nbsp;&nbsp;
+                <input type="reset" value="重置">
+            </td>
+        </tr>
+    </form>

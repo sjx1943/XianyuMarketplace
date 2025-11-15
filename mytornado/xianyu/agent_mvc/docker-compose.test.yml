@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  mysql:
+    environment:
+      MYSQL_DATABASE: xianyu_test_db
+    ports:
+      - "3307:3306"
+
+  mongodb:
+    ports:
+      - "27018:27017"
+
+  redis:
+    ports:
+      - "6380:6379"
+
+  app:
+    environment:
+      - MYSQL_DATABASE=xianyu_test_db
+      - MONGODB_DATABASE=chat_test_db
+      - REDIS_DB=1 # Use a different Redis DB for tests
+      - TORNADO_ENV=test

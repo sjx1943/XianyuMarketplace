@@ -1,0 +1,45 @@
+<!-- /fix in friend_profile.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ friend.username }}的主页</title>
+    <link rel="stylesheet" href="{{ static_url('css/home.css') }}">
+</head>
+<body>
+    <h1>{{ friend.username }}的上传物品</h1>
+    <div class="product-list">
+        {% for product in products %}
+        <div class="product-item">
+            <a href="/product/detail/{{ product.id }}">
+                <img src="{{ static_url('images/' + product.image) }}" alt="{{ product.name }}">
+            </a>
+            <div class="product-info">
+                <p class="product-name">{{ product.name }}</p>
+                <p class="product-price">￥{{ product.price }}</p>
+                <p class="product-quantity">数量：{{ product.quantity }}</p>
+                <p class="product-upload-time">上传时间: {{ product.upload_time }}</p>
+                <p class="product-tags">
+                    {% for tag in product.tag %}
+                        <span class="tag">{{ tag }}</span>
+                    {% end %}
+                </p>
+            </div>
+        </div>
+        {% end %}
+    </div>
+    <div class="actions">
+        {% if i_am_blocked %}
+            <p class="blocked-message">您已被该用户拉黑。</p>
+        {% elif i_am_blocking %}
+            <button id="block-friend-btn" data-friend-id="{{ friend.id }}">取消拉黑</button>
+        {% elif is_friend %}
+            <button id="block-friend-btn" data-friend-id="{{ friend.id }}">拉黑</button>
+        {% else %}
+            <button id="add-friend-btn" data-friend-id="{{ friend.id }}" data-user-id="{{ current_user_id }}">添加好友</button>
+        {% end %}
+    </div>
+    <a href="/chat_room?user_id={{ current_user_id }}">返回消息列表</a>
+    <script src="{{ static_url('js/userInfo.js') }}"></script>
+</body>
+</html>

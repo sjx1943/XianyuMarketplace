@@ -1,0 +1,9 @@
+venv/
+.idea/
+.venv1
+
+# 新增以下内容
+*.pyc
+__pycache__/
+config.ini
+xianyu/agent_mvc/GEMINI.md

@@ -1,0 +1,3 @@
+.inactive-products {
+    margin-bottom: 100px; /* 增加底部外边距，避免被footer遮挡 */
+}

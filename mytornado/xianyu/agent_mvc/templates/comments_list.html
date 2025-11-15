@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品评价</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <style>
+        .comments-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .comment-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #fff;
+        }
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .user-info {
+            font-weight: bold;
+            color: #333;
+        }
+        .comment-time {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .rating {
+            color: #ff6b35;
+            margin: 5px 0;
+        }
+        .star {
+            color: #ffd700;
+        }
+        .comment-content {
+            color: #444;
+            line-height: 1.6;
+        }
+        .no-comments {
+            text-align: center;
+            color: #999;
+            margin: 50px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="comments-container">
+        <h2>商品评价</h2>
+        
+        {% if comments %}
+            {% for comment in comments %}
+            <div class="comment-item">
+                <div class="comment-header">
+                    <div class="user-info">{{ comment['user_name'] }}</div>
+                    <div class="comment-time">{{ comment['created_at'] }}</div>
+                </div>
+                <div class="rating">
+                    评分：
+                    {% for i in range(int(comment['rating'])) %}
+                        <span class="star">★</span>
+                    {% end %}
+                    {% for i in range(5 - int(comment['rating'])) %}
+                        <span class="star" style="color: #ddd;">★</span>
+                    {% end %}
+                    ({{ comment['rating'] }}分)
+                </div>
+                <div class="comment-content">{{ comment['content'] }}</div>
+                {% if 'product_name' in comment %}
+                <div style="color: #666; font-size: 0.9em; margin-top: 10px;">
+                    商品：{{ comment['product_name'] }}
+                </div>
+                {% end %}
+            </div>
+            {% end %}
+        {% else %}
+            <div class="no-comments">
+                <p>暂无评价</p>
+            </div>
+        {% end %}
+    </div>
+</body>
+</html>

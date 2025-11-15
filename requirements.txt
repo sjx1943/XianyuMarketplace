@@ -1,0 +1,16 @@
+aiomysql==0.2.0
+async-timeout==4.0.3
+asyncmy==0.2.10
+bcrypt==4.3.0
+certifi==2025.1.31
+dnspython==2.7.0
+greenlet==3.0.3
+motor==3.6.0
+pymongo==4.9.2
+PyMySQL==1.1.1
+redis==5.0.3
+SQLAlchemy==2.0.28
+tornado==6.4.2
+typing_extensions==4.12.2
+cryptography
+beautifulsoup4

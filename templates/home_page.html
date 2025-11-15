@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>我的商品管理</title>
+    <link rel="stylesheet" href="{{ static_url('css/main.css') }}"> <!-- 复用主页样式 -->
+    <link rel="stylesheet" href="{{ static_url('css/footer.css') }}">
+    <style>
+        /* 增加一些页面特有的微调 */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* 响应式网格布局 */
+            gap: 20px; /* 网格间距 */
+            padding: 20px;
+            padding-bottom: 60px; /* 增加底部内边距，避免被导航栏遮挡 */
+        }
+        .product-card {
+            position: relative;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column; /* 确保卡片内部垂直布局 */
+        }
+        .product-card a {
+            text-decoration: none;
+            color: inherit;
+        }
+        .product-image {
+            width: 100%;
+            height: 200px; /* 固定图片高度 */
+            object-fit: cover; /* 裁剪并填充，不变形 */
+        }
+        .product-info {
+            padding: 15px;
+            flex-grow: 1; /* 让信息区占据多余空间 */
+        }
+        .product-status {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            color: white;
+            z-index: 1;
+        }
+        .status-on-sale { background-color: #28a745; }
+        .status-off-shelf { background-color: #ffc107; }
+        .status-deleted { background-color: #dc3545; }
+        .status-sold-out { background-color: #6c757d; }
+
+        .product-actions {
+            padding: 10px;
+            display: flex;
+            justify-content: space-around;
+            border-top: 1px solid #eee; /* 分隔线 */
+            margin-top: auto; /* 将按钮推到底部 */
+        }
+        .header-actions {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-actions">
+        <h1>我的商品管理</h1>
+        <a href="/orders" class="btn btn-primary">我的订单</a>
+    </div>
+
+    <div class="product-grid"> <!-- 使用与主页相同的网格布局 -->
+        {% for product in products %}
+            <div class="product-card">
+                <a href="/product/detail/{{ product.id }}">
+                    <img src="{{ static_url('images/' + product.image) }}" alt="{{ product.name }}" class="product-image">
+                </a>
+                
+                <!-- 显示商品状态 -->
+                {% if product.quantity > 0 and product.status == '在售' %}
+                    <span class="product-status status-on-sale">在售</span>
+                {% elif product.quantity <= 0 %}
+                    <span class="product-status status-sold-out">已售罄</span>
+                {% elif product.status == '已下架' %}
+                    <span class="product-status status-off-shelf">已下架</span>
+                {% elif product.status == '已删除' %}
+                    <span class="product-status status-deleted">已删除</span>
+                {% end %}
+
+                <div class="product-info">
+                    <h3 class="product-name">{{ product.name }}</h3>
+                    <p class="product-price">¥{{ product.price }}</p>
+                    <p class="product-quantity">数量: {{ product.quantity }}</p>
+                </div>
+
+                <div class="product-actions">
+                    {% if product.status == '在售' %}
+                        <button class="btn btn-secondary status-btn" data-product-id="{{ product.id }}" data-status="已下架">下架</button>
+                    {% else %}
+                        <button class="btn btn-primary status-btn" data-product-id="{{ product.id }}" data-status="在售">上架</button>
+                    {% end %}
+                    <button class="btn btn-danger delete-btn" data-product-id="{{ product.id }}">删除</button>
+                </div>
+            </div>
+        {% end %}
+    </div>
+
+    {% include "foot.html" %}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 处理状态变更按钮点击
+            document.querySelectorAll('.status-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const productId = this.dataset.productId;
+                    const newStatus = this.dataset.status;
+
+                    if (newStatus === '在售') {
+                        const currentQuantity = prompt("请输入新的商品数量：", "1");
+                        if (currentQuantity === null) return; // 用户取消
+
+                        const quantity = parseInt(currentQuantity, 10);
+                        if (isNaN(quantity) || quantity <= 0) {
+                            alert("请输入一个有效的商品数量（必须大于0）。");
+                            return;
+                        }
+                        updateProductStatus(productId, newStatus, quantity);
+                    } else {
+                        updateProductStatus(productId, newStatus);
+                    }
+                });
+            });
+
+            // 处理删除按钮点击
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const productId = this.dataset.productId;
+                    if (confirm('您确定要删除此商品吗？')) {
+                        deleteProduct(productId);
+                    }
+                });
+            });
+        });
+
+        function updateProductStatus(productId, status, quantity = null) {
+            let body = { status: status };
+            if (quantity !== null) {
+                body.quantity = quantity;
+            }
+
+            fetch(`/api/product/${productId}/status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-XSRFToken': getCookie('_xsrf')
+                },
+                body: JSON.stringify(body)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('操作成功');
+                    location.reload();
+                } else {
+                    alert('操作失败：' + data.error);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function deleteProduct(productId) {
+            fetch(`/api/product/${productId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'X-XSRFToken': getCookie('_xsrf')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('商品已删除');
+                    location.reload();
+                } else {
+                    alert('删除失败：' + data.error);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>

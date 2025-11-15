@@ -1,0 +1,168 @@
+<div class="register-container">
+    <div class="register-form">
+        <h2>注册账号</h2>
+        <form method="post" action="/regist" enctype="multipart/form-data">
+            {% raw xsrf_form_html() %} <!-- 防跨域攻击 -->
+            <div class="form-group">
+                <label for="username">用户名 <span class="required">*</span></label>
+                <input type="text" id="username" name="username" placeholder="请输入用户名" required>
+            </div>
+            <div class="form-group">
+                <label for="password">密码 <span class="required">*</span></label>
+                <input type="password" id="password" name="password" placeholder="请输入密码（至少6位）" minlength="6" required>
+            </div>
+            <div class="form-group">
+                <label for="email">邮箱 <span class="required">*</span></label>
+                <input type="email" id="email" name="email" placeholder="请输入邮箱地址" required>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn-register">注册</button>
+                <button type="reset" class="btn-reset">重置</button>
+            </div>
+            <div class="links">
+                <a href="/login">已有账号？去登录</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .register-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh;
+        background-color: #f5f5f5;
+    }
+
+    .register-form {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        padding: 30px;
+        width: 100%;
+        max-width: 450px;
+    }
+
+    .register-form h2 {
+        text-align: center;
+        margin-bottom: 25px;
+        color: #333;
+    }
+
+    .form-group {
+        margin-bottom: 18px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: bold;
+        color: #555;
+    }
+
+    .required {
+        color: red;
+    }
+
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 15px;
+        box-sizing: border-box;
+        transition: border-color 0.3s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #4CAF50;
+    }
+
+    .btn-register,
+    .btn-reset {
+        padding: 12px 20px;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        margin-right: 10px;
+    }
+
+    .btn-register {
+        background-color: #4CAF50;
+        color: white;
+        flex: 1;
+    }
+
+    .btn-register:hover {
+        background-color: #45a049;
+    }
+
+    .btn-reset {
+        background-color: #f44336;
+        color: white;
+        flex: 1;
+    }
+
+    .btn-reset:hover {
+        background-color: #da190b;
+    }
+
+    .form-group:has(.btn-register) {
+        display: flex;
+        gap: 10px;
+    }
+
+    .links {
+        text-align: center;
+        margin-top: 15px;
+    }
+
+    .links a {
+        color: #4CAF50;
+        text-decoration: none;
+    }
+
+    .links a:hover {
+        text-decoration: underline;
+    }
+
+    .success-message {
+        color: #4CAF50;
+        text-align: center;
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #e8f5e9;
+        border-radius: 4px;
+    }
+
+    .error-message {
+        color: #f44336;
+        text-align: center;
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #ffebee;
+        border-radius: 4px;
+    }
+
+    @media (max-width: 600px) {
+        .register-form {
+            padding: 20px;
+            margin: 10px;
+        }
+
+        .form-group input,
+        .form-group select {
+            font-size: 14px;
+        }
+    }
+</style>
+
+<div class="footer-info" style="text-align: center; margin-top: 20px; color: #777; font-size: 14px;">
+    <p>版权所有 &copy; 2025 小区二手交易平台</p>
+</div>

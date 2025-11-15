@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}二手交易平台主页{% end %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ static_url('css/main.css') }}">
+{% end %}
+
+{% block body %}
+<div class="page-container">
+    <div class="content-wrap">
+        {% if username %}
+        <p class="welcome-msg">欢迎 {{ username }}，來到小区的二手交易平台!</p>
+        <input type="hidden" id="logged-in-user-id" value="{{ user_id }}">
+        {% end %}
+
+        <form id="search-form" class="search-form">
+            <input type="text" id="search-input" name="q" placeholder="输入商品名称或关键词">
+            <button id="search-button">搜索</button>
+            <div id="search-results"></div>
+        </form>
+
+        <nav class="category-nav">
+            <a href="#" data-tag="all" onclick="loadProducts('all'); return false;">全部商品</a>
+            {% set unique_tags = [] %}
+            {% for tag in tags %}
+            {% if tag not in unique_tags %}
+            {% set unique_tags = unique_tags + [tag] %}
+            <a href="#" data-tag="{{ tag }}" onclick="loadProducts('{{ tag }}'); return false;">{{ tag }}</a>
+            {% end %}
+            {% end %}
+        </nav>
+
+        <div class="product-list" id="product-list" style="padding-bottom: 60px;">
+            <!-- 商品列表将通过 JavaScript 动态加载 -->
+        </div>
+    </div>
+
+    {% include "foot.html" %}
+</div>
+
+<script src="{{ static_url('js/main.js') }}"></script>
+<script src="{{ static_url('js/search.js') }}"></script>
+{% end %}

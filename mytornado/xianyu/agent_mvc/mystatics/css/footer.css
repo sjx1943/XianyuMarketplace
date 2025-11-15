@@ -1,0 +1,81 @@
+
+
+/* Footer 容器 */
+.main-footer {
+    display: flex;
+    flex-wrap: wrap; /* 允许内容换行 */
+    justify-content: space-around;
+    align-items: center;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #ffffff;
+    border-top: 1px solid #e0e0e0;
+    z-index: 1000;
+    padding-top: 5px; /* 顶部留出一些空间 */
+}
+
+/* 菜单项 */
+.main-footer a {
+    text-decoration: none;
+    color: #333;
+    text-align: center;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1; /* 每个图标占据相同空间 */
+    min-width: 60px; /* 避免在小屏幕上过度挤压 */
+    padding: 5px 0;
+    position: relative; /* 添加此行 */
+}
+
+/* 菜单图标 */
+.main-footer a img {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 4px;
+}
+
+/* 版权信息 */
+.footer-info {
+    display: block; /* 确保它是一个块级元素 */
+    width: 100%; /* 占据整行宽度以实现换行 */
+    text-align: center;
+    font-size: 10px;
+    color: #999;
+    padding: 5px 0;
+    background-color: #f8f9fa; /* 给一个稍微不同的背景色以区分 */
+}
+
+/* 未读消息计数样式 */
+.unread-count {
+    background-color: red;
+    color: white;
+    border-radius: 50%;
+    padding: 1px 5px;
+    font-size: 11px;
+    position: absolute;
+    top: 17px; /* 定位到图标的垂直中心 */
+    left: 50%; /* 定位到图标的水平中心 */
+    transform: translate(-50%, -50%); /* 将自身中心对齐到指定位置 */
+    min-width: 16px;
+    text-align: center;
+    line-height: 14px;
+    display: none; /* 默认隐藏 */
+}
+
+/* 响应式调整 */
+@media (max-width: 480px) {
+    .main-footer a {
+        font-size: 11px;
+    }
+
+    .main-footer a img {
+        width: 22px;
+        height: 22px;
+    }
+}
+
