@@ -297,22 +297,20 @@ class OrderHandler(tornado.web.RequestHandler):
                 return
 
             new_status = self.get_argument("status")
-            valid_statuses = ['confirmed', 'shipped'] 
+            # 简化流程：只支持直接发货（确认订单=发货）
+            valid_statuses = ['shipped'] 
             
             if new_status not in valid_statuses:
                 self.write(json.dumps({'success': False, 'error': '无效的操作'}))
                 return
 
-            # 验证订单状态转换逻辑
-            if new_status == 'confirmed' and order.status != 'pending':
-                self.write(json.dumps({'success': False, 'error': '只有待确认的订单才能被确认'}))
-                return
-            
-            if new_status == 'shipped' and order.status != 'confirmed':
-                self.write(json.dumps({'success': False, 'error': '只有已确认的订单才能发货'}))
+            # 验证订单状态转换逻辑：只有待确认的订单可以发货
+            if new_status == 'shipped' and order.status != 'pending':
+                self.write(json.dumps({'success': False, 'error': '只有待确认的订单才能发货'}))
                 return
 
             order.status = new_status
+            order.shipped_at = dt_class.now()  # 记录发货时间
             
             self.session.commit()
             

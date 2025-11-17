@@ -52,19 +52,36 @@
 
 /* 未读消息计数样式 */
 .unread-count {
-    background-color: red;
+    background-color: #ff4444;
     color: white;
     border-radius: 50%;
-    padding: 1px 5px;
-    font-size: 11px;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: bold;
     position: absolute;
-    top: 17px; /* 定位到图标的垂直中心 */
-    left: 50%; /* 定位到图标的水平中心 */
-    transform: translate(-50%, -50%); /* 将自身中心对齐到指定位置 */
-    min-width: 16px;
+    top: 2px;
+    right: 15px;
+    min-width: 18px;
+    height: 18px;
     text-align: center;
     line-height: 14px;
-    display: none; /* 默认隐藏 */
+    display: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 10;
+}
+
+/* 未读消息计数脉动动画 */
+.unread-count.pulse {
+    animation: pulse 1s ease-in-out;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
 }
 
 /* 响应式调整 */

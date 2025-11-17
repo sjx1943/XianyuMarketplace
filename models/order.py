@@ -19,10 +19,11 @@ class Order(Base):
     seller_id = Column(Integer, ForeignKey('xu_user.id'), nullable=True)  # 卖家ID快照
     user_id = Column(Integer, ForeignKey('xu_user.id'), nullable=False)  # 买家
     quantity = Column(Integer, nullable=False, default=1)
-    status = Column(String(50), nullable=False, default='pending')  # pending, confirmed, shipped, delivered, completed, cancelled
+    status = Column(String(50), nullable=False, default='pending')  # pending, shipped, completed, cancelled
     order_note = Column(Text, nullable=True)  # 订单备注
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    shipped_at = Column(DateTime, nullable=True)  # 发货时间
     completed_at = Column(DateTime, nullable=True)  # 完成时间
 
     product = relationship("Product")

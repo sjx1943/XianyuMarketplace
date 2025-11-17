@@ -38,7 +38,7 @@
                     <div class="order-item">
                         <div class="order-header">
                             <span>订单号: <a href="/orders/{{ item['order'].id }}">{{ item['order'].id }}</a></span>
-                            {% set status_map = {'pending': '待处理', 'confirmed': '已确认', 'shipped': '已发货', 'completed': '已完成', 'cancelled': '已取消'} %}
+                            {% set status_map = {'pending': '待发货', 'shipped': '已发货', 'completed': '已完成', 'cancelled': '已取消'} %}
                             <span>状态: {{ status_map.get(item['order'].status, item['order'].status) }}</span>
                         </div>
                         <div class="order-body">
@@ -68,9 +68,7 @@
                                 <!-- 卖家操作 -->
                                 {% else %}
                                     {% if item['order'].status == 'pending' %}
-                                        <button class="btn btn-success update-status-btn" data-order-id="{{ item['order'].id }}" data-status="confirmed">确认订单</button>
-                                    {% elif item['order'].status == 'confirmed' %}
-                                        <button class="btn btn-info update-status-btn" data-order-id="{{ item['order'].id }}" data-status="shipped">发货</button>
+                                        <button class="btn btn-success update-status-btn" data-order-id="{{ item['order'].id }}" data-status="shipped">确认发货</button>
                                     {% end %}
                                 {% end %}
                             </div>
@@ -127,7 +125,7 @@
                 button.addEventListener('click', function() {
                     const orderId = this.dataset.orderId;
                     const newStatus = this.dataset.status;
-                    const actionText = newStatus === 'confirmed' ? '确认订单' : '发货';
+                    const actionText = '确认发货';
                     
                     if (confirm(`您确定要${actionText}吗？`)) {
                         fetch(`/orders/${orderId}`, {
