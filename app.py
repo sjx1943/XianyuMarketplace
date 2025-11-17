@@ -85,6 +85,7 @@ def make_app():
         (r"/forgot_password", ForgotPasswordHandler),
         (r"/forgot", ForgotPasswordHandler),
         (r"/reset_password", ResetPasswordHandler),
+        (r"/reset", ResetPasswordHandler),
         (r"/product/upload", ProductUploadHandler, dict(app_settings=settings)),
         (r"/product/edit/([0-9]+)", ProductEditHandler, dict(app_settings=settings)),
         (r"/product_list", ProductListHandler),

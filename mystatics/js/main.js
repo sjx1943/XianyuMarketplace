@@ -44,8 +44,6 @@ function loadProducts(tag = 'all') {
                         <p>￥${product.price}</p>
                         <p>数量：${product.quantity}</p>
                         <p>标签：${product.tag}</p>
-                        <p>商品上传者ID：${product.user_id}</p>
-                        ${window.currentUserId ? `<p>当前用户ID：${window.currentUserId}</p>` : ''}
                         ${product.user_id === window.currentUserId ?
                           `<a href="/product/edit/${product.id}" class="edit-product button-link">编辑</a>` : ''}
                     </div>

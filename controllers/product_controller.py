@@ -14,7 +14,7 @@ Session = sessionmaker(bind=engine)
 
 class ProductDetailHandler(tornado.web.RequestHandler):
     def initialize(self):
-        self.session = Session()
+        self.session = Session()  # 每个Handler独立session
 
     def get_current_user(self):
         user_id = self.get_secure_cookie("user_id")
@@ -127,7 +127,8 @@ class ProductUploadHandler(tornado.web.RequestHandler):
 
     def validate_product_data(self, name, description, price, images, quantity):
             # 验证产品数据是否合法
-        if name and description and price > 0 and len(images) > 0 and quantity >0:
+            # 允许价格为0（免费赠送的商品）
+        if name and description and price >= 0 and len(images) > 0 and quantity >0:
             return True
         else:
             return False
@@ -272,7 +273,7 @@ class ProductEditHandler(tornado.web.RequestHandler):
 
 class ProductListHandler(tornado.web.RequestHandler):
     def initialize(self):
-        self.session = scoped_session(Session)
+        self.session = Session()
 
     def get(self):
         tags = self.get_arguments("tag")
@@ -302,12 +303,12 @@ class ProductListHandler(tornado.web.RequestHandler):
 
 
     def on_finish(self):
-        self.session.remove()
+        self.session.close()
 
 
 class HomePageHandler(tornado.web.RequestHandler):
     def initialize(self):
-        self.session = scoped_session(Session)
+        self.session = Session()
 
     def get(self):
         user_id = self.get_secure_cookie("user_id")
@@ -328,11 +329,11 @@ class HomePageHandler(tornado.web.RequestHandler):
             self.redirect("/login")
 
     def on_finish(self):
-        self.session.remove()
+        self.session.close()
 
 class ElseHomePageHandler(tornado.web.RequestHandler):
     def initialize(self):
-        self.session = scoped_session(Session)
+        self.session = Session()
 
     def get(self):
         user_id = self.get_argument("user_id", None)
@@ -367,12 +368,12 @@ class ElseHomePageHandler(tornado.web.RequestHandler):
         except Exception as e:
             self.write(f"Error: {str(e)}")
         finally:
-            self.session.remove()
+            self.session.close()
 
 
 class UpdateProductStatusHandler(tornado.web.RequestHandler):
     def initialize(self):
-        self.session = scoped_session(Session)
+        self.session = Session()
 
     def get_current_user(self):
         user_id = self.get_secure_cookie("user_id")
@@ -425,7 +426,7 @@ class UpdateProductStatusHandler(tornado.web.RequestHandler):
             self.session.rollback()
             self.write(json.dumps({'success': False, 'error': str(e)}))
         finally:
-            self.session.remove()
+            self.session.close()
 
 
 class DeleteProductHandler(tornado.web.RequestHandler):

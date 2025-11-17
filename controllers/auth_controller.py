@@ -23,11 +23,11 @@ class Loginmodule(UIModule):
 
 class LoginHandler(tornado.web.RequestHandler):
     def initialize(self):
-        self.session = Session()  # 创建新的会话
+        self.session = Session()  # 每个Handler独立session
         # logging.basicConfig(level=logging.INFO)
 
     def on_finish(self):
-        self.session.close()  # 关闭会话
+        self.session.close()  # 关闭session
 
     def get(self):
         message = self.get_argument("message", None)
@@ -83,9 +83,21 @@ def send_email(to_email, subject, body):
     server.quit()
 
 
-def send_reset_email(email, reset_token):
+def send_reset_email(email, reset_token, base_url=None):
     """发送包含密码重置令牌的电子邮件"""
-    reset_link = f"http://yourwebsite.com/reset_password?reset_token={reset_token}"
+    import os
+    # 优先使用传入的base_url，否则从环境变量获取，最后使用默认值
+    if not base_url:
+        # 从环境变量获取域名（Replit会自动设置REPLIT_DOMAINS）
+        domains = os.environ.get('REPLIT_DOMAINS', '')
+        if domains:
+            # REPLIT_DOMAINS可能包含多个域名，用逗号分隔，取第一个
+            base_url = f"https://{domains.split(',')[0].strip()}"
+        else:
+            # 如果没有环境变量，使用默认值
+            base_url = os.environ.get('RESET_URL', 'http://localhost:5000')
+    
+    reset_link = f"{base_url}/reset_password?reset_token={reset_token}"
     subject = "密码重置"
     body = f"您的验证码为：\n\n {reset_token} \n\n请点击以下链接输入验证码和新密码进行密码重置： {reset_link}"
 
@@ -98,10 +110,10 @@ class Forgotmodule(UIModule):
 
 class ForgotPasswordHandler(tornado.web.RequestHandler):
     def initialize(self):
-        self.session = Session()  # 创建新的会话
+        self.session = Session()  # 每个Handler独立session
 
     def on_finish(self):
-        self.session.close()  # 关闭会话
+        self.session.close()  # 关闭session
 
     def get(self):
         ms = self.get_argument('message',default=None)
@@ -113,7 +125,9 @@ class ForgotPasswordHandler(tornado.web.RequestHandler):
             reset_token = generate_reset_token()
             user.reset_token = reset_token
             self.session.commit()
-            send_reset_email(email, reset_token)
+            # 获取当前请求的域名
+            base_url = f"{self.request.protocol}://{self.request.host}"
+            send_reset_email(email, reset_token, base_url)
             self.render("token_input.html", result="请输入您的邮箱中的验证码和新密码")
         else:
             self.render("forgot_password.html", result="未查到关联邮箱，请核实后输入正确邮箱")
@@ -129,10 +143,16 @@ def hash_password(password):
 
 class ResetPasswordHandler(tornado.web.RequestHandler):
     def initialize(self):
-        self.session = Session()  # 创建新的会话
+        self.session = Session()  # 每个Handler独立session
 
     def on_finish(self):
-        self.session.close()  # 关闭会话
+        self.session.close()  # 关闭session
+
+    def get(self):
+        # 显示重置密码表单
+        reset_token = self.get_argument("reset_token", default=None)
+        result = self.get_argument("result", default="请输入您的邮箱验证码和新密码")
+        self.render("token_input.html", result=result, reset_token=reset_token)
 
     def post(self):
         reset_token = self.get_argument("reset_token")
@@ -154,10 +174,10 @@ class Registmodule(UIModule):
 
 class RegisterHandler(tornado.web.RequestHandler):
     def initialize(self):
-        self.session = Session()  # 创建新的会话
+        self.session = Session()  # 每个Handler独立session
 
     def on_finish(self):
-        self.session.close()  # 关闭会话
+        self.session.close()  # 关闭session
 
     def get(self):
         self.render("reg.html", result="")

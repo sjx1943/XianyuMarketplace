@@ -1,0 +1,50 @@
+根据当前测试发现的遗留问题：
+
+1./chat_room页面布局有待优化，移动端 '我的好友'侧边栏字体过大、过宽导致占据聊天消息显示空间，且侧边栏折叠标志需实现灵活托拽。
+
+
+2.注册登陆页面，‘用户名或密码错误’或者'注册成功'等提示字样需要变为红色，当前为'藏青色'看不清。/reset页面跳转提示404（Sorry, the page you are looking for could not be found.）当前无法无法通过邮箱进行密码重置。
+
+3.扩充用户xu_user的数据库字段，添加Phone_number，支持用户通过手机号验证码方式登陆。
+
+4.补充应用SEO单点登录方式，支持通过微信账号(weixin.qq.com)方式授权登录。
+
+
+
+5.在upload页面发布商品时，若商品价格设置为0时，页面出现error：{"error": "\u4e0a\u4f20\u5931\u8d25: (psycopg2.OperationalError) SSL connection has been closed unexpectedly\n\n[SQL: INSERT INTO products (name, description, price, user_id, tag, image, quantity, status) VALUES (%(name)s, %(description)s, %(price)s, %(user_id)s, %(tag)s, %(image)s, %(quantity)s, %(status)s) RETURNING products.id, products.upload_time]\n[parameters: {'name': '\u7535\u5b50\u79e4', 'description': '\u4e00\u4e2a\u7535\u5b50\u79e4', 'price': 0.0, 'user_id': 1, 'tag': '\u7535\u5b50\u4ea7\u54c1', 'image': '', 'quantity': 1, 'status': '\u5728\u552e'}]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)"}，需要及时捕获POST请求的异常数据字段填写，并及时提醒用户修改。此外，当用户设置商品价格为0时，商品详情页上的商品价格要修改为“免费/free”。
+
+
+6.在“我的”页面上需要显示 登录用户名username。
+
+
+
+7.在/create_order下单页面，收获地址和联系电话改为选填。买家下单/创建订单成功后，卖家未在"消息"中收到商品被拍下的提醒，点击该提醒后可以自动跳转至"我的订单"页面对该商品订单进行管理，如确认订单/发货/取消等等。
+
+
+9. 修改订单逻辑，卖家点"确认订单"="发货"，或者系统页面主动提示卖家订单已确认，是否需要发货，否则买家无法进行后续确认收货的操作。
+
+
+11.chat_room聊天室页面最下面的"输入消息框"没有贴近底边，距离底部还有一定距离，即div.container容器未在显示屏幕上"完全铺开"，造成空间浪费。
+
+12.消息的发送时间当前只显示xx(小时):xx（分钟），如果非当日消息则需要在消息时间戳上显示消息发送的具体日期（或者星期几、昨天/前天等相对日期的提示),且未显示北京时间（UST +8:00）
+
+14.移动端 聊天室页面的右键点击功能要改为长按（long press），否则移动端无法对聊天消息进行删除或其他操作。
+
+
+
+17.密码重置的邮件文本中的网站域名需要进行替换修改，当前重置密码的邮件文本为：您的验证码为：
+
+ {xxxxxx} 
+
+请点击以下链接输入验证码和新密码进行密码重置： http://yourwebsite.com/reset_password?reset_token={xxxxxx}，yourwebsite.com需改为当前app的实际域名，或者设置‘App Secrets’标签，添加reset_url条目。
+
+
+19. chat_room页面顶部区域的‘search-bar’功能异常，无法执行相关的搜索功能。
+
+针对以上问题，结合记忆文件中详细的测试用例，请逐一进行修复与代码审查，并在‘Preview’进行实际的测试验证。
+
+
+Publish上线后的修改：
+
+1.取消/mian主页的 '商品展示栏'上传ID和登陆ID的显示，仅为调试用。
+2.平台支持中国大陆手机号动态验证码、微信号（weixin.qq.com）和电子邮箱📮的注册和登录。

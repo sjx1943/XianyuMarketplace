@@ -24,7 +24,7 @@ connections = {}
 class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
     def initialize(self, mongo):
         self.mongo = mongo
-        self.session = scoped_session(Session)
+        self.session = Session()
 
     def open(self):
         user_id = self.get_argument("user_id", None)
@@ -125,29 +125,25 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
                 self.write_message(json.dumps({"error": "缺少必要参数"}))
                 return
 
-            # 定向检查拉黑状态
-            session = scoped_session(Session)
-            try:
-                # 获取发送者信息，优先使用房间号
-                from_user = session.query(User).filter_by(id=from_user_id).first()
-                if from_user and from_user.room_number:
-                    from_display_name = from_user.room_number
-                elif from_user:
-                    from_display_name = from_user.username
-                else:
-                    from_display_name = '未知用户'
-                
-                # 检查发送方是否已拉黑接收方
-                if session.query(Blacklist).filter_by(blocker_id=from_user_id, blocked_id=target_user_id).first():
-                    self.write_message(json.dumps({"status": "error", "error": "您已将对方拉黑，无法发送消息"}))
-                    return
+            # 定向检查拉黑状态 - 使用handler的session，不要remove
+            # 获取发送者信息，优先使用房间号
+            from_user = self.session.query(User).filter_by(id=from_user_id).first()
+            if from_user and from_user.room_number:
+                from_display_name = from_user.room_number
+            elif from_user:
+                from_display_name = from_user.username
+            else:
+                from_display_name = '未知用户'
+            
+            # 检查发送方是否已拉黑接收方
+            if self.session.query(Blacklist).filter_by(blocker_id=from_user_id, blocked_id=target_user_id).first():
+                self.write_message(json.dumps({"status": "error", "error": "您已将对方拉黑，无法发送消息"}))
+                return
 
-                # 检查接收方是否已拉黑发送方
-                if session.query(Blacklist).filter_by(blocker_id=target_user_id, blocked_id=from_user_id).first():
-                    self.write_message(json.dumps({"status": "error", "error": "您已被对方拉黑，无法发送消息"}))
-                    return
-            finally:
-                session.remove()
+            # 检查接收方是否已拉黑发送方
+            if self.session.query(Blacklist).filter_by(blocker_id=target_user_id, blocked_id=from_user_id).first():
+                self.write_message(json.dumps({"status": "error", "error": "您已被对方拉黑，无法发送消息"}))
+                return
 
             # 使用中国时区
             china_tz = datetime.timezone(datetime.timedelta(hours=8))
@@ -189,14 +185,13 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
         if hasattr(self, 'user_id') and self.user_id in connections:
             del connections[self.user_id]
             logging.warning(f"WebSocket connection closed for user_id: {self.user_id}")
-        if hasattr(self, 'session'):
-            self.session.remove()
+        self.session.close()
 
 ##渲染加载聊天页面
 class ChatHandler(tornado.web.RequestHandler):
     def initialize(self, mongo):
         self.mongo = mongo
-        self.session = scoped_session(Session)
+        self.session = Session()
 
     async def get(self):
         user_id_cookie = self.get_secure_cookie("user_id")
@@ -295,7 +290,7 @@ class ChatHandler(tornado.web.RequestHandler):
                     friends=friends)
 
     def on_finish(self):
-        self.session.remove()
+        self.session.close()
 
 #标记消息为已读
 class MarkMessagesReadHandler(tornado.web.RequestHandler):
@@ -354,7 +349,7 @@ class MessageAPIHandler(tornado.web.RequestHandler):
 class SendMessageAPIHandler(tornado.web.RequestHandler):
     def initialize(self, mongo):
         self.mongo = mongo
-        self.session = scoped_session(Session)
+        self.session = Session()
 
     @tornado.gen.coroutine
     def post(self):
@@ -430,13 +425,13 @@ class SendMessageAPIHandler(tornado.web.RequestHandler):
         except Exception as e:
             self.write({"status": "error", "error": str(e)})
         finally:
-            self.session.remove()
+            self.session.close()
 
 #点击感兴趣的商品，触发聊天
 class InitiateChatHandler(tornado.web.RequestHandler):
     def initialize(self, mongo):
         self.mongo = mongo
-        self.session = scoped_session(Session)
+        self.session = Session()
 
     @tornado.web.authenticated
     async def get(self):
@@ -469,11 +464,11 @@ class InitiateChatHandler(tornado.web.RequestHandler):
             logging.error(f"发起聊天失败: {e}")
             self.redirect("/chat_room") # 出错时重定向到主聊天页
         finally:
-            self.session.remove()
+            self.session.close()
 
     def on_finish(self):
         if hasattr(self, 'session'):
-            self.session.remove()
+            self.session.close()
 
 
 class DeleteMessagesHandler(tornado.web.RequestHandler):
