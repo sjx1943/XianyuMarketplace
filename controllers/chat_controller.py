@@ -24,6 +24,7 @@ connections = {}
 class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
     def initialize(self, mongo):
         self.mongo = mongo
+        self.session = scoped_session(Session)
 
     def open(self):
         user_id = self.get_argument("user_id", None)
@@ -76,14 +77,24 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
                 message['isSelf'] = message['from_user_id'] == user_id
                 if message['isSelf']:
 
-                    # 修改为"我（用户名）"格式
-                    from_user = yield self.mongo.users.find_one({"_id": message['from_user_id']})
-                    username = from_user['username'] if from_user else '未知用户'
-                    message['from_username'] = f'我({username})'
+                    # 修改为"我（房间号）"格式，优先显示房间号
+                    from_user_pg = self.session.query(User).filter_by(id=message['from_user_id']).first()
+                    if from_user_pg and from_user_pg.room_number:
+                        display_name = from_user_pg.room_number
+                    elif from_user_pg:
+                        display_name = from_user_pg.username
+                    else:
+                        display_name = '未知用户'
+                    message['from_username'] = f'我({display_name})'
                 else:
-                    # 获取发送方用户名
-                    from_user = yield self.mongo.users.find_one({"_id": message['from_user_id']})
-                    message['from_username'] = from_user['username'] if from_user else '未知发件人'
+                    # 获取发送方房间号，优先显示房间号
+                    from_user_pg = self.session.query(User).filter_by(id=message['from_user_id']).first()
+                    if from_user_pg and from_user_pg.room_number:
+                        message['from_username'] = from_user_pg.room_number
+                    elif from_user_pg:
+                        message['from_username'] = from_user_pg.username
+                    else:
+                        message['from_username'] = '未知发件人'
 
                 if self.ws_connection:
                     self.write_message(json.dumps(message))
@@ -106,7 +117,6 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
             data = json.loads(message)
             target_user_id = int(data.get("target_user_id"))
             from_user_id = int(self.get_secure_cookie("user_id").decode("utf-8"))
-            from_username = self.get_secure_cookie("username").decode("utf-8")
             message_content = data.get("message")
             product_id = int(data.get("product_id", 0))  # 默认值为0
             product_name = data.get("product_name", "")  # 默认值为空字符串
@@ -118,6 +128,15 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
             # 定向检查拉黑状态
             session = scoped_session(Session)
             try:
+                # 获取发送者信息，优先使用房间号
+                from_user = session.query(User).filter_by(id=from_user_id).first()
+                if from_user and from_user.room_number:
+                    from_display_name = from_user.room_number
+                elif from_user:
+                    from_display_name = from_user.username
+                else:
+                    from_display_name = '未知用户'
+                
                 # 检查发送方是否已拉黑接收方
                 if session.query(Blacklist).filter_by(blocker_id=from_user_id, blocked_id=target_user_id).first():
                     self.write_message(json.dumps({"status": "error", "error": "您已将对方拉黑，无法发送消息"}))
@@ -134,10 +153,10 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
             china_tz = datetime.timezone(datetime.timedelta(hours=8))
             timestamp = datetime.datetime.now(china_tz).strftime("%Y-%m-%d %H:%M:%S")
 
-            # 构建消息数据结构
+            # 构建消息数据结构 - 使用房间号而非用户名
             message_data = {
                 "from_user_id": from_user_id,
-                "from_username": from_username,
+                "from_username": from_display_name,
                 "to_user_id": target_user_id,
                 "message": message_content,
                 "product_id": product_id,
@@ -156,13 +175,22 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
             # 发送成功的响应
             self.write_message(json.dumps({"status": "Message sent successfully"}))
 
-            # 也发回给发送者
+            # 也发回给发送者 - 显示为"我(房间号)"格式
             if from_user_id in connections and from_user_id != target_user_id:
                 sender_data = message_data.copy()
                 sender_data["status"] = "read"  # 发送者看到的消息默认为已读
+                sender_data["from_username"] = f'我({from_display_name})'
                 connections[from_user_id].write_message(json.dumps(sender_data))
         except Exception as e:
             self.write_message(json.dumps({"error": str(e)}))
+    
+    def on_close(self):
+        """WebSocket连接关闭时清理资源"""
+        if hasattr(self, 'user_id') and self.user_id in connections:
+            del connections[self.user_id]
+            logging.warning(f"WebSocket connection closed for user_id: {self.user_id}")
+        if hasattr(self, 'session'):
+            self.session.remove()
 
 ##渲染加载聊天页面
 class ChatHandler(tornado.web.RequestHandler):
@@ -188,22 +216,32 @@ class ChatHandler(tornado.web.RequestHandler):
         recent_products = self.session.query(Product).order_by(Product.id.desc()).limit(10).all()
         for p in recent_products:
             uploader = self.session.query(User).filter_by(id=p.user_id).first()
+            # 优先显示房间号，如果没有则显示用户名
+            display_name = uploader.room_number if (uploader and uploader.room_number) else (uploader.username if uploader else "Unknown")
             broadcasts.append({
                 "product_id": p.id,
                 "product_name": p.name,
-                "uploader": uploader.username if uploader else "Unknown",
+                "uploader": display_name,
                 "time": p.upload_time.strftime("%Y-%m-%d %H:%M:%S") if p.upload_time else "",
                 "image": "/mystatics/images/c.png"
             })
 
-        # 获取MongoDB中的广播消息
+        # 获取MongoDB中的广播消息，并转换uploader为房间号
         broadcast_cursor = self.mongo.broadcast_messages.find().sort([('timestamp', -1)]).limit(5)
         async for broadcast in broadcast_cursor:
             if '_id' in broadcast:
                 broadcast['_id'] = str(broadcast['_id'])
+            
+            # 尝试根据uploader（可能是username）查找用户并获取房间号
+            uploader_display = broadcast.get('uploader', '未知用户')
+            if uploader_display and uploader_display != '未知用户':
+                user = self.session.query(User).filter_by(username=uploader_display).first()
+                if user and user.room_number:
+                    uploader_display = user.room_number
+            
             broadcasts.append({
                 'product_id': broadcast.get('product_id', ''),
-                'uploader': broadcast.get('uploader', '未知用户'),
+                'uploader': uploader_display,
                 'time': broadcast.get('timestamp', '未知时间'),
                 'product_name': broadcast.get('product_name', '')
             })
@@ -242,9 +280,11 @@ class ChatHandler(tornado.web.RequestHandler):
             if friend:
                 # Check if the friend is blocked by the current user
                 is_blocked = self.session.query(Blacklist).filter_by(blocker_id=user_id, blocked_id=friend.id).first() is not None
+                # 优先显示房间号，如果没有则显示用户名
+                display_name = friend.room_number if friend.room_number else friend.username
                 friends.append({
                     'id': friend.id,
-                    'username': friend.username,
+                    'username': display_name,
                     'status': 'blocked' if is_blocked else 'active'
                 })
 

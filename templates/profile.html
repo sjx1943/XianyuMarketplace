@@ -3,11 +3,11 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>{{ friend.username }}的主页</title>
+    <title>{{ friend.room_number if friend.room_number else friend.username }}的主页</title>
     <link rel="stylesheet" href="{{ static_url('css/home.css') }}">
 </head>
 <body>
-    <h1>{{ friend.username }}的上传物品</h1>
+    <h1>{{ friend.room_number if friend.room_number else friend.username }}的上传物品</h1>
     <div class="product-list">
         {% for product in products %}
         <div class="product-item">

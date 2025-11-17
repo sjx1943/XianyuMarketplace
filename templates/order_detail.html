@@ -26,14 +26,14 @@
             <p><strong>数量:</strong> {{ order.quantity }}</p>
             <p><strong>卖家:</strong> 
                 {% if seller %}
-                    <a href="/profile/{{ seller.id }}">{{ seller.username }}</a>
+                    <a href="/profile/{{ seller.id }}">{{ seller.room_number if seller.room_number else seller.username }}</a>
                 {% else %}
                     未知
                 {% endif %}
             </p>
             <hr>
             <h3>买家信息</h3>
-            <p><strong>买家:</strong> <a href="/profile/{{ buyer.id }}">{{ buyer.username }}</a></p>
+            <p><strong>买家:</strong> <a href="/profile/{{ buyer.id }}">{{ buyer.room_number if buyer.room_number else buyer.username }}</a></p>
             <p><strong>订单备注 (地址/电话等):</strong></p>
             <p>{{ order.order_note or '无' }}</p>
         </div>

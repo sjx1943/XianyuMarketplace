@@ -48,12 +48,14 @@ class CommentHandler(tornado.web.RequestHandler):
                     user = self.session.query(User).filter_by(id=comment.user_id).first()
                     # 修复：使用 comment.text 并进行敏感词过滤
                     filtered_content = filter_sensitive_words(comment.text)
+                    # 优先显示房间号，如果没有则显示用户名
+                    display_name = user.room_number if (user and user.room_number) else (user.username if user else '匿名用户')
                     comments_data.append({
                         'id': comment.id,
                         'content': filtered_content,
                         'rating': comment.rating,
                         'created_at': comment.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                        'user_name': user.username if user else '匿名用户'
+                        'user_name': display_name
                     })
                 
                 self.write(json.dumps({'success': True, 'comments': comments_data}))
@@ -108,10 +110,15 @@ class CommentHandler(tornado.web.RequestHandler):
             self.session.add(new_comment)
             self.session.commit()
             
+            # 返回房间号显示名称
+            display_name = user.room_number if user.room_number else user.username
+            
             self.write(json.dumps({
                 'success': True, 
                 'message': '评价发布成功',
-                'comment_id': new_comment.id
+                'comment_id': new_comment.id,
+                'user_name': display_name,
+                'created_at': new_comment.created_at.strftime('%Y-%m-%d %H:%M:%S')
             }))
             
         except Exception as e:

@@ -243,9 +243,9 @@
                 <div class="seller-info">
                     <strong>卖家主页：</strong>
                     {% if product.user_id == user_id %}
-                        <a href="/home_page" class="seller-link">{{ uploader.username }}（我的店铺）</a>
+                        <a href="/home_page" class="seller-link">{{ uploader.room_number if uploader.room_number else uploader.username }}（我的店铺）</a>
                     {% else %}
-                        <a href="/profile/{{ product.user_id }}" class="seller-link">{{ uploader.username }}</a>
+                        <a href="/profile/{{ product.user_id }}" class="seller-link">{{ uploader.room_number if uploader.room_number else uploader.username }}</a>
                     {% end %}
                 </div>
                 
