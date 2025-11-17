@@ -19,8 +19,7 @@ Session = sessionmaker(bind=engine)
 
 class MainHandler(tornado.web.RequestHandler):
     def initialize(self):
-        # self.session = Session()
-        self.session = scoped_session(Session)
+        self.session = Session()
 
     # def get_current_user(self):
     #     return self.get_secure_cookie("user")
@@ -37,12 +36,11 @@ class MainHandler(tornado.web.RequestHandler):
         return None
 
     def prepare(self):
-        if not self.current_user:
-            self.redirect("/login")
-            raise tornado.web.Finish()
+        # 游客模式：允许未登录用户浏览商品列表
+        # 不再强制重定向到登录页面
         
-        # 检查用户是否已设置房间号
-        if not self.current_user.room_number:
+        # 如果用户已登录，检查是否已设置房间号
+        if self.current_user and not self.current_user.room_number:
             # 如果当前路径不是设置房间号页面，则跳转
             if self.request.path != "/set_room_number":
                 self.redirect("/set_room_number")
@@ -74,10 +72,13 @@ class MainHandler(tornado.web.RequestHandler):
         return products_list
 
     def get(self):
-    # 从当前用户对象获取user_id
+        # 游客模式：支持未登录用户浏览
         current_user = self.get_current_user()
         user_id = str(current_user.id) if current_user else None
         username = self.get_secure_cookie("username")
+        
+        # 判断是否为游客模式
+        is_guest = current_user is None
 
         products = self.get_products()
         tags = []
@@ -92,10 +93,11 @@ class MainHandler(tornado.web.RequestHandler):
 
         self.render("main_page.html",
                     username=username,
-                    user_id=user_id,  # 使用从用户对象获取的user_id
+                    user_id=user_id,
+                    is_guest=is_guest,  # 传递游客状态
                     tags=tags,
                     products=products,
                     product_id=product_id)
 
     def on_finish(self) -> None:
-        self.session.remove()
+        self.session.close()

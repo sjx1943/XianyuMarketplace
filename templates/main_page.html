@@ -9,13 +9,24 @@
 {% block body %}
 <div class="page-container">
     <div class="content-wrap">
-        {% if username %}
+        {% if is_guest %}
+        <!-- 游客模式提示 -->
+        <div class="guest-header">
+            <p class="guest-msg">👋 欢迎访问小区二手交易平台（游客模式）</p>
+            <div class="guest-actions">
+                <a href="/login" class="login-btn">登录</a>
+                <a href="/register" class="register-btn">注册</a>
+            </div>
+        </div>
+        {% elif username %}
         <div class="user-header">
             <p class="welcome-msg">欢迎 {{ username }}，來到小区的二手交易平台!</p>
             <a href="/logout" class="logout-btn">退出登录</a>
         </div>
         <input type="hidden" id="logged-in-user-id" value="{{ user_id }}">
         {% end %}
+        
+        <input type="hidden" id="is-guest" value="{{ 'true' if is_guest else 'false' }}">
 
         <form id="search-form" class="search-form">
             <input type="text" id="search-input" name="q" placeholder="输入商品名称或关键词">
