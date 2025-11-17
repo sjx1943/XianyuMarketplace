@@ -11,6 +11,7 @@ from models.order import Order
 from models.comment import Comment
 from models.friendship import Friendship
 from models.blacklist import Blacklist
+from models.chat_message import ChatMessage
 
 print("Creating database tables...")
 try:
