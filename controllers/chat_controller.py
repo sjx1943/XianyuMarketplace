@@ -24,18 +24,27 @@ connections = {}
 class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
     def initialize(self, mongo):
         self.mongo = mongo
-        self.session = Session()
+        self.session = None  # 先设为None，在open时创建
 
     def open(self):
-        user_id = self.get_argument("user_id", None)
-        if user_id is None or not user_id.isdigit():
-            logging.warning("WebSocket connection opened with invalid user_id, connection closed.")
+        try:
+            # 在连接打开时创建Session
+            self.session = Session()
+            
+            user_id = self.get_argument("user_id", None)
+            if user_id is None or not user_id.isdigit():
+                logging.warning("WebSocket connection opened with invalid user_id, connection closed.")
+                self.close()
+                return
+            self.user_id = int(user_id)  # Ensure user_id is an integer
+            connections[self.user_id] = self
+            logging.warning(f"WebSocket connection established, user_id: {self.user_id}")
+            self.send_stored_messages()
+        except Exception as e:
+            logging.error(f"Error in WebSocket open: {e}")
+            if self.session:
+                self.session.close()
             self.close()
-            return
-        self.user_id = int(user_id)  # Ensure user_id is an integer
-        connections[self.user_id] = self
-        logging.warning(f"WebSocket connection established, user_id: {self.user_id}")
-        self.send_stored_messages()
 
 
     @coroutine
@@ -182,10 +191,14 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
     
     def on_close(self):
         """WebSocket连接关闭时清理资源"""
-        if hasattr(self, 'user_id') and self.user_id in connections:
-            del connections[self.user_id]
-            logging.warning(f"WebSocket connection closed for user_id: {self.user_id}")
-        self.session.close()
+        try:
+            if hasattr(self, 'user_id') and self.user_id in connections:
+                del connections[self.user_id]
+                logging.warning(f"WebSocket connection closed for user_id: {self.user_id}")
+        finally:
+            # 确保Session总是被关闭，即使有异常
+            if hasattr(self, 'session'):
+                self.session.close()
 
 ##渲染加载聊天页面
 class ChatHandler(tornado.web.RequestHandler):

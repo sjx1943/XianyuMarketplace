@@ -5,10 +5,20 @@ const userIdFromUrl = parseInt(urlParams.get('user_id'));
 // DOM元素
 const productListDiv = document.getElementById('product-list');
 
-// 修改获取当前用户ID的逻辑
-//window.currentUserId = document.body.getAttribute('data-user-id') || userIdFromUrl;
+// 修改获取当前用户ID和游客状态的逻辑
 const loggedInUserId = document.getElementById('logged-in-user-id');
+const isGuestEl = document.getElementById('is-guest');
 window.currentUserId = loggedInUserId ? parseInt(loggedInUserId.value) : null;
+window.isGuest = isGuestEl ? isGuestEl.value === 'true' : true;
+
+// 游客模式检查函数
+function checkGuestAccess(action = '该操作') {
+    if (window.isGuest) {
+        alert(`${action}需要登录。请先登录或注册账号。`);
+        return false;
+    }
+    return true;
+}
 
 // 加载商品信息
 function loadProducts(tag = 'all') {
@@ -67,6 +77,11 @@ function setupAddFriendButton() {
     if (!addFriendBtn) return;
 
     addFriendBtn.addEventListener('click', async function() {
+        // 游客模式检查
+        if (!checkGuestAccess('添加好友')) {
+            return;
+        }
+        
         const friendId = parseInt(this.dataset.friendId);
         const loggedInUserId = document.getElementById('logged-in-user-id');
         const currentUserId = loggedInUserId ? parseInt(loggedInUserId.value) : null;
