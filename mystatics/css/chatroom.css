@@ -405,3 +405,15 @@ body.is-resizing {
 .message.selected {
     outline: 2px solid #007bff;
 }
+
+/* 搜索高亮样式 */
+.message.search-highlight {
+    background-color: #fff3cd !important;
+    border-left: 3px solid #ffc107;
+}
+
+.message.search-active {
+    background-color: #ffeb3b !important;
+    border-left: 3px solid #ff9800;
+    box-shadow: 0 0 10px rgba(255, 152, 0, 0.5);
+}

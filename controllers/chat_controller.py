@@ -390,12 +390,16 @@ class SendMessageAPIHandler(tornado.web.RequestHandler):
 
             temp_id = data.get("tempId")
 
+            # 使用中国时区（东8区）
+            china_tz = datetime.timezone(datetime.timedelta(hours=8))
+            timestamp = datetime.datetime.now(china_tz).strftime("%Y-%m-%d %H:%M:%S")
+            
             message = {
                 "from_user_id": user_id,
                 "from_username": self.get_secure_cookie("username").decode("utf-8"),
                 "to_user_id": friend_id,
                 "message": data["message"],
-                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "timestamp": timestamp,
                 "status": "unread",
                 "temp_id": temp_id
             }
