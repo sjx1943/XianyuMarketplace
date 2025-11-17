@@ -34,33 +34,99 @@ class LoginHandler(tornado.web.RequestHandler):
         self.render("login.html", message="", result=message)
 
     def post(self):
-        username = self.get_argument("username")
-        password = self.get_argument("password")
-        # logging.info(f"Attempting to log in user: {username}")
-
-        user = self.session.query(User).filter_by(username=username).first()
-        # logging.info(f"User query completed. User found: {user is not None}")
-
+        from sqlalchemy import or_
+        from models.verification_code import VerificationCode
+        from datetime import datetime, timezone, timedelta
+        import hashlib
+        
+        login_type = self.get_argument("login_type", "password")
+        
         try:
-            if user and bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
-                # logging.info("Password is correct.")
+            if login_type == "code":
+                phone = self.get_argument("phone", "").strip()
+                code = self.get_argument("code", "").strip()
+                
+                if not phone or not code:
+                    self.render("login.html", message="", result="请输入手机号和验证码")
+                    return
+                
+                beijing_tz = timezone(timedelta(hours=8))
+                now = datetime.now(beijing_tz)
+                
+                verification = self.session.query(VerificationCode).filter_by(
+                    phone=phone,
+                    code=code,
+                    is_used=0
+                ).first()
+                
+                if not verification:
+                    self.render("login.html", message="", result="验证码错误或已使用")
+                    return
+                
+                if now > verification.expires_at.replace(tzinfo=beijing_tz):
+                    self.render("login.html", message="", result="验证码已过期")
+                    return
+                
+                verification.is_used = 1
+                self.session.commit()
+                
+                user = self.session.query(User).filter_by(phone=phone).first()
+                if not user:
+                    password_hash = hashlib.md5('123456'.encode()).hexdigest()
+                    user = User(
+                        username=f"user_{phone[-4:]}",
+                        password=password_hash,
+                        email=f"{phone}@temp.com",
+                        phone=phone
+                    )
+                    self.session.add(user)
+                    self.session.commit()
+                
                 self.set_secure_cookie("user_id", str(user.id), expires_days=1)
                 
-                # 检查用户是否已设置房间号
                 if not user.room_number:
-                    # 未设置房间号，跳转到设置页面
                     self.set_secure_cookie("username", user.username, expires_days=1)
                     self.redirect("/set_room_number")
                 else:
-                    # 已设置房间号，使用房间号作为显示名称
                     self.set_secure_cookie("username", user.room_number, expires_days=1)
                     self.redirect("/main")
+            
             else:
-                # logging.warning("Invalid username or password.")
-                self.render("login.html", message="Invalid username or password", result="用户名或密码错误")
+                identifier = self.get_argument("username", "").strip()
+                password = self.get_argument("password", "").strip()
+                
+                if not identifier or not password:
+                    self.render("login.html", message="", result="请输入用户名和密码")
+                    return
+                
+                user = self.session.query(User).filter(
+                    or_(
+                        User.username == identifier,
+                        User.room_number == identifier,
+                        User.phone == identifier
+                    )
+                ).first()
+                
+                if user and bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
+                    if user.is_active == 0:
+                        self.render("login.html", message="", result="账号已被禁用，请联系管理员")
+                        return
+                    
+                    self.set_secure_cookie("user_id", str(user.id), expires_days=1)
+                    
+                    if not user.room_number:
+                        self.set_secure_cookie("username", user.username, expires_days=1)
+                        self.redirect("/set_room_number")
+                    else:
+                        self.set_secure_cookie("username", user.room_number, expires_days=1)
+                        self.redirect("/main")
+                else:
+                    self.render("login.html", message="", result="用户名/房间号/手机号或密码错误")
+                    
         except Exception as e:
-            # logging.error(f"Error occurred during login for user {username}: {e}")
-            self.render("login.html", message="An error occurred", result=str(e))
+            logging.error(f"登录错误: {e}")
+            self.session.rollback()
+            self.render("login.html", message="", result=f"登录失败: {str(e)}")
 
 def generate_reset_token():
     """生成一个简单的重置令牌"""

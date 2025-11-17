@@ -1,22 +1,48 @@
 <div class="login-container">
     <div class="login-form">
-        <h2>登录</h2>
-        <form method="post" action="/login">
+        <h2>用户登录</h2>
+        
+        <div class="login-type-switch">
+            <button type="button" class="switch-btn active" data-type="password">密码登录</button>
+            <button type="button" class="switch-btn" data-type="code">验证码登录</button>
+        </div>
+        
+        <form method="post" action="/login" id="loginForm">
             {% module xsrf_form_html() %}
-            <div class="form-group">
-                <label for="username">用户名</label>
-                <input type="text" id="username" name="username" placeholder="请输入用户名" required>
+            <input type="hidden" name="login_type" id="login_type" value="password">
+            
+            <div id="passwordLoginFields">
+                <div class="form-group">
+                    <label for="username">用户名/房间号/手机号</label>
+                    <input type="text" id="username" name="username" placeholder="支持用户名、房间号（如3-1-801）或手机号">
+                </div>
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <input type="password" id="password" name="password" placeholder="请输入密码">
+                </div>
             </div>
-            <div class="form-group">
-                <label for="password">密码</label>
-                <input type="password" id="password" name="password" placeholder="请输入密码" required>
+            
+            <div id="codeLoginFields" style="display: none;">
+                <div class="form-group">
+                    <label for="phone">手机号</label>
+                    <input type="tel" id="phone" name="phone" placeholder="请输入11位手机号" maxlength="11">
+                </div>
+                <div class="form-group code-group">
+                    <label for="code">验证码</label>
+                    <div class="code-input-wrapper">
+                        <input type="text" id="code" name="code" placeholder="请输入验证码" maxlength="6">
+                        <button type="button" id="sendCodeBtn" class="btn-send-code">发送验证码</button>
+                    </div>
+                </div>
             </div>
+            
             <div class="form-group">
                 <button type="submit" class="btn-login">登录</button>
             </div>
             <div class="links">
                 <a href="/register">注册账号</a>
                 <a href="/forgot_password">忘记密码</a>
+                <a href="/admin/login" class="admin-link">🛡️ 管理员入口</a>
             </div>
             {% if result %}
             <div class="{% if '成功' in result or '登出' in result %}success-message{% else %}error-message{% end %}">{{ result }}</div>
@@ -24,6 +50,81 @@
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const switchBtns = document.querySelectorAll('.switch-btn');
+    const loginTypeInput = document.getElementById('login_type');
+    const passwordFields = document.getElementById('passwordLoginFields');
+    const codeFields = document.getElementById('codeLoginFields');
+    const sendCodeBtn = document.getElementById('sendCodeBtn');
+    let countdown = 0;
+    
+    switchBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            switchBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            const type = this.dataset.type;
+            loginTypeInput.value = type;
+            
+            if (type === 'password') {
+                passwordFields.style.display = 'block';
+                codeFields.style.display = 'none';
+                document.getElementById('username').required = true;
+                document.getElementById('password').required = true;
+                document.getElementById('phone').required = false;
+                document.getElementById('code').required = false;
+            } else {
+                passwordFields.style.display = 'none';
+                codeFields.style.display = 'block';
+                document.getElementById('username').required = false;
+                document.getElementById('password').required = false;
+                document.getElementById('phone').required = true;
+                document.getElementById('code').required = true;
+            }
+        });
+    });
+    
+    sendCodeBtn.addEventListener('click', async function() {
+        if (countdown > 0) return;
+        
+        const phone = document.getElementById('phone').value.trim();
+        if (!/^1[3-9]\d{9}$/.test(phone)) {
+            alert('请输入正确的11位手机号');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/send_code', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({phone})
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                alert(`验证码发送成功！${data.dev_mode ? '开发模式：' + data.code : ''}`);
+                countdown = 60;
+                sendCodeBtn.disabled = true;
+                const timer = setInterval(() => {
+                    countdown--;
+                    sendCodeBtn.textContent = `${countdown}秒后重发`;
+                    if (countdown <= 0) {
+                        clearInterval(timer);
+                        sendCodeBtn.disabled = false;
+                        sendCodeBtn.textContent = '发送验证码';
+                    }
+                }, 1000);
+            } else {
+                alert(data.message || '发送失败');
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    });
+});
+</script>
 
 <style>
     .login-container {
@@ -121,6 +222,74 @@
         margin-top: 30px;
         color: #777;
         font-size: 14px;
+    }
+    
+    .login-type-switch {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .switch-btn {
+        flex: 1;
+        padding: 10px;
+        background: #fff;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 14px;
+        color: #666;
+    }
+    
+    .switch-btn:hover {
+        background: #f5f5f5;
+    }
+    
+    .switch-btn.active {
+        background: #4CAF50;
+        color: white;
+    }
+    
+    .code-input-wrapper {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .code-input-wrapper input {
+        flex: 1;
+    }
+    
+    .btn-send-code {
+        padding: 10px 15px;
+        background: #2196F3;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        white-space: nowrap;
+        font-size: 14px;
+        transition: background 0.3s;
+    }
+    
+    .btn-send-code:hover:not(:disabled) {
+        background: #1976D2;
+    }
+    
+    .btn-send-code:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+    
+    .admin-link {
+        color: #FF9800 !important;
+        font-weight: bold;
+    }
+    
+    .admin-link:hover {
+        color: #F57C00 !important;
     }
 </style>
 

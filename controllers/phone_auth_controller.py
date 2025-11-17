@@ -37,8 +37,9 @@ class SendCodeHandler(tornado.web.RequestHandler):
             if code:
                 self.write({
                     'success': True,
-                    'message': '验证码已发送，请查看控制台（开发模式）',
-                    'dev_code': code
+                    'message': '验证码已发送',
+                    'code': code,
+                    'dev_mode': True
                 })
             else:
                 self.write({'success': False, 'message': '发送验证码失败，请稍后重试'})
