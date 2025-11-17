@@ -47,9 +47,15 @@ def make_app():
     # 优先使用MONGODB_URI环境变量（MongoDB Atlas），否则使用本地配置
     mongodb_uri = os.environ.get('MONGODB_URI')
     if mongodb_uri:
-        # 使用MongoDB Atlas连接字符串，指定数据库名称为chat_db
+        # 使用MongoDB Atlas连接字符串
+        # 如果URI中包含数据库名，使用get_default_database()
+        # 否则使用chat_db作为默认数据库
         mongo_client = motor_tornado.MotorClient(mongodb_uri)
-        mongo = mongo_client['chat_db']
+        try:
+            mongo = mongo_client.get_default_database()
+        except Exception:
+            # 如果URI中没有指定数据库，使用chat_db
+            mongo = mongo_client['chat_db']
     else:
         # 使用本地MongoDB配置
         mongo_host = os.environ.get('MONGODB_HOST', config.get('mongodb', 'host'))
