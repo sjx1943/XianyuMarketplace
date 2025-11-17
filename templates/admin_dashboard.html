@@ -2,74 +2,117 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>管理员仪表盘 - 待删除商品</title>
-    <link rel="stylesheet" href="{{ static_url('css/main.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员控制台 - 小区二手商品交易平台</title>
+    <link rel="stylesheet" href="/static/css/admin.css">
 </head>
 <body>
-    <h1>管理员仪表盘</h1>
-    <div class="container">
-        <h2>待永久删除的商品</h2>
-        <p>以下商品已被用户软删除。在这里可以进行永久物理删除。</p>
-        <div class="product-list">
-            {% if not products %}
-                <p>暂无已删除的商品</p>
-            {% else %}
-                {% for product in products %}
-                    <div class="product-item">
-                        <img src="{{ static_url('images/' + product.image) }}" alt="{{ product.name }}" style="width:100px; height:auto;">
-                        <div class="product-info">
-                            <p><strong>{{ product.name }}</strong> (ID: {{ product.id }})</p>
-                            <p>价格: ¥{{ product.price }}</p>
-                            <p>所有者ID: {{ product.user_id }}</p>
-                        </div>
-                        <div class="product-actions">
-                            <button class="btn btn-danger physical-delete-btn" data-product-id="{{ product.id }}">永久删除</button>
-                        </div>
+    <div class="admin-layout">
+        <nav class="admin-sidebar">
+            <div class="sidebar-header">
+                <h2>🛡️ 管理后台</h2>
+                <p>{{ admin.username if hasattr(admin, 'username') else 'Admin' }}</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="active"><a href="/admin/dashboard">📊 Dashboard</a></li>
+                <li><a href="/admin/users">👥 用户管理</a></li>
+                <li><a href="/admin/products">📦 商品管理</a></li>
+                <li><a href="/admin/orders">📋 订单管理</a></li>
+                <li><a href="/logout">🚪 退出登录</a></li>
+            </ul>
+        </nav>
+
+        <main class="admin-main">
+            <div class="admin-header">
+                <h1>控制台概览</h1>
+                <a href="/" class="btn-back">返回前台</a>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-info">
+                        <h3>{{ stats['total_users'] if stats else 0 }}</h3>
+                        <p>总用户数</p>
+                        <span class="stat-detail">活跃: {{ stats['active_users'] if stats else 0 }}</span>
                     </div>
-                {% end %}
-            {% end %}
-        </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📦</div>
+                    <div class="stat-info">
+                        <h3>{{ stats['total_products'] if stats else 0 }}</h3>
+                        <p>总商品数</p>
+                        <span class="stat-detail">在售: {{ stats['on_sale_products'] if stats else 0 }}</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📋</div>
+                    <div class="stat-info">
+                        <h3>{{ stats['total_orders'] if stats else 0 }}</h3>
+                        <p>总订单数</p>
+                        <span class="stat-detail">待处理: {{ stats['pending_orders'] if stats else 0 }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="content-section">
+                    <h2>最新用户 (前10)</h2>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>用户名</th>
+                                <th>房间号</th>
+                                <th>状态</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if recent_users %}
+                                {% for user in recent_users %}
+                                <tr>
+                                    <td>{{ user.id }}</td>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.room_number if user.room_number else '-' }}</td>
+                                    <td><span class="badge badge-{{ 'success' if user.is_active else 'danger' }}">{{ '正常' if user.is_active else '禁用' }}</span></td>
+                                </tr>
+                                {% end %}
+                            {% else %}
+                                <tr><td colspan="4">暂无数据</td></tr>
+                            {% end %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="content-section">
+                    <h2>最新商品 (前10)</h2>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>商品名</th>
+                                <th>价格</th>
+                                <th>状态</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if recent_products %}
+                                {% for product in recent_products %}
+                                <tr>
+                                    <td>{{ product.id }}</td>
+                                    <td>{{ product.name[:20] }}</td>
+                                    <td>¥{{ product.price }}</td>
+                                    <td><span class="badge badge-info">{{ product.status }}</span></td>
+                                </tr>
+                                {% end %}
+                            {% else %}
+                                <tr><td colspan="4">暂无数据</td></tr>
+                            {% end %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
     </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            function getCookie(name) {
-                let cookieValue = null;
-                if (document.cookie && document.cookie !== '') {
-                    const cookies = document.cookie.split(';');
-                    for (let i = 0; i < cookies.length; i++) {
-                        const cookie = cookies[i].trim();
-                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                            break;
-                        }
-                    }
-                }
-                return cookieValue;
-            }
-
-            document.querySelectorAll('.physical-delete-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const productId = this.dataset.productId;
-                    if (confirm(`您确定要永久删除商品 ID: ${productId} 吗？此操作不可恢复！`)) {
-                        fetch(`/api/admin/product/${productId}/physical_delete`, {
-                            method: 'POST',
-                            headers: { 'X-XSRFToken': getCookie('_xsrf') }
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                alert('商品已永久删除');
-                                location.reload();
-                            } else {
-                                alert('删除失败：' + data.error);
-                            }
-                        })
-                        .catch(error => console.error('Error:', error));
-                    }
-                });
-            });
-        });
-    </script>
 </body>
 </html>

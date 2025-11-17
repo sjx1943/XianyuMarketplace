@@ -19,12 +19,18 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False)
     reset_token = Column(String(255))
     room_number = Column(String(50), unique=True, nullable=True)
+    phone = Column(String(20), unique=True, nullable=True)
+    is_admin = Column(Integer, default=0)
+    is_active = Column(Integer, default=1)
 
-    def __init__(self, username, password, email, room_number=None):
+    def __init__(self, username, password, email, room_number=None, phone=None, is_admin=0):
         self.username = username
         self.password = password
         self.email = email
         self.room_number = room_number
+        self.phone = phone
+        self.is_admin = is_admin
+        self.is_active = 1
 
 
     def __repr__(self):

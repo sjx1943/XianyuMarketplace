@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理 - 管理员控制台</title>
+    <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <nav class="admin-sidebar">
+            <div class="sidebar-header">
+                <h2>🛡️ 管理后台</h2>
+                <p>{{ admin.username }}</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/admin/dashboard">📊 Dashboard</a></li>
+                <li class="active"><a href="/admin/users">👥 用户管理</a></li>
+                <li><a href="/admin/products">📦 商品管理</a></li>
+                <li><a href="/admin/orders">📋 订单管理</a></li>
+                <li><a href="/logout">🚪 退出登录</a></li>
+            </ul>
+        </nav>
+
+        <main class="admin-main">
+            <div class="admin-header">
+                <h1>用户管理</h1>
+                <a href="/admin/dashboard" class="btn-back">返回Dashboard</a>
+            </div>
+
+            <div class="content-section">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>用户名</th>
+                            <th>邮箱</th>
+                            <th>房间号</th>
+                            <th>手机号</th>
+                            <th>状态</th>
+                            <th>管理员</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr id="user-{{ user.id }}">
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.room_number or '-' }}</td>
+                            <td>{{ user.phone or '-' }}</td>
+                            <td><span class="badge badge-{{ 'success' if user.is_active else 'danger' }}">{{ '正常' if user.is_active else '禁用' }}</span></td>
+                            <td><span class="badge badge-{{ 'info' if user.is_admin else 'secondary' }}">{{ '是' if user.is_admin else '否' }}</span></td>
+                            <td>
+                                <button class="btn-toggle" data-user-id="{{ user.id }}" data-action="toggle_active">
+                                    {{ '禁用' if user.is_active else '启用' }}
+                                </button>
+                            </td>
+                        </tr>
+                        {% end %}
+                    </tbody>
+                </table>
+
+                <div class="pagination">
+                    {% if page > 1 %}
+                    <a href="?page={{ page - 1 }}">上一页</a>
+                    {% end %}
+                    <span>第 {{ page }} / {{ total_pages }} 页</span>
+                    {% if page < total_pages %}
+                    <a href="?page={{ page + 1 }}">下一页</a>
+                    {% end %}
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.querySelectorAll('.btn-toggle').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const userId = this.dataset.userId;
+                const action = this.dataset.action;
+                
+                if (!confirm('确定要执行此操作吗？')) return;
+                
+                try {
+                    const response = await fetch('/admin/users', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ user_id: userId, action })
+                    });
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert(result.message);
+                        location.reload();
+                    } else {
+                        alert(result.message);
+                    }
+                } catch (error) {
+                    alert('操作失败');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

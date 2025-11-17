@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订单管理 - 管理员控制台</title>
+    <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <nav class="admin-sidebar">
+            <div class="sidebar-header">
+                <h2>🛡️ 管理后台</h2>
+                <p>{{ admin.username }}</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/admin/dashboard">📊 Dashboard</a></li>
+                <li><a href="/admin/users">👥 用户管理</a></li>
+                <li><a href="/admin/products">📦 商品管理</a></li>
+                <li class="active"><a href="/admin/orders">📋 订单管理</a></li>
+                <li><a href="/logout">🚪 退出登录</a></li>
+            </ul>
+        </nav>
+
+        <main class="admin-main">
+            <div class="admin-header">
+                <h1>订单管理</h1>
+                <div>
+                    <select onchange="location.href='/admin/orders?status=' + this.value">
+                        <option value="all" {{ 'selected' if status_filter == 'all' else '' }}>全部</option>
+                        <option value="pending" {{ 'selected' if status_filter == 'pending' else '' }}>待发货</option>
+                        <option value="shipped" {{ 'selected' if status_filter == 'shipped' else '' }}>已发货</option>
+                        <option value="completed" {{ 'selected' if status_filter == 'completed' else '' }}>已完成</option>
+                    </select>
+                    <a href="/admin/dashboard" class="btn-back">返回Dashboard</a>
+                </div>
+            </div>
+
+            <div class="content-section">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>订单ID</th>
+                            <th>商品ID</th>
+                            <th>买家ID</th>
+                            <th>卖家ID</th>
+                            <th>总价</th>
+                            <th>状态</th>
+                            <th>创建时间</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>{{ order.id }}</td>
+                            <td><a href="/product/detail/{{ order.product_id }}" target="_blank">{{ order.product_id }}</a></td>
+                            <td>{{ order.user_id }}</td>
+                            <td>{{ order.seller_id if hasattr(order, 'seller_id') else '-' }}</td>
+                            <td>¥{{ order.total_price }}</td>
+                            <td>
+                                <span class="badge badge-{% if order.status == 'completed' %}success{% elif order.status == 'shipped' %}info{% else %}warning{% end %}">
+                                    {{ order.status }}
+                                </span>
+                            </td>
+                            <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '-' }}</td>
+                        </tr>
+                        {% end %}
+                    </tbody>
+                </table>
+
+                <div class="pagination">
+                    {% if page > 1 %}
+                    <a href="?page={{ page - 1 }}&status={{ status_filter }}">上一页</a>
+                    {% end %}
+                    <span>第 {{ page }} / {{ total_pages }} 页</span>
+                    {% if page < total_pages %}
+                    <a href="?page={{ page + 1 }}&status={{ status_filter }}">下一页</a>
+                    {% end %}
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

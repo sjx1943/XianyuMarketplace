@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品管理 - 管理员控制台</title>
+    <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <nav class="admin-sidebar">
+            <div class="sidebar-header">
+                <h2>🛡️ 管理后台</h2>
+                <p>{{ admin.username }}</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/admin/dashboard">📊 Dashboard</a></li>
+                <li><a href="/admin/users">👥 用户管理</a></li>
+                <li class="active"><a href="/admin/products">📦 商品管理</a></li>
+                <li><a href="/admin/orders">📋 订单管理</a></li>
+                <li><a href="/logout">🚪 退出登录</a></li>
+            </ul>
+        </nav>
+
+        <main class="admin-main">
+            <div class="admin-header">
+                <h1>商品管理</h1>
+                <div>
+                    <select onchange="location.href='/admin/products?status=' + this.value">
+                        <option value="all" {{ 'selected' if status_filter == 'all' else '' }}>全部</option>
+                        <option value="在售" {{ 'selected' if status_filter == '在售' else '' }}>在售</option>
+                        <option value="已售" {{ 'selected' if status_filter == '已售' else '' }}>已售</option>
+                        <option value="已删除" {{ 'selected' if status_filter == '已删除' else '' }}>已删除</option>
+                    </select>
+                    <a href="/admin/dashboard" class="btn-back">返回Dashboard</a>
+                </div>
+            </div>
+
+            <div class="content-section">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>商品名</th>
+                            <th>价格</th>
+                            <th>卖家ID</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr>
+                            <td>{{ product.id }}</td>
+                            <td><a href="/product/detail/{{ product.id }}" target="_blank">{{ product.name }}</a></td>
+                            <td>¥{{ product.price }}</td>
+                            <td>{{ product.user_id }}</td>
+                            <td><span class="badge badge-info">{{ product.status }}</span></td>
+                            <td>
+                                {% if product.status != '已删除' %}
+                                <button class="btn-delete" data-product-id="{{ product.id }}">删除</button>
+                                {% else %}
+                                <button class="btn-restore" data-product-id="{{ product.id }}">恢复</button>
+                                {% end %}
+                            </td>
+                        </tr>
+                        {% end %}
+                    </tbody>
+                </table>
+
+                <div class="pagination">
+                    {% if page > 1 %}
+                    <a href="?page={{ page - 1 }}&status={{ status_filter }}">上一页</a>
+                    {% end %}
+                    <span>第 {{ page }} / {{ total_pages }} 页</span>
+                    {% if page < total_pages %}
+                    <a href="?page={{ page + 1 }}&status={{ status_filter }}">下一页</a>
+                    {% end %}
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.querySelectorAll('.btn-delete, .btn-restore').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const productId = this.dataset.productId;
+                const action = this.classList.contains('btn-delete') ? 'delete' : 'restore';
+                
+                if (!confirm(`确定要${action === 'delete' ? '删除' : '恢复'}此商品吗？`)) return;
+                
+                try {
+                    const response = await fetch('/admin/products', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ product_id: productId, action })
+                    });
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert(result.message);
+                        location.reload();
+                    } else {
+                        alert(result.message);
+                    }
+                } catch (error) {
+                    alert('操作失败');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
