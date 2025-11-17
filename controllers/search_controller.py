@@ -25,8 +25,7 @@ class SearchHandler(tornado.web.RequestHandler):
                     Product.description.like(f'%{query}%'),
                     Product.tag.like(f'%{query}%')
                 ),
-                Product.status != '已删除',
-                Product.status == '在售'  # 只显示在售商品
+                Product.status != '已删除'  # 只排除已删除商品
             ).all()
 
             # 将结果转换为 JSON 格式
