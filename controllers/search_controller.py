@@ -1,7 +1,8 @@
 import tornado.web
 import json
 import logging
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import or_
 from base.base import engine
 from models.product import Product
 
@@ -10,17 +11,22 @@ Session = sessionmaker(bind=engine)
 
 class SearchHandler(tornado.web.RequestHandler):
     def initialize(self):
-        self.session = scoped_session(Session)
+        self.session = Session()
 
     def get(self):
         try:
             query = self.get_argument("q", "")
             logging.info(f"搜索查询: {query}")
 
-            # 使用 LIKE 进行模糊搜索
+            # 使用 LIKE 进行模糊搜索（搜索商品名称、描述和标签）
             search_results = self.session.query(Product).filter(
-                Product.name.like(f'%{query}%'),
-                Product.status != '已删除'
+                or_(
+                    Product.name.like(f'%{query}%'),
+                    Product.description.like(f'%{query}%'),
+                    Product.tag.like(f'%{query}%')
+                ),
+                Product.status != '已删除',
+                Product.status == '在售'  # 只显示在售商品
             ).all()
 
             # 将结果转换为 JSON 格式
@@ -45,4 +51,4 @@ class SearchHandler(tornado.web.RequestHandler):
             self.write(json.dumps({"error": "服务器内部错误，请稍后重试"}))
 
     def on_finish(self):
-        self.session.remove()
+        self.session.close()
