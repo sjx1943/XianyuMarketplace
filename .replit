@@ -18,20 +18,20 @@ args = "tornado-server"
 name = "tornado-server"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python init_db.py && python app.py --port=5000"
 waitForPort = 5000
-
-[workflows.workflow.metadata]
-outputType = "webview"
 
 [[ports]]
 localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 35457
+localPort = 32819
 externalPort = 3002
 
 [[ports]]
@@ -39,12 +39,12 @@ localPort = 36719
 externalPort = 3000
 
 [[ports]]
-localPort = 37201
-externalPort = 3003
-
-[[ports]]
 localPort = 40271
 externalPort = 3001
 
 [nix]
 channel = "stable-25_05"
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["python", "app.py", "--port=5000"]

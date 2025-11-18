@@ -107,9 +107,15 @@ python init_db.py
 # 可选：迁移现有订单数据（添加seller_id快照）
 python migrate_orders_seller_id.py
 
-# 启动服务器
+# 启动服务器（默认5000端口）
 python app.py --port=5000
 ```
+
+## 部署配置（Autoscale）
+- **Run命令**: `python app.py --port=5000`
+- **绑定地址**: 0.0.0.0（自动配置）
+- **健康检查端点**: `/health` (返回 `{"status": "ok"}`)
+- **部署类型**: Autoscale（无状态自动扩缩容）
 
 ## 项目结构
 ```

@@ -25,6 +25,12 @@ import redis
 from models.friendship import Friendship
 from models.user import User
 
+# Health Check Handler for deployment
+class HealthCheckHandler(RequestHandler):
+    def get(self):
+        self.set_header("Content-Type", "application/json")
+        self.write({"status": "ok"})
+
 # 404 Handler
 class NotFoundHandler(RequestHandler):
     def prepare(self):
@@ -74,6 +80,7 @@ def make_app():
     redis_client = redis.StrictRedis()
 
     return Application([
+        (r"/health", HealthCheckHandler),
         (r"/", MainHandler),
         (r"/main", MainHandler),
         (r"/home_page", HomePageHandler),
@@ -151,10 +158,11 @@ if __name__ == "__main__":
     
     # 解析命令行参数
     parser = argparse.ArgumentParser(description='Tornado Application')
-    parser.add_argument('--port', type=int, default=9000, help='Port to listen on')
+    parser.add_argument('--port', type=int, default=5000, help='Port to listen on')
     args = parser.parse_args()
     
     app = make_app()
-    app.listen(args.port)
+    # Bind to 0.0.0.0 for Autoscale deployments
+    app.listen(args.port, address="0.0.0.0")
     print(f"后端已在端口 {args.port} 启动,可通过远程开发工具运行服务")
     tornado.ioloop.IOLoop.current().start()
