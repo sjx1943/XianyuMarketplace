@@ -14,7 +14,7 @@ from controllers.main_controller import MainHandler, MyStaticFileHandler
 from controllers.auth_controller import LoginHandler, RegisterHandler, ForgotPasswordHandler, ResetPasswordHandler, LogoutHandler, SetRoomNumberHandler, Loginmodule, Registmodule, Forgotmodule
 from controllers.phone_auth_controller import PhoneLoginHandler, SendCodeHandler
 from controllers.product_controller import ProductUploadHandler, HomePageHandler, ProductDetailHandler, ProductListHandler, ElseHomePageHandler, UpdateProductStatusHandler, DeleteProductHandler, PhysicalDeleteProductHandler, AdminDashboardHandler, ProductEditHandler
-from controllers.admin_controller import AdminLoginHandler, AdminDashboardHandler as NewAdminDashboardHandler, AdminUserManagementHandler, AdminProductManagementHandler, AdminOrderManagementHandler
+from controllers.admin_controller import AdminLoginHandler, AdminDashboardHandler as NewAdminDashboardHandler, AdminUserManagementHandler, AdminProductManagementHandler, AdminOrderManagementHandler, AdminOrderDetailHandler
 from controllers.chat_controller import ChatWebSocketHandler, ChatHandler, MessageAPIHandler, SendMessageAPIHandler, MarkMessagesReadHandler, DeleteMessagesHandler, UnreadCountHandler
 from controllers.friend_profile_controller import FriendProfileHandler, DeleteFriendHandler, InitiateChatHandler, BlockFriendHandler
 from controllers.search_controller import SearchHandler
@@ -106,6 +106,7 @@ def make_app():
         (r"/admin/users", AdminUserManagementHandler),
         (r"/admin/products", AdminProductManagementHandler),
         (r"/admin/orders", AdminOrderManagementHandler),
+        (r"/admin/order/([0-9]+)", AdminOrderDetailHandler),
         
         (r"/product/upload", ProductUploadHandler, dict(app_settings=settings)),
         (r"/product/edit/([0-9]+)", ProductEditHandler, dict(app_settings=settings)),

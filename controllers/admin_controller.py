@@ -311,3 +311,34 @@ class AdminOrderManagementHandler(AdminBaseHandler):
         except Exception as e:
             logging.error(f"订单管理加载错误: {e}")
             self.write("加载错误")
+
+class AdminOrderDetailHandler(AdminBaseHandler):
+    """管理员订单详情查看"""
+    
+    async def get(self, order_id):
+        """获取订单详情"""
+        try:
+            order = self.session.query(Order).filter_by(id=int(order_id)).first()
+            if not order:
+                self.write("订单不存在")
+                return
+            
+            product = self.session.query(Product).filter_by(id=order.product_id).first()
+            buyer = self.session.query(User).filter_by(id=order.user_id).first()
+            
+            seller = None
+            if order.seller_id:
+                seller = self.session.query(User).filter_by(id=order.seller_id).first()
+            elif product:
+                seller = self.session.query(User).filter_by(id=product.user_id).first()
+            
+            self.render('admin_order_detail.html',
+                       admin=self.current_admin,
+                       order=order,
+                       product=product,
+                       buyer=buyer,
+                       seller=seller)
+            
+        except Exception as e:
+            logging.error(f"订单详情加载错误: {e}")
+            self.write("加载错误")

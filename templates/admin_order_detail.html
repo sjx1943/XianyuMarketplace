@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订单详情 - 管理员控制台</title>
+    <link rel="stylesheet" href="/static/css/admin.css">
+    <style>
+        .order-detail-card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .order-detail-card h3 {
+            color: #333;
+            margin: 24px 0 16px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .order-detail-card p {
+            margin: 12px 0;
+            color: #666;
+        }
+        .order-detail-card strong {
+            color: #333;
+            display: inline-block;
+            min-width: 120px;
+        }
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .badge-warning { background: #fff3cd; color: #856404; }
+        .badge-info { background: #d1ecf1; color: #0c5460; }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-danger { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <nav class="admin-sidebar">
+            <div class="sidebar-header">
+                <h2>🛡️ 管理后台</h2>
+                <p>{{ admin.username }}</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/admin/dashboard">📊 Dashboard</a></li>
+                <li><a href="/admin/users">👥 用户管理</a></li>
+                <li><a href="/admin/products">📦 商品管理</a></li>
+                <li class="active"><a href="/admin/orders">📋 订单管理</a></li>
+                <li><a href="/logout">🚪 退出登录</a></li>
+            </ul>
+        </nav>
+
+        <main class="admin-main">
+            <div class="admin-header">
+                <h1>订单详情 #{{ order.id }}</h1>
+                <a href="/admin/orders" class="btn-back">返回订单列表</a>
+            </div>
+
+            <div class="content-section">
+                <div class="order-detail-card">
+                    <h3>📋 订单信息</h3>
+                    <p><strong>订单号:</strong> {{ order.id }}</p>
+                    <p><strong>订单状态:</strong> 
+                        {% set status_map = {'pending': '待发货', 'shipped': '已发货', 'completed': '已完成', 'cancelled': '已取消'} %}
+                        <span class="badge badge-{% if order.status == 'completed' %}success{% elif order.status == 'shipped' %}info{% elif order.status == 'cancelled' %}danger{% else %}warning{% end %}">
+                            {{ status_map.get(order.status, order.status) }}
+                        </span>
+                    </p>
+                    <p><strong>下单时间:</strong> {{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') if order.created_at else 'N/A' }}</p>
+                    {% if order.shipped_at %}
+                    <p><strong>发货时间:</strong> {{ order.shipped_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                    {% end %}
+                    {% if order.completed_at %}
+                    <p><strong>完成时间:</strong> {{ order.completed_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                    {% end %}
+
+                    <h3>📦 商品信息</h3>
+                    <p><strong>商品名称:</strong> 
+                        {% if product %}
+                            <a href="/product/detail/{{ product.id }}" target="_blank">{{ product.name }}</a>
+                        {% else %}
+                            {{ order.product_name if order.product_name else '未知商品' }} (商品已下架)
+                        {% end %}
+                    </p>
+                    <p><strong>单价:</strong> ¥{{ product.price if product else 'N/A' }}</p>
+                    <p><strong>数量:</strong> {{ order.quantity }}</p>
+                    <p><strong>总价:</strong> ¥{{ order.total_price if order.total_price else (product.price * order.quantity if product else 'N/A') }}</p>
+
+                    <h3>👤 用户信息</h3>
+                    <p><strong>买家ID:</strong> {{ buyer.id if buyer else 'N/A' }}</p>
+                    <p><strong>买家用户名:</strong> {{ buyer.username if buyer else 'N/A' }}</p>
+                    <p><strong>买家房间号:</strong> {{ buyer.room_number if buyer and buyer.room_number else 'N/A' }}</p>
+                    
+                    <p><strong>卖家ID:</strong> {{ seller.id if seller else 'N/A' }}</p>
+                    <p><strong>卖家用户名:</strong> {{ seller.username if seller else 'N/A' }}</p>
+                    <p><strong>卖家房间号:</strong> {{ seller.room_number if seller and seller.room_number else 'N/A' }}</p>
+
+                    <h3>📝 订单备注</h3>
+                    <p style="background: #f8f9fa; padding: 12px; border-radius: 4px; white-space: pre-wrap;">{{ order.order_note if order.order_note else '无备注信息' }}</p>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

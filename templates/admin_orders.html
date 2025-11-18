@@ -52,8 +52,8 @@
                     <tbody>
                         {% if orders %}
                             {% for order in orders %}
-                            <tr>
-                                <td>{{ order.id }}</td>
+                            <tr onclick="location.href='/admin/order/{{ order.id }}'" style="cursor: pointer;">
+                                <td><a href="/admin/order/{{ order.id }}" style="color: #007bff; text-decoration: none;">{{ order.id }}</a></td>
                                 <td>{{ order.product_name if order.product_name else '-' }}</td>
                                 <td>{{ order.user_id }}</td>
                                 <td>{{ order.seller_id if order.seller_id else '-' }}</td>
