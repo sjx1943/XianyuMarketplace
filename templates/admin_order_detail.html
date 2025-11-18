@@ -87,9 +87,9 @@
                             {{ order.product_name if order.product_name else '未知商品' }} (商品已下架)
                         {% end %}
                     </p>
-                    <p><strong>单价:</strong> ¥{{ product.price if product else 'N/A' }}</p>
-                    <p><strong>数量:</strong> {{ order.quantity }}</p>
-                    <p><strong>总价:</strong> ¥{{ order.total_price if order.total_price else (product.price * order.quantity if product else 'N/A') }}</p>
+                    <p><strong>单价:</strong> ¥{{ product.price if (product is not None and product.price is not None) else 'N/A' }}</p>
+                    <p><strong>数量:</strong> {{ order.quantity if order.quantity is not None else 'N/A' }}</p>
+                    <p><strong>总价:</strong> ¥{{ (product.price * order.quantity) if (product is not None and product.price is not None and order.quantity is not None) else 'N/A' }}</p>
 
                     <h3>👤 用户信息</h3>
                     <p><strong>买家ID:</strong> {{ buyer.id if buyer else 'N/A' }}</p>
