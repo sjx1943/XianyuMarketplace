@@ -121,6 +121,7 @@
         <div id="message" class="message"></div>
 
         <form id="admin-login-form">
+            {% module xsrf_form_html() %}
             <div class="form-group">
                 <label for="username">用户名或邮箱</label>
                 <input type="text" id="username" name="username" placeholder="请输入管理员用户名或邮箱" required autofocus>
@@ -160,6 +161,7 @@
 
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
+            const xsrfToken = document.querySelector('input[name="_xsrf"]').value;
 
             if (!username || !password) {
                 showMessage('请输入用户名和密码', 'error');
@@ -169,8 +171,11 @@
             try {
                 const response = await fetch('/admin/login', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Xsrftoken': xsrfToken
+                    },
+                    body: JSON.stringify({ username, password, _xsrf: xsrfToken })
                 });
 
                 const result = await response.json();
