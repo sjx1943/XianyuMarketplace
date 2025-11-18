@@ -25,10 +25,15 @@
         <main class="admin-main">
             <div class="admin-header">
                 <h1>用户管理</h1>
-                <a href="/admin/dashboard" class="btn-back">返回Dashboard</a>
+                <div>
+                    <input type="text" id="search-input" placeholder="搜索用户名、邮箱、房间号..." style="padding: 8px; width: 300px; margin-right: 10px;">
+                    <button onclick="searchUsers()" style="padding: 8px 16px;">搜索</button>
+                    <a href="/admin/dashboard" class="btn-back">返回Dashboard</a>
+                </div>
             </div>
 
             <div class="content-section">
+                {% raw xsrf_form_html() %}
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -76,6 +81,27 @@
     </div>
 
     <script>
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        function searchUsers() {
+            const keyword = document.getElementById('search-input').value.trim();
+            if (keyword) {
+                window.location.href = `/admin/users?search=${encodeURIComponent(keyword)}`;
+            } else {
+                window.location.href = '/admin/users';
+            }
+        }
+
+        document.getElementById('search-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchUsers();
+            }
+        });
+
         document.querySelectorAll('.btn-toggle').forEach(btn => {
             btn.addEventListener('click', async function() {
                 const userId = this.dataset.userId;
@@ -84,10 +110,18 @@
                 if (!confirm('确定要执行此操作吗？')) return;
                 
                 try {
+                    const xsrfToken = getCookie('_xsrf');
                     const response = await fetch('/admin/users', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ user_id: userId, action })
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'X-Xsrftoken': xsrfToken
+                        },
+                        body: JSON.stringify({ 
+                            user_id: parseInt(userId), 
+                            action: action,
+                            _xsrf: xsrfToken
+                        })
                     });
                     const result = await response.json();
                     
@@ -98,7 +132,8 @@
                         alert(result.message);
                     }
                 } catch (error) {
-                    alert('操作失败');
+                    console.error('操作错误:', error);
+                    alert('操作失败: ' + error.message);
                 }
             });
         });

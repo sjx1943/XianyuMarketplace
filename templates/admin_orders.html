@@ -41,29 +41,33 @@
                     <thead>
                         <tr>
                             <th>订单ID</th>
-                            <th>商品ID</th>
+                            <th>商品名</th>
                             <th>买家ID</th>
                             <th>卖家ID</th>
-                            <th>总价</th>
+                            <th>数量</th>
                             <th>状态</th>
                             <th>创建时间</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for order in orders %}
-                        <tr>
-                            <td>{{ order.id }}</td>
-                            <td><a href="/product/detail/{{ order.product_id }}" target="_blank">{{ order.product_id }}</a></td>
-                            <td>{{ order.user_id }}</td>
-                            <td>{{ order.seller_id if hasattr(order, 'seller_id') else '-' }}</td>
-                            <td>¥{{ order.total_price }}</td>
-                            <td>
-                                <span class="badge badge-{% if order.status == 'completed' %}success{% elif order.status == 'shipped' %}info{% else %}warning{% end %}">
-                                    {{ order.status }}
-                                </span>
-                            </td>
-                            <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '-' }}</td>
-                        </tr>
+                        {% if orders %}
+                            {% for order in orders %}
+                            <tr>
+                                <td>{{ order.id }}</td>
+                                <td>{{ order.product_name if order.product_name else '-' }}</td>
+                                <td>{{ order.user_id }}</td>
+                                <td>{{ order.seller_id if order.seller_id else '-' }}</td>
+                                <td>{{ order.quantity }}</td>
+                                <td>
+                                    <span class="badge badge-{% if order.status == 'completed' %}success{% elif order.status == 'shipped' %}info{% else %}warning{% end %}">
+                                        {{ order.status }}
+                                    </span>
+                                </td>
+                                <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '-' }}</td>
+                            </tr>
+                            {% end %}
+                        {% else %}
+                            <tr><td colspan="7">暂无订单数据</td></tr>
                         {% end %}
                     </tbody>
                 </table>

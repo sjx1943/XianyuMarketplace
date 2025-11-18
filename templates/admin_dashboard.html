@@ -111,6 +111,36 @@
                         </tbody>
                     </table>
                 </div>
+
+                <div class="content-section">
+                    <h2>最新订单 (前10)</h2>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>订单ID</th>
+                                <th>买家ID</th>
+                                <th>商品名</th>
+                                <th>状态</th>
+                                <th>创建时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if recent_orders %}
+                                {% for order in recent_orders %}
+                                <tr>
+                                    <td>{{ order.id }}</td>
+                                    <td>{{ order.user_id }}</td>
+                                    <td>{{ order.product_name if order.product_name else '-' }}</td>
+                                    <td><span class="badge badge-{% if order.status == 'completed' %}success{% elif order.status == 'shipped' %}info{% else %}warning{% end %}">{{ order.status }}</span></td>
+                                    <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '-' }}</td>
+                                </tr>
+                                {% end %}
+                            {% else %}
+                                <tr><td colspan="5">暂无数据</td></tr>
+                            {% end %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </main>
     </div>

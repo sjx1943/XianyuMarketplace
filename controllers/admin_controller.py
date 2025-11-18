@@ -141,19 +141,32 @@ class AdminUserManagementHandler(AdminBaseHandler):
         """获取所有用户"""
         try:
             page = max(1, int(self.get_argument("page", 1)))
+            search_keyword = self.get_argument("search", "").strip()
             per_page = 20
-            total = self.session.query(func.count(User.id)).scalar()
+            
+            query = self.session.query(User)
+            if search_keyword:
+                query = query.filter(
+                    or_(
+                        User.username.ilike(f'%{search_keyword}%'),
+                        User.email.ilike(f'%{search_keyword}%'),
+                        User.room_number.ilike(f'%{search_keyword}%')
+                    )
+                )
+            
+            total = query.count()
             total_pages = max(1, (total + per_page - 1) // per_page) if total > 0 else 1
             page = min(page, total_pages)
             offset = (page - 1) * per_page
             
-            users = self.session.query(User).offset(offset).limit(per_page).all()
+            users = query.offset(offset).limit(per_page).all()
             
             self.render('admin_users.html',
                        admin=self.current_admin,
                        users=users,
                        page=page,
-                       total_pages=total_pages)
+                       total_pages=total_pages,
+                       search_keyword=search_keyword)
             
         except Exception as e:
             logging.error(f"用户管理加载错误: {e}")
