@@ -57,6 +57,7 @@ class AdminLoginHandler(tornado.web.RequestHandler):
     
     async def post(self):
         """处理管理员登录"""
+        self.set_header('Content-Type', 'application/json')
         try:
             data = json.loads(self.request.body)
             username = data.get('username', '').strip()
@@ -174,6 +175,7 @@ class AdminUserManagementHandler(AdminBaseHandler):
     
     async def post(self):
         """用户操作（禁用/启用/删除）"""
+        self.set_header('Content-Type', 'application/json')
         try:
             data = json.loads(self.request.body)
             action = data.get('action')
@@ -205,7 +207,7 @@ class AdminUserManagementHandler(AdminBaseHandler):
         except Exception as e:
             logging.error(f"用户操作错误: {e}")
             self.session.rollback()
-            self.write({'success': False, 'message': '操作失败'})
+            self.write({'success': False, 'message': f'操作失败: {str(e)}'})
             return
 
 class AdminProductManagementHandler(AdminBaseHandler):
@@ -244,6 +246,7 @@ class AdminProductManagementHandler(AdminBaseHandler):
     
     async def post(self):
         """商品操作（删除/修改状态）"""
+        self.set_header('Content-Type', 'application/json')
         try:
             data = json.loads(self.request.body)
             action = data.get('action')
@@ -274,7 +277,7 @@ class AdminProductManagementHandler(AdminBaseHandler):
         except Exception as e:
             logging.error(f"商品操作错误: {e}")
             self.session.rollback()
-            self.write({'success': False, 'message': '操作失败'})
+            self.write({'success': False, 'message': f'操作失败: {str(e)}'})
             return
 
 class AdminOrderManagementHandler(AdminBaseHandler):
