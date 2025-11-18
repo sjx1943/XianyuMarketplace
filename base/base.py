@@ -32,5 +32,12 @@ else:
     except:
         conn_url = 'sqlite:///xianyu.db'
 
-engine = create_engine(conn_url, echo=True, pool_recycle=3600)
+engine = create_engine(
+    conn_url, 
+    echo=True, 
+    pool_pre_ping=True,
+    pool_recycle=3600,
+    pool_size=10,
+    max_overflow=20
+)
 Base = declarative_base()
