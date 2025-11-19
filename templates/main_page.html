@@ -20,8 +20,23 @@
         </div>
         {% elif username %}
         <div class="user-header">
-            <p class="welcome-msg">欢迎 {{ username }}，來到小区的二手交易平台!</p>
-            <a href="/logout" class="logout-btn">退出登录</a>
+            <div class="welcome-section">
+                <p class="welcome-msg">欢迎 {{ username }}，來到小区的二手交易平台!</p>
+            </div>
+            <div class="header-nav">
+                <a href="/product/upload" class="nav-btn upload-btn">
+                    <span class="nav-icon">📦</span>
+                    <span class="nav-text">发布商品</span>
+                </a>
+                <a href="/orders" class="nav-btn orders-btn">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-text">我的订单</span>
+                </a>
+                <a href="/logout" class="nav-btn logout-btn">
+                    <span class="nav-icon">🚪</span>
+                    <span class="nav-text">退出登录</span>
+                </a>
+            </div>
         </div>
         <input type="hidden" id="logged-in-user-id" value="{{ user_id }}">
         {% end %}

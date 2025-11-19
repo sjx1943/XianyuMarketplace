@@ -78,13 +78,6 @@ function initEventListeners() {
         });
     });
 
-    document.getElementById('toggle-friend-list')?.addEventListener('click', () => {
-        const friendList = document.getElementById('friend-list-container');
-        friendList.classList.toggle('collapsed');
-        // 保存用户的侧边栏偏好设置
-        localStorage.setItem('friendListCollapsed', friendList.classList.contains('collapsed'));
-    });
-
     const container = document.getElementById('message-content-container');
     if (container) {
         container.addEventListener('scroll', () => {
@@ -96,78 +89,6 @@ function initEventListeners() {
 
     initFriendListContextMenu();
     initMessageContextMenu();
-    initAutoResizeAndDrag(); // Initialize new features
-}
-
-function initAutoResizeAndDrag() {
-    const friendList = document.getElementById('friend-list-container');
-    const dragHandle = document.getElementById('drag-handle');
-    const BREAKPOINT = 992; // Bootstrap's lg breakpoint
-
-    // Debounce function to limit resize event firing
-    function debounce(func, delay) {
-        let timeout;
-        return function(...args) {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(this, args), delay);
-        };
-    }
-
-    // Auto-collapse based on window size and user preference
-    const handleResize = () => {
-        if (window.innerWidth < BREAKPOINT) {
-            // 在移动端，检查用户是否有保存的偏好设置
-            const savedPreference = localStorage.getItem('friendListCollapsed');
-            if (savedPreference !== null) {
-                // 如果用户有保存的偏好，使用保存的设置
-                if (savedPreference === 'true') {
-                    friendList.classList.add('collapsed');
-                } else {
-                    friendList.classList.remove('collapsed');
-                }
-            } else {
-                // 如果没有保存的偏好，默认展开（改善首次访问体验）
-                friendList.classList.remove('collapsed');
-            }
-        } else {
-            // 桌面端始终展开
-            friendList.classList.remove('collapsed');
-        }
-    };
-
-    window.addEventListener('resize', debounce(handleResize, 100));
-    handleResize(); // Initial check
-
-    // Drag-to-resize logic
-    if (dragHandle) {
-        dragHandle.addEventListener('mousedown', function(e) {
-            e.preventDefault();
-            document.body.classList.add('is-resizing');
-
-            const startX = e.clientX;
-            const startWidth = friendList.offsetWidth;
-
-            const doDrag = function(e) {
-                const newWidth = startWidth + e.clientX - startX;
-                // Get min/max from CSS properties
-                const minWidth = parseInt(window.getComputedStyle(friendList).minWidth, 10);
-                const maxWidth = parseInt(window.getComputedStyle(friendList).maxWidth, 10);
-
-                if (newWidth > minWidth && newWidth < maxWidth) {
-                    friendList.style.width = `${newWidth}px`;
-                }
-            };
-
-            const stopDrag = function() {
-                document.body.classList.remove('is-resizing');
-                document.removeEventListener('mousemove', doDrag);
-                document.removeEventListener('mouseup', stopDrag);
-            };
-
-            document.addEventListener('mousemove', doDrag);
-            document.addEventListener('mouseup', stopDrag);
-        });
-    }
 }
 
 function selectFriend(friendId, element) {

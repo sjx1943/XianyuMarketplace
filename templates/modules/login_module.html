@@ -11,6 +11,13 @@
             {% module xsrf_form_html() %}
             <input type="hidden" name="login_type" id="login_type" value="password">
             
+            {% if result %}
+            <div class="{% if '成功' in result or '登出' in result %}inline-success-message{% else %}inline-error-message{% end %}">
+                <span class="message-icon">{% if '成功' in result or '登出' in result %}✓{% else %}⚠{% end %}</span>
+                <span class="message-text">{{ result }}</span>
+            </div>
+            {% end %}
+            
             <div id="passwordLoginFields">
                 <div class="form-group">
                     <label for="username">用户名/房间号/手机号</label>
@@ -44,9 +51,6 @@
                 <a href="/forgot_password">忘记密码</a>
                 <a href="/admin/login" class="admin-link">🛡️ 管理员入口</a>
             </div>
-            {% if result %}
-            <div class="{% if '成功' in result or '登出' in result %}success-message{% else %}error-message{% end %}">{{ result }}</div>
-            {% end %}
         </form>
     </div>
 </div>
@@ -199,22 +203,56 @@ document.addEventListener('DOMContentLoaded', function() {
         text-decoration: underline;
     }
 
-    .error-message {
-        color: #f44336;
-        text-align: center;
-        margin-top: 10px;
-        padding: 10px;
+    .inline-error-message {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 16px;
+        margin-bottom: 16px;
         background-color: #ffebee;
+        border-left: 4px solid #f44336;
         border-radius: 4px;
+        color: #c62828;
+        font-size: 14px;
+        line-height: 1.4;
+        animation: slideIn 0.3s ease-out;
     }
 
-    .success-message {
-        color: #4CAF50;
-        text-align: center;
-        margin-top: 10px;
-        padding: 10px;
+    .inline-success-message {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 16px;
+        margin-bottom: 16px;
         background-color: #e8f5e9;
+        border-left: 4px solid #4CAF50;
         border-radius: 4px;
+        color: #2e7d32;
+        font-size: 14px;
+        line-height: 1.4;
+        animation: slideIn 0.3s ease-out;
+    }
+    
+    .message-icon {
+        font-size: 18px;
+        font-weight: bold;
+        flex-shrink: 0;
+    }
+    
+    .message-text {
+        flex: 1;
+        word-break: break-word;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     .footer-info {
@@ -290,6 +328,38 @@ document.addEventListener('DOMContentLoaded', function() {
     
     .admin-link:hover {
         color: #F57C00 !important;
+    }
+    
+    @media (max-width: 768px) {
+        .login-container {
+            min-height: auto;
+            padding: 20px 10px;
+        }
+        
+        .login-form {
+            padding: 20px;
+            box-shadow: none;
+        }
+        
+        .inline-error-message,
+        .inline-success-message {
+            padding: 10px 12px;
+            font-size: 13px;
+        }
+        
+        .message-icon {
+            font-size: 16px;
+        }
+        
+        .links {
+            flex-direction: column;
+            gap: 10px;
+            text-align: center;
+        }
+        
+        .links a {
+            display: block;
+        }
     }
 </style>
 

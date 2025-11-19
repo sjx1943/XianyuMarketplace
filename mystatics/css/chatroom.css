@@ -59,17 +59,17 @@ body.is-resizing {
 
 /* --- Friend List --- */
 .friend-list {
-    width: 30%;
+    width: 280px; /* Default width, can be overridden by localStorage */
     min-width: 200px; /* Draggable min width */
-    max-width: 500px; /* Draggable max width */
+    max-width: 400px; /* Draggable max width */
     background-color: #fff;
     border-right: 1px solid #d1d7de;
     display: flex;
     flex-direction: column;
-    transition: min-width 0.3s ease-in-out, width 0.3s ease-in-out;
     overflow: hidden;
     position: relative; /* Needed for z-index */
     z-index: 100;
+    flex-shrink: 0; /* Prevent sidebar from shrinking */
 }
 
 .friend-list-header {
@@ -317,49 +317,67 @@ body.is-resizing {
 
 
 
-/* --- Toggle Button & Responsiveness --- */
+/* --- Toggle Button (Mobile Only) --- */
 #toggle-friend-list {
-    display: block; /* 始终显示，支持拖拽 */
+    display: none; /* Hidden on desktop */
     position: fixed;
-    left: 10px;
-    top: 10px;
-    width: 40px;
-    height: 40px;
-    background-color: #fff;
-    border: 1px solid #ccc;
+    left: 15px;
+    top: 70px;
+    width: 44px;
+    height: 44px;
+    background-color: #007bff;
+    color: white;
+    border: none;
     border-radius: 50%;
-    cursor: move;
-    font-size: 20px;
-    line-height: 40px;
+    font-size: 22px;
+    line-height: 44px;
     text-align: center;
     z-index: 10001;
-    transition: background-color 0.2s ease, box-shadow 0.2s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 12px rgba(0, 123, 255, 0.4);
+    transition: all 0.3s ease;
 }
 
 #toggle-friend-list:hover {
-    background-color: #f5f5f5;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    background-color: #0056b3;
+    transform: scale(1.1);
+    box-shadow: 0 4px 16px rgba(0, 123, 255, 0.6);
 }
 
 #toggle-friend-list::before {
     content: '☰';
 }
 
-.friend-list.collapsed {
-    width: 0;
-    min-width: 0;
-    border-right: none;
+/* Mobile overlay for sidebar */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    display: block;
+    opacity: 1;
 }
 
 /* Mobile View */
 @media (max-width: 768px) {
+    #toggle-friend-list {
+        display: block; /* Show toggle button on mobile */
+    }
+    
     .resizer {
-        display: none; /* Hide resizer on mobile */
+        display: none; /* Hide resizer on mobile - no drag resize */
     }
 
     .friend-list {
-        position: absolute;
+        position: fixed; /* Fixed positioning for overlay effect */
         top: 0;
         left: 0;
         bottom: 0;
@@ -367,17 +385,21 @@ body.is-resizing {
         z-index: 1000;
         width: 80%;
         max-width: 300px;
-        transform: translateX(-100%);
+        transform: translateX(-100%); /* Hidden by default on mobile */
         border-right: 1px solid #d1d7de;
         transition: transform 0.3s ease-in-out;
+        box-shadow: none;
     }
 
-    .friend-list:not(.collapsed) {
-        transform: translateX(0);
-        box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+    .friend-list.mobile-visible {
+        transform: translateX(0); /* Slide in when visible */
+        box-shadow: 4px 0 20px rgba(0,0,0,0.2);
     }
-
-    /* 移动端按钮样式已在全局定义 */
+    
+    .message-input-area {
+        /* Ensure input area is not covered by sidebar on mobile */
+        z-index: 10;
+    }
 }
 
 /* Context Menu Styles */
