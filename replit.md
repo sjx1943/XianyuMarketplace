@@ -44,6 +44,7 @@
 27. ✅ **SSL连接池修复** - 配置pool_pre_ping=True和pool_recycle=3600，解决PostgreSQL空闲连接超时问题
 28. ✅ **JSON响应修复** - 所有管理员POST方法设置Content-Type: application/json，防止前端解析错误
 29. ✅ **订单详情页面** - 添加管理员订单详情查看(/admin/order/<id>)，支持从订单列表点击跳转
+30. ✅ **订单详情页面安全修复** - 修复模板total_price错误，添加完整None值检查，支持已删除商品、0价商品等边界情况
 
 ### 环境变量
 项目使用以下环境变量（由Replit自动配置）:
