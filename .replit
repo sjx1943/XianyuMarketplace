@@ -35,11 +35,16 @@ localPort = 36719
 externalPort = 3000
 
 [[ports]]
+localPort = 36895
+externalPort = 3002
+
+[[ports]]
 localPort = 40271
 externalPort = 3001
 
 [nix]
 channel = "stable-25_05"
+packages = ["cacert", "cargo", "libiconv", "libxcrypt", "openssl", "pkg-config", "rustc"]
 
 [deployment]
 deploymentTarget = "autoscale"

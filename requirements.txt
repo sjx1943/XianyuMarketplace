@@ -14,3 +14,6 @@ tornado==6.4.2
 typing_extensions==4.12.2
 cryptography
 beautifulsoup4
+alibabacloud_dysmsapi20170525
+alibabacloud-tea-openapi
+requests

@@ -198,7 +198,7 @@ document.getElementById('send-code-btn-reset').addEventListener('click', functio
     }
     
     // 发送请求
-    fetch('/api/send_verification_code', {
+    fetch('/api/send_code', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -208,13 +208,18 @@ document.getElementById('send-code-btn-reset').addEventListener('click', functio
     })
     .then(response => response.json())
     .then(data => {
-        if (data.status === 'success') {
-            alert('验证码已发送到您的手机');
+        if (data.success) {
+            if (data.dev_mode && data.code) {
+                alert(`验证码已发送（开发模式）：${data.code}`);
+            } else {
+                alert('验证码已发送到您的手机');
+            }
         } else {
             alert(data.message || '发送失败，请稍后重试');
         }
     })
-    .catch(() => {
+    .catch(error => {
+        console.error('发送验证码错误:', error);
         alert('网络错误，请稍后重试');
     });
 });
