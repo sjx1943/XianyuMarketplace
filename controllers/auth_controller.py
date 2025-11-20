@@ -143,20 +143,22 @@ def generate_reset_token():
 
 def send_email(to_email, subject, body):
     """
-    发送电子邮件，支持环境变量配置
+    发送电子邮件，支持SSL/TLS双模式
     
     环境变量（可选）：
     - SMTP_SERVER: SMTP服务器地址（默认：smtp.qq.com）
-    - SMTP_PORT: SMTP端口（默认：587）
+    - SMTP_PORT: SMTP端口（默认：465，QQ邮箱推荐SSL端口）
     - SMTP_USER: SMTP用户名/邮箱（默认：363328084@qq.com）
     - SMTP_PASSWORD: SMTP密码/授权码（默认：jluwcomlwzycbieb）
+    - SMTP_USE_SSL: 使用SSL而非TLS（默认：True）
     """
     import os
     
     smtp_server = os.environ.get('SMTP_SERVER', 'smtp.qq.com')
-    smtp_port = int(os.environ.get('SMTP_PORT', 587))
+    smtp_port = int(os.environ.get('SMTP_PORT', 465))
     smtp_user = os.environ.get('SMTP_USER', '363328084@qq.com')
     smtp_password = os.environ.get('SMTP_PASSWORD', 'jluwcomlwzycbieb')
+    use_ssl = os.environ.get('SMTP_USE_SSL', 'True').lower() in ['true', '1', 'yes']
     
     try:
         msg = MIMEMultipart()
@@ -165,9 +167,18 @@ def send_email(to_email, subject, body):
         msg['Subject'] = subject
         msg.attach(MIMEText(body, 'plain', 'utf-8'))
         
-        # 连接SMTP服务器
-        server = smtplib.SMTP(smtp_server, smtp_port, timeout=10)
-        server.starttls()
+        logging.info(f"尝试发送邮件: {to_email} (服务器:{smtp_server}:{smtp_port}, SSL:{use_ssl})")
+        
+        # 根据配置选择SSL或TLS连接
+        if use_ssl:
+            # SSL连接（端口465，QQ邮箱推荐）
+            server = smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=15)
+        else:
+            # TLS连接（端口587）
+            server = smtplib.SMTP(smtp_server, smtp_port, timeout=15)
+            server.starttls()
+        
+        # 登录
         server.login(smtp_user, smtp_password)
         
         # 发送邮件
@@ -175,17 +186,18 @@ def send_email(to_email, subject, body):
         server.sendmail(smtp_user, to_email, text)
         server.quit()
         
-        logging.info(f"邮件发送成功: {to_email}")
+        logging.info(f"✅ 邮件发送成功: {to_email}")
         return True
         
     except smtplib.SMTPAuthenticationError as e:
-        logging.error(f"SMTP认证失败: {e}")
-        raise Exception("邮箱认证失败，请检查SMTP配置")
+        logging.error(f"❌ SMTP认证失败: {e}")
+        logging.error(f"   请检查: 1) QQ邮箱授权码是否正确 2) 是否开启了SMTP服务")
+        raise Exception("邮箱认证失败，请检查授权码是否正确")
     except smtplib.SMTPException as e:
-        logging.error(f"SMTP错误: {e}")
+        logging.error(f"❌ SMTP错误: {e}")
         raise Exception(f"邮件发送失败: {str(e)}")
     except Exception as e:
-        logging.error(f"邮件发送异常: {e}")
+        logging.error(f"❌ 邮件发送异常: {type(e).__name__}: {e}")
         raise Exception(f"邮件发送失败: {str(e)}")
 
 
