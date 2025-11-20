@@ -247,7 +247,17 @@ def send_reset_email(email, reset_token, base_url=None):
     subject = "密码重置"
     body = f"您的验证码为：\n\n {reset_token} \n\n请点击以下链接输入验证码和新密码进行密码重置： {reset_link}"
 
-    send_email(email, subject, body)
+    try:
+        send_email(email, subject, body)
+        logging.info(f"密码重置邮件已发送: {email}")
+    except Exception as e:
+        logging.error(f"SMTP发送失败，降级到开发模式: {e}")
+        print("=" * 50)
+        print("📧 邮件发送失败，降级到开发模式")
+        print(f"收件人: {email}")
+        print(f"重置验证码: {reset_token}")
+        print(f"重置链接: {reset_link}")
+        print("=" * 50)
 
 class Forgotmodule(UIModule):
     def render(self, *args, **kwargs):

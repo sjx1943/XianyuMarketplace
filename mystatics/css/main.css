@@ -372,7 +372,74 @@ body {
     background-color: #e65c2e;
 }
 
+/* 订单按钮样式 */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s;
+    white-space: nowrap;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+.btn-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+.order-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    align-items: center;
+}
+
 /* 响应式调整 */
+@media (max-width: 768px) {
+    /* 移动端订单按钮优化 */
+    .btn {
+        padding: 12px 18px;
+        font-size: 15px;
+        min-height: 44px;
+        flex: 1;
+    }
+    
+    .order-actions {
+        width: 100%;
+        justify-content: stretch;
+    }
+}
+
 @media (max-width: 600px) {
     .product-list {
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));

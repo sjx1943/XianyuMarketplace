@@ -143,6 +143,53 @@
             font-weight: bold;
             margin-top: 10px;
         }
+        .tag-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .tag-checkbox {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            padding: 8px 15px;
+            border: 2px solid #ddd;
+            border-radius: 20px;
+            background: white;
+            transition: all 0.2s;
+            font-weight: normal;
+        }
+        .tag-checkbox:hover {
+            border-color: #4CAF50;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .tag-checkbox input[type="checkbox"] {
+            display: none;
+        }
+        .tag-checkbox input[type="checkbox"]:checked + span {
+            color: white;
+        }
+        .tag-checkbox:has(input[type="checkbox"]:checked) {
+            background: #4CAF50;
+            border-color: #4CAF50;
+            color: white;
+        }
+        @media (max-width: 600px) {
+            .tag-selector {
+                gap: 8px;
+            }
+            .tag-checkbox {
+                padding: 6px 12px;
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -162,8 +209,18 @@
         <label for="quantity">数量:</label>
         <input type="number" id="quantity" name="quantity" min="1" value="{{ product.quantity if product else '' }}" required>
 
-        <label for="tag">标签:</label>
-        <input type="text" id="tag" name="tag" value="{{ product.tag if product else '' }}" placeholder="例如：电子产品、书籍、家具等" required>
+        <label>商品标签: <span style="color: #999; font-weight: normal; font-size: 13px;">(至少选择一个)</span></label>
+        <div class="tag-selector">
+            {% set predefined_tags = ['电子产品', '书籍', '家具', '服装鞋帽', '食品饮料', '母婴用品', '运动户外', '玩具', '美妆个护', '家电', '日用百货', '其他'] %}
+            {% set selected_tags = product.tag.split(',') if product and product.tag else [] %}
+            {% for tag in predefined_tags %}
+            <label class="tag-checkbox">
+                <input type="checkbox" name="tags" value="{{ tag }}" {% if tag in selected_tags %}checked{% end %}>
+                <span>{{ tag }}</span>
+            </label>
+            {% end %}
+        </div>
+        <input type="hidden" id="tag" name="tag" value="{{ product.tag if product else '' }}" required>
 
         <label>商品图片:</label>
         <div class="image-management-container" id="imageContainer">
@@ -203,6 +260,24 @@
         const imageCountInfo = document.getElementById('image-count-info');
         const form = document.getElementById('productForm');
         const MAX_IMAGES = 9;
+        
+        // 标签选择逻辑
+        const tagCheckboxes = document.querySelectorAll('input[name="tags"]');
+        const hiddenTagInput = document.getElementById('tag');
+        
+        function updateHiddenTagInput() {
+            const selectedTags = Array.from(tagCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+            hiddenTagInput.value = selectedTags.join(',');
+        }
+        
+        tagCheckboxes.forEach(cb => {
+            cb.addEventListener('change', updateHiddenTagInput);
+        });
+        
+        // 初始化时更新一次
+        updateHiddenTagInput();
         
         // 存储新选择的文件
         let selectedFiles = [];

@@ -1,0 +1,41 @@
+2025-11-20 07:50:56,804 INFO sqlalchemy.engine.Engine INSERT INTO xu_verification_code (id, phone, code, expires_at, is_used) VALUES (nextval('verification_code_id_seq'), %(phone)s, %(code)s, %(expires_at)s, %(is_used)s) RETURNING xu_verification_code.id, xu_verification_code.created_at
+INFO:sqlalchemy.engine.Engine:INSERT INTO xu_verification_code (id, phone, code, expires_at, is_used) VALUES (nextval('verification_code_id_seq'), %(phone)s, %(code)s, %(expires_at)s, %(is_used)s) RETURNING xu_verification_code.id, xu_verification_code.created_at
+2025-11-20 07:50:56,804 INFO sqlalchemy.engine.Engine [generated in 0.00024s] {'phone': '15067114412', 'code': '585894', 'expires_at': datetime.datetime(2025, 11, 20, 7, 55, 56, 416005, tzinfo=datetime.timezone.utc), 'is_used': 0}
+INFO:sqlalchemy.engine.Engine:[generated in 0.00024s] {'phone': '15067114412', 'code': '585894', 'expires_at': datetime.datetime(2025, 11, 20, 7, 55, 56, 416005, tzinfo=datetime.timezone.utc), 'is_used': 0}
+2025-11-20 07:50:56,869 INFO sqlalchemy.engine.Engine COMMIT
+INFO:sqlalchemy.engine.Engine:COMMIT
+🚀 尝试通过阿里云发送短信: 15067114412
+📞 调用阿里云API: phone=15067114412, sign=东阳市灵灵配送服务部, template=SMS_498400208
+📨 阿里云响应: Code=OK, Message=OK
+✅ 阿里云短信真正发送成功到: 15067114412
+2025-11-20 07:51:33,117 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+2025-11-20 07:51:33,119 INFO sqlalchemy.engine.Engine SELECT xu_user.id AS xu_user_id, xu_user.username AS xu_user_username, xu_user.password AS xu_user_password, xu_user.email AS xu_user_email, xu_user.reset_token AS xu_user_reset_token, xu_user.room_number AS xu_user_room_number, xu_user.phone AS xu_user_phone, xu_user.is_admin AS xu_user_is_admin, xu_user.is_active AS xu_user_is_active 
+FROM xu_user 
+WHERE xu_user.email = %(email_1)s 
+ LIMIT %(param_1)s
+INFO:sqlalchemy.engine.Engine:SELECT xu_user.id AS xu_user_id, xu_user.username AS xu_user_username, xu_user.password AS xu_user_password, xu_user.email AS xu_user_email, xu_user.reset_token AS xu_user_reset_token, xu_user.room_number AS xu_user_room_number, xu_user.phone AS xu_user_phone, xu_user.is_admin AS xu_user_is_admin, xu_user.is_active AS xu_user_is_active 
+FROM xu_user 
+WHERE xu_user.email = %(email_1)s 
+ LIMIT %(param_1)s
+2025-11-20 07:51:33,119 INFO sqlalchemy.engine.Engine [generated in 0.00020s] {'email_1': 'sjx.1943@163.com', 'param_1': 1}
+INFO:sqlalchemy.engine.Engine:[generated in 0.00020s] {'email_1': 'sjx.1943@163.com', 'param_1': 1}
+2025-11-20 07:51:33,180 INFO sqlalchemy.engine.Engine UPDATE xu_user SET reset_token=%(reset_token)s WHERE xu_user.id = %(xu_user_id)s
+INFO:sqlalchemy.engine.Engine:UPDATE xu_user SET reset_token=%(reset_token)s WHERE xu_user.id = %(xu_user_id)s
+2025-11-20 07:51:33,180 INFO sqlalchemy.engine.Engine [generated in 0.00018s] {'reset_token': 'zD4PZd1c3hMnM6WvtCYqWw', 'xu_user_id': 1}
+INFO:sqlalchemy.engine.Engine:[generated in 0.00018s] {'reset_token': 'zD4PZd1c3hMnM6WvtCYqWw', 'xu_user_id': 1}
+2025-11-20 07:51:33,208 INFO sqlalchemy.engine.Engine COMMIT
+INFO:sqlalchemy.engine.Engine:COMMIT
+==================================================
+📧 准备发送邮件
+收件人: sjx.1943@163.com
+服务器: smtp.qq.com:465
+SSL模式: True
+发件人: 363328084@qq.com
+==================================================
+🚀 开始SMTP连接...
+📡 使用SMTP_SSL连接...
+🔑 登录SMTP服务器: 363328084@qq.com
+📤 发送邮件内容...
+✅ SMTP发送完成，关闭连接...
+✅ 邮件真正发送成功到: sjx.1943@163.com
