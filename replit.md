@@ -1,204 +1,33 @@
-# 小区二手商品交易平台 - Replit 部署版本
+# 小区二手商品交易平台
 
-## 项目概述
-基于 Tornado 框架的二手闲置物品交易平台，已适配到 Replit 环境运行。
+## Overview
+This project is a community-based second-hand goods trading platform built with the Tornado framework, adapted for deployment on Replit. It facilitates the exchange of idle items among residents, focusing on ease of use, security, and a rich user experience. Key features include robust user authentication (password, phone number + SMS, and WeChat OAuth), a real-time chat system, comprehensive product listings with image uploads, and an administrative dashboard for platform management. The platform aims to create a streamlined and trustworthy environment for local community trading.
 
-## 技术栈
-- **后端**: Python 3.11 + Tornado 6.4.2
-- **数据库**: PostgreSQL (Replit提供) + MongoDB (聊天消息)
-- **ORM**: SQLAlchemy 2.0.28
-- **缓存**: Redis (可选)
-- **前端**: HTML + CSS + JavaScript + WebSocket
+## User Preferences
+I prefer iterative development with clear, concise explanations for each step. Please prioritize core functionality and user experience. I value clean code and robust error handling. For any significant changes or architectural decisions, please ask for my approval first. Ensure all user-facing features are mobile-responsive and accessible. Do not make changes to folder `base/`. Do not make changes to file `config.ini`.
 
-## 当前完成的工作
+## System Architecture
+The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
+-   **Backend**: Python 3.11 + Tornado 6.4.2.
+-   **Database**: PostgreSQL for main data (Replit-provided), MongoDB for chat messages. SQLAlchemy 2.0.28 is used as the ORM.
+-   **Frontend**: HTML, CSS, JavaScript, and WebSockets for dynamic interactions.
+-   **UI/UX**: Modern, responsive design with a focus on intuitive navigation. Features like inline error messages, dynamic navigation bars, mobile-friendly button sizing, and responsive chat layouts enhance usability.
+-   **Authentication**: Supports multiple login methods: username/room number + password, phone number + SMS verification, and WeChat OAuth (QR code for PC, in-browser for mobile).
+-   **Session Management**: Employs a per-handler session pattern to prevent cross-request session pollution.
+-   **Chat System**: Real-time messaging with unread notifications, message search, and a draggable, responsive sidebar.
+-   **Product Management**: Features include product listing with instant image preview, multi-tag selection, and an optimized search function supporting multiple fields.
+-   **Order Workflow**: Simplified states: `pending`, `shipped`, `completed`. Includes seller-side unread order notifications.
+-   **Admin Dashboard**: A comprehensive administrative interface for user, product, and order management, including statistics and pagination, secured by `is_admin` flag.
+-   **Deployment**: Configured for Replit Autoscale with `python app.py --port=5000` as the run command and `/health` for health checks.
+-   **Core Concepts**:
+    -   **Room Number Identity**: Users are identified by a mandatory "room number" (e.g., '3-1-801') for all transactions and communications.
+    -   **Time Handling**: All timestamps are standardized to Beijing time (UTC+8), with client-side relative time display and automatic refresh.
+    -   **Security**: CSRF protection for OAuth, unique constraints on identifiers (phone, OpenID), and secure handling of sensitive data.
 
-### 已修复的问题
-1. ✅ 修复用户注册路由404问题 - 添加了 `/regist` 路由别名
-2. ✅ 修复密码重置路由404问题 - 添加了 `/forgot` 路由别名
-3. ✅ 优化注册页面UI - 全新现代化设计，响应式布局
-4. ✅ 数据库迁移 - 从MySQL成功迁移到PostgreSQL
-5. ✅ 环境配置 - 安装所有依赖并配置Replit工作流
-6. ✅ 用户登出功能 - 实现完整的登出逻辑，包括清除cookies、重定向和成功消息显示
-7. ✅ 订单页面NoneType错误修复 - 实现order-snapshot策略，添加seller_id快照字段，支持已删除商品的订单管理
-8. ✅ 强制用户名（房间号）设置 - 登录后必须设置楼号-单元号-房间号格式的用户名（如'3-1-801'），后续交易均使用此标识
-9. ✅ Session管理优化 - 修复scoped_session问题，使用per-handler Session()模式，避免跨请求session污染
-10. ✅ 搜索功能增强 - 支持同时搜索商品名称、描述、标签，修复过滤逻辑只排除已删除商品
-11. ✅ 时间戳优化 - 实现相对时间显示（"刚刚"、"5分钟前"），支持自动刷新和悬停显示完整时间
-12. ✅ 消息通知系统 - 实现未读消息红点提示，15秒自动刷新，脉冲动画效果
-13. ✅ 订单流程优化 - 简化订单状态流：pending → shipped → completed（确认订单=发货）
-14. ✅ 移动端响应式 - 所有页面均已适配移动设备，包括聊天室、主页、订单页面
-15. ✅ 右键菜单优化 - 完善边界检测，防止菜单超出屏幕
-
-### 本次会话新增功能（2025-11-17 & 2025-11-18 & 2025-11-18晚 & 2025-11-19 & 2025-11-20）
-16. ✅ **时区修复** - 所有时间戳统一使用北京时间（东8区），聊天消息显示相对时间
-17. ✅ **聊天室搜索** - 顶部搜索栏支持搜索聊天记录，高亮显示结果，Enter键切换
-18. ✅ **折叠按钮拖拽** - 聊天室侧边栏折叠按钮支持自由拖拽，位置保存到localStorage
-19. ✅ **游客浏览模式** - 未登录用户可以浏览商品列表（只读模式），带登录/注册引导，JS权限检查
-20. ✅ **WebSocket Session修复** - 修复ChatWebSocketHandler的Session泄漏问题，try/finally确保资源释放
-21. ✅ **手机号验证码登录** - 支持手机号+验证码登录，开发模式控制台输出验证码，5分钟过期，防重放攻击
-22. ✅ **管理员Dashboard系统** - 完整的管理后台：登录验证、统计数据、用户管理、商品管理、订单管理
-23. ✅ **根路径登录跳转** - 未登录用户访问根路径自动跳转到/login
-24. ✅ **统一登录页面** - 支持密码登录（用户名/房间号/手机号）+ 验证码登录双模式切换，添加管理员入口链接
-25. ✅ **阿里云短信服务** - 集成阿里云SMS API，支持真实短信发送，自动降级到开发模式
-26. ✅ **管理员功能全面测试** - 完成登录、Dashboard、用户/商品/订单管理、分页功能的完整测试，100%通过率
-27. ✅ **SSL连接池修复** - 配置pool_pre_ping=True和pool_recycle=3600，解决PostgreSQL空闲连接超时问题
-28. ✅ **JSON响应修复** - 所有管理员POST方法设置Content-Type: application/json，防止前端解析错误
-29. ✅ **订单详情页面** - 添加管理员订单详情查看(/admin/order/<id>)，支持从订单列表点击跳转
-30. ✅ **订单详情页面安全修复** - 修复模板total_price错误，添加完整None值检查，支持已删除商品、0价商品等边界情况
-35. ✅ **阿里云SDK安装** - 安装alibabacloud_dysmsapi20170525，手机验证码真正调用阿里云API（不再是开发模式）
-36. ✅ **验证码API路径修复** - 统一前后端API路径为/api/send_code，修复"网络错误"提示
-37. ✅ **SMTP邮件发送优化** - 优化send_email函数，支持SSL(465)/TLS(587)双模式，默认SSL适配QQ邮箱，增强错误日志
-38. ✅ **SMS/SMTP日志增强** - 添加print()强制输出到控制台，方便调试阿里云短信和SMTP邮件发送
-39. ✅ **生产环境验证** - 阿里云短信API和QQ邮箱SMTP均已验证成功工作（非开发模式）
-40. ✅ **SMTP降级机制** - 邮件发送失败时自动降级到开发模式（控制台输出重置链接和验证码）
-41. ✅ **商品标签多选功能** - 12个预设标签（电子产品、书籍、家具等），美观checkbox界面，支持多选，移动端响应式
-42. ✅ **移动端订单按钮优化** - 添加完整按钮样式（primary/success/danger），移动端44px最小高度，触控友好
-43. ✅ **卖家订单未读通知** - 主页"我的订单"按钮显示红色数字徽章，实时提醒卖家有新订单（pending状态），15秒自动刷新
-44. ✅ **订单页面图片统一** - 订单列表商品图片固定120x120px尺寸，移动端响应式调整为100%宽度
-45. ✅ **订单页面导航优化** - 添加"返回首页"按钮，改善页面导航体验
-
-### UI优化（2025-11-19）
-31. ✅ **登录页面错误提示优化** - 将错误/成功消息从页面底部移至表单顶部inline显示，带图标和渐入动画，移动端自适应，修复login.html重复消息显示
-32. ✅ **主页导航栏增强** - 在欢迎消息下方添加顶部导航栏，包含"发布商品"、"我的订单"、"退出登录"按钮，移动端仅显示图标
-33. ✅ **"我的商品"页面导航优化** - 增加快捷操作区（返回首页、发布商品、我的订单），提升导航便捷性
-34. ✅ **聊天室侧边栏响应式重构** - 桌面端支持拖拽调整宽度（200-400px，保存至localStorage），移动端(<768px)自动隐藏+浮动按钮唤起，遮罩层点击关闭，修复设备旋转和视口切换时的状态管理问题
-
-### 环境变量
-项目使用以下环境变量（由Replit自动配置）:
-- `DATABASE_URL` - PostgreSQL连接字符串
-- `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` - 数据库详细配置
-
-### MongoDB配置
-聊天功能使用MongoDB存储消息。配置方式：
-- 默认连接: `mongodb://localhost:27017/chat_db`
-- 可通过环境变量覆盖: `MONGODB_HOST`, `MONGODB_PORT`, `MONGODB_DATABASE`
-
-### 用户名（房间号）设置规则
-为了便于小区内部管理，所有用户登录后必须设置房间号：
-- **格式要求**: 楼号-单元号-房间号（例如：3-1-801，代表3幢1单元801室）
-- **唯一性**: 每个房间号全局唯一，一经设置即作为用户唯一标识
-- **强制性**: 首次登录后必须设置，否则无法访问其他功能
-- **显示规则**: 所有买卖交易、聊天消息显示的用户名均为房间号
-
-## 新增功能说明
-
-### 手机号验证码登录 + 密码重置
-- **阿里云短信集成**：已安装alibabacloud_dysmsapi20170525 SDK，真正调用阿里云API发送验证码
-- **验证码有效期**：5分钟（UTC存储，避免时区混淆）
-- **安全机制**：验证后标记为已使用，防止重放攻击
-- **自动注册**：未注册手机号自动创建账户
-- **环境变量**：ALIYUN_ACCESS_KEY_ID, ALIYUN_ACCESS_KEY_SECRET, ALIYUN_SMS_SIGN_NAME, ALIYUN_SMS_TEMPLATE_CODE
-- **开发降级**：如环境变量未配置或SDK报错，自动降级到开发模式（控制台输出验证码）
-
-### 邮箱密码重置
-- **SMTP配置**：支持SSL(465)/TLS(587)双模式，默认SSL适配QQ邮箱
-- **环境变量（可选）**：
-  - SMTP_SERVER（默认：smtp.qq.com）
-  - SMTP_PORT（默认：465）
-  - SMTP_USER（默认：363328084@qq.com）
-  - SMTP_PASSWORD（默认：jluwcomlwzycbieb - QQ邮箱授权码）
-  - SMTP_USE_SSL（默认：true）
-- **安全提示**：生产部署前，请将SMTP凭据改为环境变量，避免硬编码泄露
-
-### 管理员Dashboard (/admin/login)
-- **访问入口**：/admin/login（需要is_admin=1权限）
-- **权限控制**：AdminBaseHandler强制验证is_admin字段
-- **功能模块**：
-  - Dashboard：用户/商品/订单统计，最新数据展示
-  - 用户管理：启用/禁用账号，删除用户，分页显示（20条/页）
-  - 商品管理：删除/恢复商品，按状态筛选（全部/在售/已售完/已删除），分页显示
-  - 订单管理：查看所有订单，按状态筛选（全部/pending/shipped/completed），分页显示
-- **创建管理员**：直接在数据库中设置`xu_user.is_admin = 1`
-- **测试账号**：用户名=admin，密码=Zpepc001@，房间号=ADMIN-0-001
-- **测试报告**：详见 `ADMIN_TESTING_REPORT.md` - 端到端测试+代码审查，核心功能100%验证
-
-### 数据库更新
-新增表：
-- `xu_verification_code`：手机验证码存储（phone, code, created_at, expires_at, is_used）
-
-User表新增字段：
-- `phone`：手机号（unique）
-- `is_admin`：管理员标识（0=普通用户，1=管理员）
-- `is_active`：账户状态（0=禁用，1=正常）
-
-## 待完成的任务（低优先级）
-
-### 可选功能扩展
-- [x] 接入真实SMS服务 - 已完成阿里云短信服务集成（ALIYUN_ACCESS_KEY_ID等）
-- [ ] 添加搜索回归测试 - 确保搜索功能覆盖各种状态的商品
-- [ ] 管理员操作日志 - 记录管理员的所有操作行为
-- [ ] 管理员用户搜索 - 用户管理页面添加搜索框
-- [ ] 批量操作 - 支持批量禁用/删除用户或商品
-- [ ] 数据导出 - 支持导出用户/商品/订单数据为CSV
-
-### 已验证存在的功能
-- ✅ 商品图片上传即时预览和删除功能
-- ✅ 商品详情页编辑按钮（仅对商品所有者显示）
-- ✅ 聊天室UI布局和响应式设计
-- ✅ 右键菜单边界检测
-
-## 启动命令
-```bash
-# 初始化数据库表
-python init_db.py
-
-# 可选：迁移现有订单数据（添加seller_id快照）
-python migrate_orders_seller_id.py
-
-# 启动服务器（默认5000端口）
-python app.py --port=5000
-```
-
-## 部署配置（Autoscale）
-- **Run命令**: `python app.py --port=5000`
-- **绑定地址**: 0.0.0.0（自动配置）
-- **健康检查端点**: `/health` (返回 `{"status": "ok"}`)
-- **部署类型**: Autoscale（无状态自动扩缩容）
-
-### 部署修复说明（2025-11-18）
-已修复以下部署问题：
-1. ✅ 修复run命令中未定义的`$file`变量，改用明确的`python app.py --port=5000`
-2. ✅ app.py绑定地址从默认改为`0.0.0.0`以支持Autoscale
-3. ✅ 添加健康检查端点`/health`，在根路由之前注册避免冲突
-4. ✅ 默认端口从9000改为5000以匹配workflow和deployment配置
-
-## 项目结构
-```
-.
-├── app.py                  # 主应用入口
-├── init_db.py             # 数据库的初始化脚本
-├── config.ini             # 配置文件
-├── base/                  # 数据库基础配置
-├── models/                # 数据模型
-├── controllers/           # 业务控制器
-├── templates/             # HTML模板
-├── mystatics/            # 静态资源
-└── utils/                # 工具函数
-```
-
-## 核心功能特性
-
-### Session管理
-- **CRITICAL**: 使用per-handler Session()模式，在initialize()中创建，on_finish()中关闭
-- **禁止**: 不要使用scoped_session，会导致单线程Tornado环境中跨请求session污染
-
-### 搜索功能
-- 多字段OR搜索：Product.name、Product.description、Product.tag
-- 过滤逻辑：只排除 `Product.status != '已删除'`，包含在售和已售商品
-- Session管理：per-handler模式
-
-### 时间格式化
-- 工具文件：`mystatics/js/time_format.js`
-- 支持相对时间显示：刚刚、X分钟前、X小时前、X天前
-- 自动刷新：每分钟更新一次
-- 悬停提示：显示完整时间戳
-
-### 订单状态流程
-- **pending**: 买家创建订单
-- **shipped**: 卖家确认发货（旧状态"confirmed"已移除）
-- **completed**: 买家确认收货
-
-## 最后更新
-- 2025-11-15 - 初始Replit部署和基础问题修复
-- 2025-11-17 - Session管理优化、搜索增强、时间戳优化、消息通知、移动端适配
-- 2025-11-18 - 部署配置修复、阿里云短信集成、管理员功能测试（100%通过）
+## External Dependencies
+-   **PostgreSQL**: Primary relational database for user data, products, orders.
+-   **MongoDB**: NoSQL database specifically used for storing chat messages.
+-   **Redis**: Optional caching layer.
+-   **阿里云短信服务 (Alibaba Cloud SMS)**: Used for sending SMS verification codes during phone number login and password reset. Requires `ALIYUN_ACCESS_KEY_ID`, `ALIYUN_ACCESS_KEY_SECRET`, `ALIYUN_SMS_SIGN_NAME`, `ALIYUN_SMS_TEMPLATE_CODE`.
+-   **SMTP (Email Service)**: Used for password reset emails, supporting SSL/TLS. Configurable via `SMTP_SERVER`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_USE_SSL`. Defaults configured for QQ Mail.
+-   **WeChat Open Platform OAuth**: Integrated for WeChat login, requiring `WECHAT_APP_ID`, `WECHAT_APP_SECRET`, `WECHAT_REDIRECT_URI`.

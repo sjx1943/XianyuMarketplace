@@ -22,8 +22,11 @@ class User(Base):
     phone = Column(String(20), unique=True, nullable=True)
     is_admin = Column(Integer, default=0)
     is_active = Column(Integer, default=1)
+    wechat_openid = Column(String(255), unique=True, nullable=True)
+    wechat_nickname = Column(String(255), nullable=True)
+    wechat_avatar = Column(String(500), nullable=True)
 
-    def __init__(self, username, password, email, room_number=None, phone=None, is_admin=0):
+    def __init__(self, username, password, email, room_number=None, phone=None, is_admin=0, wechat_openid=None):
         self.username = username
         self.password = password
         self.email = email
@@ -31,6 +34,7 @@ class User(Base):
         self.phone = phone
         self.is_admin = is_admin
         self.is_active = 1
+        self.wechat_openid = wechat_openid
 
 
     def __repr__(self):

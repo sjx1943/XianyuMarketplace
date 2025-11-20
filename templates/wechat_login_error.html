@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信登录失败</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .error-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 40px;
+            text-align: center;
+            max-width: 450px;
+        }
+        .error-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #e74c3c;
+            margin: 0 0 20px;
+        }
+        .error-message {
+            color: #666;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #f8f8f8;
+            border-radius: 5px;
+            border-left: 4px solid #e74c3c;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .btn {
+            padding: 12px 24px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        .btn-secondary {
+            background: #eee;
+            color: #333;
+        }
+        .btn-secondary:hover {
+            background: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-icon">❌</div>
+        <h1>登录失败</h1>
+        <div class="error-message">
+            {{ error }}
+        </div>
+        <div class="actions">
+            <a href="/wechat/login" class="btn btn-primary">重新登录</a>
+            <a href="/login" class="btn btn-secondary">其他方式</a>
+        </div>
+    </div>
+</body>
+</html>

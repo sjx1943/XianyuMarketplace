@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信OAuth未配置</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        .config-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 40px;
+            max-width: 600px;
+        }
+        h1 {
+            color: #f39c12;
+            margin: 0 0 20px;
+        }
+        .warning-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        .config-instructions {
+            background: #fff3cd;
+            border-left: 4px solid #f39c12;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: 'Courier New', monospace;
+            color: #e74c3c;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #667eea;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="config-container">
+        <div class="warning-icon">⚠️</div>
+        <h1>微信OAuth未配置</h1>
+        
+        <div class="config-instructions">
+            <p><strong>请按以下步骤配置微信OAuth：</strong></p>
+            <ol>
+                <li>在Replit Secrets中添加以下环境变量：</li>
+            </ol>
+        </div>
+        
+        <pre><code>WECHAT_APP_ID=wx1234567890abcdef
+WECHAT_APP_SECRET=your_app_secret_here
+WECHAT_REDIRECT_URI=https://your-app.replit.app/wechat/callback</code></pre>
+        
+        <p><strong>详细配置说明：</strong></p>
+        <p>请查看项目根目录的 <code>WECHAT_OAUTH_SETUP.md</code> 文件获取完整配置指南。</p>
+        
+        <p><strong>错误信息：</strong></p>
+        <p style="color: #e74c3c;">{{ error }}</p>
+        
+        <a href="/login" class="back-link">← 返回登录页面</a>
+    </div>
+</body>
+</html>

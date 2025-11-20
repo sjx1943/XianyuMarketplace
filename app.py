@@ -13,6 +13,7 @@ from controllers.main_controller import MainHandler, MyStaticFileHandler
 # from controllers.message_details_controller import MessageDetailsHandler
 from controllers.auth_controller import LoginHandler, RegisterHandler, ForgotPasswordHandler, ResetPasswordHandler, LogoutHandler, SetRoomNumberHandler, Loginmodule, Registmodule, Forgotmodule
 from controllers.phone_auth_controller import PhoneLoginHandler, SendCodeHandler
+from controllers.wechat_oauth_controller import WeChatLoginHandler, WeChatCallbackHandler, WeChatUnbindHandler
 from controllers.product_controller import ProductUploadHandler, HomePageHandler, ProductDetailHandler, ProductListHandler, ElseHomePageHandler, UpdateProductStatusHandler, DeleteProductHandler, PhysicalDeleteProductHandler, AdminDashboardHandler, ProductEditHandler
 from controllers.admin_controller import AdminLoginHandler, AdminDashboardHandler as NewAdminDashboardHandler, AdminUserManagementHandler, AdminProductManagementHandler, AdminOrderManagementHandler, AdminOrderDetailHandler
 from controllers.chat_controller import ChatWebSocketHandler, ChatHandler, MessageAPIHandler, SendMessageAPIHandler, MarkMessagesReadHandler, DeleteMessagesHandler, UnreadCountHandler
@@ -99,6 +100,11 @@ def make_app():
         # 手机号登录
         (r"/phone_login", PhoneLoginHandler),
         (r"/api/send_code", SendCodeHandler),
+        
+        # 微信OAuth登录
+        (r"/wechat/login", WeChatLoginHandler),
+        (r"/wechat/callback", WeChatCallbackHandler),
+        (r"/api/wechat/unbind", WeChatUnbindHandler),
         
         # 管理员路由
         (r"/admin/login", AdminLoginHandler),
