@@ -115,7 +115,10 @@ function startChatPolling() {
 function fetchNewData() {
     if (!window.currentUserId) return;
     fetch(`/api/unread_count`)
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error('Network error');
+            return res.json();
+        })
         .then(data => {
             if (data.status === 'success') {
                 updateUnreadIndicators(data.counts || {});
@@ -123,6 +126,9 @@ function fetchNewData() {
                     fetchNewMessagesForCurrentChat();
                 }
             }
+        })
+        .catch(error => {
+            console.error('获取未读消息数量失败:', error);
         });
 }
 

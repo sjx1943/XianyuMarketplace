@@ -141,11 +141,14 @@ async function getUnreadMessageCount() {
     }
     try {
         const response = await fetch('/api/unread_count');
-        if (!response.ok) throw new Error('Network response was not ok');
+        if (!response.ok) {
+            // console.warn('获取未读消息失败 (HTTP ' + response.status + ')');
+            return;
+        }
         
         const data = await response.json();
         if (data.status !== 'success') {
-            console.error('Failed to get unread counts:', data.error);
+            // console.warn('获取未读消息失败:', data.error);
             return;
         }
 
@@ -168,7 +171,8 @@ async function getUnreadMessageCount() {
         document.dispatchEvent(event);
 
     } catch (error) {
-        console.error('获取未读消息数量失败:', error);
+        // 静默处理错误，避免控制台spam
+        // console.warn('获取未读消息数量失败:', error);
     }
 }
 

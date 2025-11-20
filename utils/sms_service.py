@@ -95,9 +95,9 @@ def create_verification_code(session: Session, phone: str):
     try:
         code = generate_verification_code()
         
-        # 使用北京时间（东8区）创建过期时间，与LoginHandler保持一致
-        beijing_tz = datetime.timezone(datetime.timedelta(hours=8))
-        expires_at = datetime.datetime.now(beijing_tz) + datetime.timedelta(minutes=5)
+        # 使用UTC时间存储（数据库标准做法），避免时区混淆
+        # 验证时转换为北京时间进行比较
+        expires_at = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=5)
         
         verification = VerificationCode(
             phone=phone,
@@ -117,6 +117,25 @@ def create_verification_code(session: Session, phone: str):
         logging.error(f"创建验证码失败: {e}")
         return None
 
+def normalize_verification_expiry(expires_at):
+    """
+    标准化验证码过期时间（UTC → Beijing）
+    
+    Args:
+        expires_at: 从数据库读取的过期时间（可能是naive或aware datetime）
+    
+    Returns:
+        datetime: 北京时区的aware datetime
+    """
+    beijing_tz = datetime.timezone(datetime.timedelta(hours=8))
+    
+    if expires_at.tzinfo is None:
+        # Naive datetime - 假设数据库存储的是UTC（标准做法）
+        return expires_at.replace(tzinfo=datetime.timezone.utc).astimezone(beijing_tz)
+    else:
+        # Aware datetime - 转换为北京时间
+        return expires_at.astimezone(beijing_tz)
+
 def verify_code(session: Session, phone: str, code: str):
     """
     验证手机号和验证码
@@ -130,9 +149,8 @@ def verify_code(session: Session, phone: str, code: str):
         bool: 验证是否成功
     """
     try:
-        # 使用北京时间（东8区）验证，与LoginHandler保持一致
-        beijing_tz = datetime.timezone(datetime.timedelta(hours=8))
-        now = datetime.datetime.now(beijing_tz)
+        # 使用UTC时间验证（与create_verification_code保持一致）
+        now = datetime.datetime.now(datetime.timezone.utc)
         
         verification = session.query(VerificationCode).filter(
             VerificationCode.phone == phone,
@@ -157,9 +175,8 @@ def cleanup_expired_codes(session: Session):
     清理过期的验证码（可以通过定时任务调用）
     """
     try:
-        # 使用北京时间（东8区）清理，与create_verification_code保持一致
-        beijing_tz = datetime.timezone(datetime.timedelta(hours=8))
-        now = datetime.datetime.now(beijing_tz)
+        # 使用UTC时间清理（与create_verification_code保持一致）
+        now = datetime.datetime.now(datetime.timezone.utc)
         
         expired = session.query(VerificationCode).filter(
             VerificationCode.expires_at < now

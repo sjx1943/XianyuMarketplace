@@ -43,6 +43,8 @@ class LoginHandler(tornado.web.RequestHandler):
         
         try:
             if login_type == "code":
+                from utils.sms_service import normalize_verification_expiry
+                
                 phone = self.get_argument("phone", "").strip()
                 code = self.get_argument("code", "").strip()
                 
@@ -50,8 +52,8 @@ class LoginHandler(tornado.web.RequestHandler):
                     self.render("login.html", message="", result="请输入手机号和验证码")
                     return
                 
-                beijing_tz = timezone(timedelta(hours=8))
-                now = datetime.now(beijing_tz)
+                # 使用UTC时间验证（标准做法，避免时区混淆）
+                now_utc = datetime.now(timezone.utc)
                 
                 verification = self.session.query(VerificationCode).filter_by(
                     phone=phone,
@@ -63,7 +65,14 @@ class LoginHandler(tornado.web.RequestHandler):
                     self.render("login.html", message="", result="验证码错误或已使用")
                     return
                 
-                if now > verification.expires_at.replace(tzinfo=beijing_tz):
+                # 标准化过期时间并验证（使用UTC比较）
+                expires_utc = verification.expires_at if verification.expires_at.tzinfo else verification.expires_at.replace(tzinfo=timezone.utc)
+                beijing_tz = timezone(timedelta(hours=8))
+                now_beijing = now_utc.astimezone(beijing_tz)
+                expires_beijing = normalize_verification_expiry(verification.expires_at)
+                logging.debug(f"登录验证码检查: now={now_beijing}, expires_at={expires_beijing}")
+                
+                if now_utc > expires_utc:
                     self.render("login.html", message="", result="验证码已过期")
                     return
                 
@@ -133,20 +142,51 @@ def generate_reset_token():
     return secrets.token_urlsafe(16)
 
 def send_email(to_email, subject, body):
-    """发送电子邮件的简单实现"""
-    msg = MIMEMultipart()
-    msg['From'] = '363328084@qq.com'
-    msg['To'] = to_email
-    msg['Subject'] = subject
-
-    msg.attach(MIMEText(body, 'plain'))
-
-    server = smtplib.SMTP('smtp.qq.com', 587)
-    server.starttls()
-    server.login('363328084@qq.com', 'jluwcomlwzycbieb')
-    text = msg.as_string()
-    server.sendmail('363328084@qq.com', to_email, text)
-    server.quit()
+    """
+    发送电子邮件，支持环境变量配置
+    
+    环境变量（可选）：
+    - SMTP_SERVER: SMTP服务器地址（默认：smtp.qq.com）
+    - SMTP_PORT: SMTP端口（默认：587）
+    - SMTP_USER: SMTP用户名/邮箱（默认：363328084@qq.com）
+    - SMTP_PASSWORD: SMTP密码/授权码（默认：jluwcomlwzycbieb）
+    """
+    import os
+    
+    smtp_server = os.environ.get('SMTP_SERVER', 'smtp.qq.com')
+    smtp_port = int(os.environ.get('SMTP_PORT', 587))
+    smtp_user = os.environ.get('SMTP_USER', '363328084@qq.com')
+    smtp_password = os.environ.get('SMTP_PASSWORD', 'jluwcomlwzycbieb')
+    
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = smtp_user
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain', 'utf-8'))
+        
+        # 连接SMTP服务器
+        server = smtplib.SMTP(smtp_server, smtp_port, timeout=10)
+        server.starttls()
+        server.login(smtp_user, smtp_password)
+        
+        # 发送邮件
+        text = msg.as_string()
+        server.sendmail(smtp_user, to_email, text)
+        server.quit()
+        
+        logging.info(f"邮件发送成功: {to_email}")
+        return True
+        
+    except smtplib.SMTPAuthenticationError as e:
+        logging.error(f"SMTP认证失败: {e}")
+        raise Exception("邮箱认证失败，请检查SMTP配置")
+    except smtplib.SMTPException as e:
+        logging.error(f"SMTP错误: {e}")
+        raise Exception(f"邮件发送失败: {str(e)}")
+    except Exception as e:
+        logging.error(f"邮件发送异常: {e}")
+        raise Exception(f"邮件发送失败: {str(e)}")
 
 
 def send_reset_email(email, reset_token, base_url=None):
@@ -184,19 +224,102 @@ class ForgotPasswordHandler(tornado.web.RequestHandler):
     def get(self):
         ms = self.get_argument('message',default=None)
         self.render("forgot_password.html",result=ms)
+    
     def post(self):
-        email = self.get_argument("email")
-        user = self.session.query(User).filter_by(email=email).first()
-        if user is not None:
-            reset_token = generate_reset_token()
-            user.reset_token = reset_token
-            self.session.commit()
-            # 获取当前请求的域名
-            base_url = f"{self.request.protocol}://{self.request.host}"
-            send_reset_email(email, reset_token, base_url)
-            self.render("token_input.html", result="请输入您的邮箱中的验证码和新密码")
-        else:
-            self.render("forgot_password.html", result="未查到关联邮箱，请核实后输入正确邮箱")
+        from models.verification_code import VerificationCode
+        from datetime import datetime, timezone, timedelta
+        import hashlib
+        
+        reset_type = self.get_argument("reset_type", "email")
+        
+        try:
+            if reset_type == "phone":
+                # 手机号+验证码重置密码
+                phone = self.get_argument("phone", "").strip()
+                code = self.get_argument("code", "").strip()
+                new_password = self.get_argument("new_password", "").strip()
+                confirm_password = self.get_argument("confirm_password", "").strip()
+                
+                if not phone or not code or not new_password:
+                    self.render("forgot_password.html", result="请填写所有必填项")
+                    return
+                
+                if new_password != confirm_password:
+                    self.render("forgot_password.html", result="两次输入的密码不一致")
+                    return
+                
+                # 验证验证码（使用UTC时间，避免时区混淆）
+                from utils.sms_service import normalize_verification_expiry
+                
+                now_utc = datetime.now(timezone.utc)
+                
+                verification = self.session.query(VerificationCode).filter_by(
+                    phone=phone,
+                    code=code,
+                    is_used=0
+                ).first()
+                
+                if not verification:
+                    self.render("forgot_password.html", result="验证码错误或已使用")
+                    return
+                
+                # 标准化过期时间（UTC → Beijing，用于用户友好的日志）
+                beijing_tz = timezone(timedelta(hours=8))
+                now_beijing = now_utc.astimezone(beijing_tz)
+                verification_expires_beijing = normalize_verification_expiry(verification.expires_at)
+                
+                logging.debug(f"验证码过期时间检查: now={now_beijing}, expires_at={verification_expires_beijing}")
+                
+                # 使用UTC时间比较（避免时区混淆）
+                expires_utc = verification.expires_at if verification.expires_at.tzinfo else verification.expires_at.replace(tzinfo=timezone.utc)
+                if now_utc > expires_utc:
+                    self.render("forgot_password.html", result="验证码已过期")
+                    return
+                
+                # 查找用户并重置密码
+                user = self.session.query(User).filter_by(phone=phone).first()
+                if not user:
+                    self.render("forgot_password.html", result="该手机号未注册")
+                    return
+                
+                # 标记验证码已使用并更新密码（使用hash_password加密）
+                verification.is_used = 1
+                user.password = hash_password(new_password)
+                
+                # CRITICAL: 提交事务保存密码和验证码状态
+                self.session.commit()
+                
+                logging.info(f"手机号重置密码成功: {phone}")
+                self.render("password_reset_success.html")
+            
+            else:
+                # 邮箱重置密码（原有逻辑）
+                email = self.get_argument("email")
+                user = self.session.query(User).filter_by(email=email).first()
+                if user is not None:
+                    reset_token = generate_reset_token()
+                    user.reset_token = reset_token
+                    self.session.commit()
+                    
+                    try:
+                        # 获取当前请求的域名
+                        base_url = f"{self.request.protocol}://{self.request.host}"
+                        send_reset_email(email, reset_token, base_url)
+                        logging.info(f"邮箱重置密码邮件已发送: {email}")
+                        self.render("token_input.html", result="请输入您的邮箱中的验证码和新密码")
+                    except Exception as e:
+                        logging.error(f"发送重置邮件失败: {e}")
+                        # 失败时清除reset_token，避免用户无法重新请求
+                        user.reset_token = None
+                        self.session.commit()
+                        self.render("forgot_password.html", result="发送邮件失败，请稍后重试或联系管理员")
+                else:
+                    self.render("forgot_password.html", result="未查到关联邮箱，请核实后输入正确邮箱")
+        
+        except Exception as e:
+            logging.error(f"密码重置错误: {e}")
+            self.session.rollback()
+            self.render("forgot_password.html", result=f"重置失败: {str(e)}")
 
 
 
