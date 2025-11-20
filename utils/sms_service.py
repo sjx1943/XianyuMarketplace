@@ -95,7 +95,9 @@ def create_verification_code(session: Session, phone: str):
     try:
         code = generate_verification_code()
         
-        expires_at = datetime.datetime.now() + datetime.timedelta(minutes=5)
+        # 使用北京时间（东8区）创建过期时间，与LoginHandler保持一致
+        beijing_tz = datetime.timezone(datetime.timedelta(hours=8))
+        expires_at = datetime.datetime.now(beijing_tz) + datetime.timedelta(minutes=5)
         
         verification = VerificationCode(
             phone=phone,
@@ -128,7 +130,9 @@ def verify_code(session: Session, phone: str, code: str):
         bool: 验证是否成功
     """
     try:
-        now = datetime.datetime.now()
+        # 使用北京时间（东8区）验证，与LoginHandler保持一致
+        beijing_tz = datetime.timezone(datetime.timedelta(hours=8))
+        now = datetime.datetime.now(beijing_tz)
         
         verification = session.query(VerificationCode).filter(
             VerificationCode.phone == phone,
