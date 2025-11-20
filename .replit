@@ -39,7 +39,7 @@ localPort = 40271
 externalPort = 3001
 
 [[ports]]
-localPort = 46733
+localPort = 45645
 externalPort = 3002
 
 [nix]

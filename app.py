@@ -19,7 +19,7 @@ from controllers.chat_controller import ChatWebSocketHandler, ChatHandler, Messa
 from controllers.friend_profile_controller import FriendProfileHandler, DeleteFriendHandler, InitiateChatHandler, BlockFriendHandler
 from controllers.search_controller import SearchHandler
 from controllers.comment_controller import CommentHandler, ProductRatingHandler
-from controllers.order_controller import OrderHandler, CreateOrderHandler, ConfirmTransactionHandler
+from controllers.order_controller import OrderHandler, CreateOrderHandler, ConfirmTransactionHandler, UnreadOrdersCountHandler
 from motor import motor_tornado
 import redis
 from models.friendship import Friendship
@@ -123,6 +123,7 @@ def make_app():
         (r"/orders/([0-9]+)", OrderHandler),
         (r"/create_order", CreateOrderHandler),
         (r"/api/order/([0-9]+)/confirm", ConfirmTransactionHandler),
+        (r"/api/unread_orders_count", UnreadOrdersCountHandler),
 
         # 商品状态相关路由
         (r"/api/product/([0-9]+)/status", UpdateProductStatusHandler),

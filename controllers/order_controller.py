@@ -449,3 +449,43 @@ class ConfirmTransactionHandler(tornado.web.RequestHandler):
             self.write(json.dumps({'success': False, 'error': str(e)}))
         finally:
             self.session.close()
+
+
+class UnreadOrdersCountHandler(tornado.web.RequestHandler):
+    """获取卖家未读订单数量（pending状态的订单）"""
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def get_current_user(self):
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return self.session.query(User).filter_by(id=int(user_id)).first()
+        return None
+    
+    def get(self):
+        """返回当前用户作为卖家的未读订单数量"""
+        try:
+            user = self.get_current_user()
+            if not user:
+                self.write(json.dumps({'success': False, 'count': 0}))
+                return
+            
+            # 查询当前用户作为卖家的pending状态订单数量
+            unread_count = self.session.query(Order).filter(
+                Order.seller_id == user.id,
+                Order.status == 'pending'
+            ).count()
+            
+            self.set_header('Content-Type', 'application/json')
+            self.write(json.dumps({
+                'success': True,
+                'count': unread_count
+            }))
+            
+        except Exception as e:
+            self.set_header('Content-Type', 'application/json')
+            self.write(json.dumps({'success': False, 'count': 0, 'error': str(e)}))
+    
+    def on_finish(self):
+        self.session.close()
