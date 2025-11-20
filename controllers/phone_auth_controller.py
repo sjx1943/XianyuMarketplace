@@ -20,6 +20,7 @@ class SendCodeHandler(tornado.web.RequestHandler):
             self.session.close()
     
     async def post(self):
+        self.set_header('Content-Type', 'application/json')
         try:
             data = json.loads(self.request.body)
             phone = data.get('phone', '').strip()
@@ -64,6 +65,7 @@ class PhoneLoginHandler(tornado.web.RequestHandler):
     
     async def post(self):
         """验证码登录"""
+        self.set_header('Content-Type', 'application/json')
         try:
             data = json.loads(self.request.body)
             phone = data.get('phone', '').strip()

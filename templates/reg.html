@@ -1,14 +1,5 @@
 {%extends base.html%}
 {%block title%}注册 - 小区二手交易平台{%end%}
 {%block body%}
-{%module registmodule() %}
-
-{% if result %}
-    <div style="max-width: 450px; margin: 20px auto;">
-        <div style="padding: 12px 20px; border-radius: 6px; text-align: center; font-weight: 500; {% if '成功' in result %}color: #28a745; background-color: #d4edda; border: 1px solid #c3e6cb;{% else %}color: #dc3545; background-color: #f8d7da; border: 1px solid #f5c6cb;{% end %}">
-            {{ result }}
-        </div>
-    </div>
-{% end %}
-
+{%module registmodule(result=result) %}
 {%end%}

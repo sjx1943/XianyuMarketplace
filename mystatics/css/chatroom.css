@@ -278,7 +278,7 @@ body.is-resizing {
 /* --- Input Area --- */
 #message-input-area {
     flex-shrink: 0;
-    padding: 10px 15px 8px 15px; /* 减少底部内边距，使输入框更贴近底部边缘 */
+    padding: 10px 15px 10px 15px; /* 保留适当间距，确保在flexbox中完全铺开 */
     background-color: #f0f2f5;
     border-top: 1px solid #d1d7de;
     display: flex;

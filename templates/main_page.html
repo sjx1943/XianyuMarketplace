@@ -32,6 +32,15 @@
                     <span class="nav-icon">📋</span>
                     <span class="nav-text">我的订单</span>
                 </a>
+                <a href="/chat_room?user_id={{ user_id }}" id="my-messages-link" class="nav-btn messages-btn">
+                    <span class="nav-icon">💬</span>
+                    <span class="nav-text">消息</span>
+                    <span id="unread-count" class="unread-count" style="display: none;"></span>
+                </a>
+                <a href="/home_page" class="nav-btn account-btn">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-text">账户管理</span>
+                </a>
                 <a href="/logout" class="nav-btn logout-btn">
                     <span class="nav-icon">🚪</span>
                     <span class="nav-text">退出登录</span>
@@ -70,4 +79,5 @@
 
 <script src="{{ static_url('js/main.js') }}"></script>
 <script src="{{ static_url('js/search.js') }}"></script>
+<script src="{{ static_url('js/unread_notification.js') }}"></script>
 {% end %}
