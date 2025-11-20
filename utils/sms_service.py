@@ -157,7 +157,9 @@ def cleanup_expired_codes(session: Session):
     清理过期的验证码（可以通过定时任务调用）
     """
     try:
-        now = datetime.datetime.now()
+        # 使用北京时间（东8区）清理，与create_verification_code保持一致
+        beijing_tz = datetime.timezone(datetime.timedelta(hours=8))
+        now = datetime.datetime.now(beijing_tz)
         
         expired = session.query(VerificationCode).filter(
             VerificationCode.expires_at < now

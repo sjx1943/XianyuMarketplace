@@ -279,47 +279,103 @@ function updateUnreadIndicators(counts) {
 function initMessageContextMenu() {
     const contextMenu = document.getElementById('message-context-menu');
     const messageContent = document.getElementById('message-content');
+    let longPressTimer = null;
+    let touchTriggered = false;
 
-    document.addEventListener('click', () => contextMenu.style.display = 'none');
+    // 关闭菜单（避免与移动端touch事件冲突）
+    document.addEventListener('click', (e) => {
+        // 如果是touch触发的click，跳过（防止菜单立即关闭）
+        if (touchTriggered) {
+            touchTriggered = false;
+            return;
+        }
+        contextMenu.style.display = 'none';
+    });
 
+    // 显示右键菜单的通用函数
+    const showContextMenu = function(targetMessage, clientX, clientY) {
+        if (!targetMessage) return;
+        
+        // 清除所有其他消息的选中状态
+        document.querySelectorAll('.message.selected').forEach(msg => {
+            msg.classList.remove('selected');
+        });
+        
+        // 设置当前消息为选中状态（不使用toggle）
+        targetMessage.classList.add('selected');
+        
+        // 先显示菜单以获取正确的尺寸
+        contextMenu.style.display = 'block';
+        contextMenu.style.visibility = 'hidden'; // 先隐藏视觉上，但仍然占据空间以便测量
+        
+        // Calculate menu position based on message element and container boundaries
+        const messageRect = targetMessage.getBoundingClientRect();
+        const containerRect = messageContent.getBoundingClientRect();
+        const menuWidth = contextMenu.offsetWidth;
+        const menuHeight = contextMenu.offsetHeight;
+        
+        // Default to right side of message
+        let menuLeft = messageRect.right + 5;
+        
+        // Check if menu would go beyond right boundary
+        if (menuLeft + menuWidth > containerRect.right) {
+            // Position menu to the left of message instead
+            menuLeft = messageRect.left - menuWidth - 5;
+        }
+        
+        // Ensure menu stays within container horizontally
+        menuLeft = Math.max(containerRect.left, Math.min(menuLeft, containerRect.right - menuWidth));
+        
+        // Position menu vertically at center of message
+        let menuTop = messageRect.top + (messageRect.height / 2) - (menuHeight / 2);
+        
+        // Ensure menu stays within container vertically
+        menuTop = Math.max(containerRect.top, Math.min(menuTop, containerRect.bottom - menuHeight));
+        
+        // 设置位置后再显示
+        contextMenu.style.visibility = 'visible';
+        contextMenu.style.left = `${menuLeft}px`;
+        contextMenu.style.top = `${menuTop}px`;
+    };
+
+    // 桌面端右键菜单
     messageContent.addEventListener('contextmenu', function(e) {
         const targetMessage = e.target.closest('.message');
         if (targetMessage) {
             e.preventDefault();
-            targetMessage.classList.toggle('selected');
-            
-            // 先显示菜单以获取正确的尺寸
-            contextMenu.style.display = 'block';
-            contextMenu.style.visibility = 'hidden'; // 先隐藏视觉上，但仍然占据空间以便测量
-            
-            // Calculate menu position based on message element and container boundaries
-            const messageRect = targetMessage.getBoundingClientRect();
-            const containerRect = messageContent.getBoundingClientRect();
-            const menuWidth = contextMenu.offsetWidth;
-            const menuHeight = contextMenu.offsetHeight;
-            
-            // Default to right side of message
-            let menuLeft = messageRect.right + 5;
-            
-            // Check if menu would go beyond right boundary
-            if (menuLeft + menuWidth > containerRect.right) {
-                // Position menu to the left of message instead
-                menuLeft = messageRect.left - menuWidth - 5;
+            showContextMenu(targetMessage, e.clientX, e.clientY);
+        }
+    });
+
+    // 移动端长按支持（500ms）
+    messageContent.addEventListener('touchstart', function(e) {
+        const targetMessage = e.target.closest('.message');
+        if (!targetMessage) return;
+        
+        longPressTimer = setTimeout(() => {
+            const touch = e.touches[0];
+            showContextMenu(targetMessage, touch.clientX, touch.clientY);
+            touchTriggered = true; // 标记为touch触发，防止click事件关闭菜单
+            // 触发震动反馈（如果设备支持）
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
             }
-            
-            // Ensure menu stays within container horizontally
-            menuLeft = Math.max(containerRect.left, Math.min(menuLeft, containerRect.right - menuWidth));
-            
-            // Position menu vertically at center of message
-            let menuTop = messageRect.top + (messageRect.height / 2) - (menuHeight / 2);
-            
-            // Ensure menu stays within container vertically
-            menuTop = Math.max(containerRect.top, Math.min(menuTop, containerRect.bottom - menuHeight));
-            
-            // 设置位置后再显示
-            contextMenu.style.visibility = 'visible';
-            contextMenu.style.left = `${menuLeft}px`;
-            contextMenu.style.top = `${menuTop}px`;
+        }, 500);
+    });
+
+    messageContent.addEventListener('touchend', () => {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+        // 延迟重置touchTriggered标志，给click事件处理留出时间
+        setTimeout(() => touchTriggered = false, 300);
+    });
+
+    messageContent.addEventListener('touchmove', () => {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
         }
     });
 
