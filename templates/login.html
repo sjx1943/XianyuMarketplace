@@ -1,5 +1,7 @@
 {%extends base.html%}
 {%block title%}logintest{%end%}
 {%block body%}
-{%module loginmodule()%}
+<!-- 确保XSRF cookie存在 -->
+<div style="display:none;">{% module xsrf_form_html() %}</div>
+{%module loginmodule(result=result)%}
 {%end%}
