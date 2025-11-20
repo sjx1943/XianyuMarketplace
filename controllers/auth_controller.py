@@ -160,6 +160,14 @@ def send_email(to_email, subject, body):
     smtp_password = os.environ.get('SMTP_PASSWORD', 'jluwcomlwzycbieb')
     use_ssl = os.environ.get('SMTP_USE_SSL', 'True').lower() in ['true', '1', 'yes']
     
+    print("=" * 50)
+    print(f"📧 准备发送邮件")
+    print(f"收件人: {to_email}")
+    print(f"服务器: {smtp_server}:{smtp_port}")
+    print(f"SSL模式: {use_ssl}")
+    print(f"发件人: {smtp_user}")
+    print("=" * 50)
+    
     try:
         msg = MIMEMultipart()
         msg['From'] = smtp_user
@@ -167,37 +175,49 @@ def send_email(to_email, subject, body):
         msg['Subject'] = subject
         msg.attach(MIMEText(body, 'plain', 'utf-8'))
         
-        logging.info(f"尝试发送邮件: {to_email} (服务器:{smtp_server}:{smtp_port}, SSL:{use_ssl})")
+        logging.info(f"🚀 尝试发送邮件: {to_email} (服务器:{smtp_server}:{smtp_port}, SSL:{use_ssl})")
         
         # 根据配置选择SSL或TLS连接
         if use_ssl:
             # SSL连接（端口465，QQ邮箱推荐）
+            logging.info("使用SMTP_SSL连接...")
             server = smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=15)
         else:
             # TLS连接（端口587）
+            logging.info("使用SMTP+STARTTLS连接...")
             server = smtplib.SMTP(smtp_server, smtp_port, timeout=15)
             server.starttls()
         
         # 登录
+        logging.info(f"登录SMTP服务器: {smtp_user}")
         server.login(smtp_user, smtp_password)
         
         # 发送邮件
+        logging.info("发送邮件内容...")
         text = msg.as_string()
         server.sendmail(smtp_user, to_email, text)
         server.quit()
         
         logging.info(f"✅ 邮件发送成功: {to_email}")
+        print(f"✅ 邮件已成功发送到: {to_email}")
         return True
         
     except smtplib.SMTPAuthenticationError as e:
         logging.error(f"❌ SMTP认证失败: {e}")
+        logging.error(f"   用户名: {smtp_user}")
+        logging.error(f"   服务器: {smtp_server}:{smtp_port}")
         logging.error(f"   请检查: 1) QQ邮箱授权码是否正确 2) 是否开启了SMTP服务")
+        print(f"❌ SMTP认证失败: {e}")
         raise Exception("邮箱认证失败，请检查授权码是否正确")
     except smtplib.SMTPException as e:
-        logging.error(f"❌ SMTP错误: {e}")
+        logging.error(f"❌ SMTP协议错误: {e}")
+        print(f"❌ SMTP错误: {e}")
         raise Exception(f"邮件发送失败: {str(e)}")
     except Exception as e:
         logging.error(f"❌ 邮件发送异常: {type(e).__name__}: {e}")
+        import traceback
+        logging.error(f"详细错误:\n{traceback.format_exc()}")
+        print(f"❌ 邮件发送异常: {e}")
         raise Exception(f"邮件发送失败: {str(e)}")
 
 

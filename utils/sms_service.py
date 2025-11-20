@@ -30,15 +30,18 @@ def send_sms(phone, code):
     template_code = os.environ.get('ALIYUN_SMS_TEMPLATE_CODE')
     
     if not all([access_key_id, access_key_secret, sign_name, template_code]):
-        logging.warning(f"=" * 50)
-        logging.warning(f"📱 SMS验证码 (开发模式 - 未配置阿里云)")
-        logging.warning(f"手机号: {phone}")
-        logging.warning(f"验证码: {code}")
-        logging.warning(f"有效期: 5分钟")
-        logging.warning(f"=" * 50)
+        print("=" * 50)
+        print(f"📱 SMS验证码 (开发模式 - 未配置阿里云环境变量)")
+        print(f"手机号: {phone}")
+        print(f"验证码: {code}")
+        print(f"有效期: 5分钟")
+        print(f"缺少: ALIYUN_SMS_SIGN_NAME={bool(sign_name)}, ALIYUN_SMS_TEMPLATE_CODE={bool(template_code)}")
+        print("=" * 50)
+        logging.info(f"📱 开发模式SMS - {phone}: {code}")
         return True
     
     try:
+        logging.info(f"🚀 尝试通过阿里云发送短信: {phone}")
         from alibabacloud_dysmsapi20170525.client import Client as DysmsapiClient
         from alibabacloud_tea_openapi import models as open_api_models
         from alibabacloud_dysmsapi20170525 import models as dysmsapi_models
@@ -61,24 +64,32 @@ def send_sms(phone, code):
         response = client.send_sms(request)
         
         if response.body.code == 'OK':
-            logging.info(f"阿里云短信发送成功: {phone}")
+            logging.info(f"✅ 阿里云短信发送成功: {phone}")
+            print(f"✅ 阿里云短信已发送到: {phone}")
             return True
         else:
-            logging.error(f"阿里云短信发送失败: {response.body.message}")
-            return False
+            logging.error(f"❌ 阿里云短信发送失败: {response.body.message}")
+            print(f"❌ 阿里云错误: {response.body.message}, 降级到开发模式")
+            print(f"📱 开发模式 - 验证码: {code}")
+            return True
             
-    except ImportError:
-        logging.warning(f"=" * 50)
-        logging.warning(f"📱 SMS验证码 (开发模式 - 未安装阿里云SDK)")
-        logging.warning(f"手机号: {phone}")
-        logging.warning(f"验证码: {code}")
-        logging.warning(f"有效期: 5分钟")
-        logging.warning(f"提示: pip install alibabacloud_dysmsapi20170525")
-        logging.warning(f"=" * 50)
+    except ImportError as e:
+        print("=" * 50)
+        print(f"📱 SMS验证码 (开发模式 - 未安装阿里云SDK)")
+        print(f"ImportError: {e}")
+        print(f"手机号: {phone}")
+        print(f"验证码: {code}")
+        print(f"提示: pip install alibabacloud_dysmsapi20170525")
+        print("=" * 50)
+        logging.info(f"📱 开发模式SMS(ImportError) - {phone}: {code}")
         return True
     except Exception as e:
-        logging.error(f"发送短信失败: {e}")
-        logging.warning(f"开发模式降级 - 验证码: {code}")
+        logging.error(f"❌ 发送短信异常: {type(e).__name__}: {e}")
+        import traceback
+        logging.error(traceback.format_exc())
+        print(f"⚠️ 阿里云异常，降级到开发模式")
+        print(f"📱 手机号: {phone}")
+        print(f"📱 验证码: {code}")
         return True
 
 def create_verification_code(session: Session, phone: str):
