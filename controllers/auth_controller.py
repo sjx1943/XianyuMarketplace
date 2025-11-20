@@ -168,6 +168,7 @@ def send_email(to_email, subject, body):
     print(f"发件人: {smtp_user}")
     print("=" * 50)
     
+    server = None
     try:
         msg = MIMEMultipart()
         msg['From'] = smtp_user
@@ -176,30 +177,37 @@ def send_email(to_email, subject, body):
         msg.attach(MIMEText(body, 'plain', 'utf-8'))
         
         logging.info(f"🚀 尝试发送邮件: {to_email} (服务器:{smtp_server}:{smtp_port}, SSL:{use_ssl})")
+        print(f"🚀 开始SMTP连接...")
         
         # 根据配置选择SSL或TLS连接
         if use_ssl:
             # SSL连接（端口465，QQ邮箱推荐）
+            print("📡 使用SMTP_SSL连接...")
             logging.info("使用SMTP_SSL连接...")
             server = smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=15)
         else:
             # TLS连接（端口587）
+            print("📡 使用SMTP+STARTTLS连接...")
             logging.info("使用SMTP+STARTTLS连接...")
             server = smtplib.SMTP(smtp_server, smtp_port, timeout=15)
             server.starttls()
         
         # 登录
+        print(f"🔑 登录SMTP服务器: {smtp_user}")
         logging.info(f"登录SMTP服务器: {smtp_user}")
         server.login(smtp_user, smtp_password)
         
         # 发送邮件
+        print("📤 发送邮件内容...")
         logging.info("发送邮件内容...")
         text = msg.as_string()
         server.sendmail(smtp_user, to_email, text)
+        
+        print(f"✅ SMTP发送完成，关闭连接...")
         server.quit()
         
+        print(f"✅ 邮件真正发送成功到: {to_email}")
         logging.info(f"✅ 邮件发送成功: {to_email}")
-        print(f"✅ 邮件已成功发送到: {to_email}")
         return True
         
     except smtplib.SMTPAuthenticationError as e:

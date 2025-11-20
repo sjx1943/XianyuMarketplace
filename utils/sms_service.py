@@ -41,7 +41,9 @@ def send_sms(phone, code):
         return True
     
     try:
+        print(f"🚀 尝试通过阿里云发送短信: {phone}")
         logging.info(f"🚀 尝试通过阿里云发送短信: {phone}")
+        
         from alibabacloud_dysmsapi20170525.client import Client as DysmsapiClient
         from alibabacloud_tea_openapi import models as open_api_models
         from alibabacloud_dysmsapi20170525 import models as dysmsapi_models
@@ -61,16 +63,18 @@ def send_sms(phone, code):
             template_param=f'{{"code":"{code}"}}'
         )
         
+        print(f"📞 调用阿里云API: phone={phone}, sign={sign_name}, template={template_code}")
         response = client.send_sms(request)
+        print(f"📨 阿里云响应: Code={response.body.code}, Message={response.body.message}")
         
         if response.body.code == 'OK':
+            print(f"✅ 阿里云短信真正发送成功到: {phone}")
             logging.info(f"✅ 阿里云短信发送成功: {phone}")
-            print(f"✅ 阿里云短信已发送到: {phone}")
             return True
         else:
+            print(f"❌ 阿里云API返回错误: {response.body.message}")
             logging.error(f"❌ 阿里云短信发送失败: {response.body.message}")
-            print(f"❌ 阿里云错误: {response.body.message}, 降级到开发模式")
-            print(f"📱 开发模式 - 验证码: {code}")
+            print(f"📱 降级到开发模式 - 验证码: {code}")
             return True
             
     except ImportError as e:
@@ -84,12 +88,16 @@ def send_sms(phone, code):
         logging.info(f"📱 开发模式SMS(ImportError) - {phone}: {code}")
         return True
     except Exception as e:
+        print("=" * 50)
+        print(f"⚠️ 阿里云API调用异常，降级到开发模式")
+        print(f"异常类型: {type(e).__name__}")
+        print(f"异常信息: {e}")
+        print(f"手机号: {phone}")
+        print(f"📱 开发模式验证码: {code}")
+        print("=" * 50)
         logging.error(f"❌ 发送短信异常: {type(e).__name__}: {e}")
         import traceback
         logging.error(traceback.format_exc())
-        print(f"⚠️ 阿里云异常，降级到开发模式")
-        print(f"📱 手机号: {phone}")
-        print(f"📱 验证码: {code}")
         return True
 
 def create_verification_code(session: Session, phone: str):
