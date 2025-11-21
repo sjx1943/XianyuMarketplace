@@ -1,0 +1,317 @@
+// pages/chat/room.js
+const api = require('../../utils/api.js')
+const app = getApp()
+
+Page({
+  data: {
+    friendId: null,
+    productId: null,
+    orderId: null,
+    messages: [],
+    inputText: '',
+    scrollToView: '',
+    currentUserId: null,
+    myAvatar: '',
+    friendAvatar: '',
+    loading: false,
+    socketConnected: false
+  },
+
+  onLoad(options) {
+    const { friendId, productId, orderId } = options
+    
+    if (!friendId) {
+      wx.showToast({
+        title: '参数错误',
+        icon: 'none'
+      })
+      setTimeout(() => wx.navigateBack(), 1500)
+      return
+    }
+
+    const userInfo = wx.getStorageSync('userInfo')
+    if (!userInfo) {
+      wx.navigateTo({
+        url: '/pages/login/login'
+      })
+      return
+    }
+
+    this.setData({
+      friendId,
+      productId,
+      orderId,
+      currentUserId: userInfo.id,
+      myAvatar: userInfo.wechat_avatar || '/images/default-avatar.png'
+    })
+
+    this.loadChatHistory()
+    this.connectWebSocket()
+    
+    // 标记消息为已读
+    this.markAsRead()
+  },
+
+  onUnload() {
+    this.closeWebSocket()
+  },
+
+  // 加载聊天记录
+  async loadChatHistory() {
+    try {
+      this.setData({ loading: true })
+
+      const data = await api.request({
+        url: '/api/chat/history',
+        method: 'GET',
+        data: {
+          friend_id: this.data.friendId,
+          limit: 50
+        }
+      })
+
+      if (data.success) {
+        this.setData({
+          messages: data.messages || [],
+          friendAvatar: data.friend_avatar || '/images/default-avatar.png',
+          loading: false
+        })
+
+        // 滚动到底部
+        this.scrollToBottom()
+      }
+    } catch (error) {
+      console.error('加载聊天记录失败:', error)
+      this.setData({ loading: false })
+    }
+  },
+
+  // 连接WebSocket
+  connectWebSocket() {
+    const config = require('../../utils/config.js')
+    const token = wx.getStorageSync('token')
+    
+    const socketUrl = `${config.WS_BASE}/ws/chat?token=${token}`
+    
+    wx.connectSocket({
+      url: socketUrl,
+      success: () => {
+        console.log('WebSocket连接中...')
+      },
+      fail: (err) => {
+        console.error('WebSocket连接失败:', err)
+        wx.showToast({
+          title: '连接失败，请重试',
+          icon: 'none'
+        })
+      }
+    })
+
+    wx.onSocketOpen(() => {
+      console.log('WebSocket已连接')
+      this.setData({ socketConnected: true })
+    })
+
+    wx.onSocketMessage((res) => {
+      try {
+        const message = JSON.parse(res.data)
+        
+        // 只接收来自当前好友的消息
+        if (message.sender_id === this.data.friendId) {
+          this.addMessage(message)
+          this.markAsRead()
+        }
+      } catch (error) {
+        console.error('解析消息失败:', error)
+      }
+    })
+
+    wx.onSocketError((err) => {
+      console.error('WebSocket错误:', err)
+      this.setData({ socketConnected: false })
+    })
+
+    wx.onSocketClose(() => {
+      console.log('WebSocket已关闭')
+      this.setData({ socketConnected: false })
+    })
+  },
+
+  // 关闭WebSocket
+  closeWebSocket() {
+    wx.closeSocket()
+  },
+
+  // 添加消息到列表
+  addMessage(message) {
+    const messages = this.data.messages
+    messages.push(message)
+    this.setData({ messages })
+    this.scrollToBottom()
+  },
+
+  // 输入变化
+  onInputChange(e) {
+    this.setData({
+      inputText: e.detail.value
+    })
+  },
+
+  // 发送消息
+  async sendMessage() {
+    const content = this.data.inputText.trim()
+    
+    if (!content) {
+      return
+    }
+
+    try {
+      const data = await api.sendMessage({
+        receiver_id: this.data.friendId,
+        content: content,
+        type: 'text'
+      })
+
+      if (data.success) {
+        // 添加消息到列表
+        this.addMessage({
+          id: data.message_id,
+          sender_id: this.data.currentUserId,
+          content: content,
+          type: 'text',
+          time: '刚刚'
+        })
+
+        // 清空输入框
+        this.setData({
+          inputText: ''
+        })
+
+        // 通过WebSocket发送
+        if (this.data.socketConnected) {
+          wx.sendSocketMessage({
+            data: JSON.stringify({
+              type: 'text',
+              receiver_id: this.data.friendId,
+              content: content
+            })
+          })
+        }
+      } else {
+        wx.showToast({
+          title: data.error || '发送失败',
+          icon: 'none'
+        })
+      }
+    } catch (error) {
+      console.error('发送消息失败:', error)
+      wx.showToast({
+        title: '发送失败',
+        icon: 'none'
+      })
+    }
+  },
+
+  // 选择图片
+  chooseImage() {
+    wx.chooseImage({
+      count: 1,
+      sizeType: ['compressed'],
+      sourceType: ['album', 'camera'],
+      success: (res) => {
+        const tempFilePath = res.tempFilePaths[0]
+        this.sendImageMessage(tempFilePath)
+      }
+    })
+  },
+
+  // 发送图片消息
+  async sendImageMessage(filePath) {
+    try {
+      wx.showLoading({ title: '发送中...' })
+
+      // 上传图片
+      const uploadData = await api.uploadFile({
+        url: '/api/upload/image',
+        filePath: filePath,
+        name: 'image'
+      })
+
+      const imageUrl = uploadData.url || uploadData.path
+
+      // 发送图片消息
+      const data = await api.sendMessage({
+        receiver_id: this.data.friendId,
+        content: imageUrl,
+        type: 'image'
+      })
+
+      wx.hideLoading()
+
+      if (data.success) {
+        this.addMessage({
+          id: data.message_id,
+          sender_id: this.data.currentUserId,
+          content: imageUrl,
+          type: 'image',
+          time: '刚刚'
+        })
+      } else {
+        wx.showToast({
+          title: '发送失败',
+          icon: 'none'
+        })
+      }
+    } catch (error) {
+      wx.hideLoading()
+      console.error('发送图片失败:', error)
+      wx.showToast({
+        title: '发送失败',
+        icon: 'none'
+      })
+    }
+  },
+
+  // 预览图片
+  previewImage(e) {
+    const { url } = e.currentTarget.dataset
+    const images = this.data.messages
+      .filter(msg => msg.type === 'image')
+      .map(msg => msg.content)
+
+    wx.previewImage({
+      current: url,
+      urls: images
+    })
+  },
+
+  // 查看商品
+  viewProduct(e) {
+    const { id } = e.currentTarget.dataset
+    wx.navigateTo({
+      url: `/pages/product/detail?id=${id}`
+    })
+  },
+
+  // 滚动到底部
+  scrollToBottom() {
+    this.setData({
+      scrollToView: 'bottom-anchor'
+    })
+  },
+
+  // 标记为已读
+  async markAsRead() {
+    try {
+      await api.markMessagesRead(this.data.friendId)
+      
+      // 更新全局未读数
+      const unreadData = await api.getUnreadCount()
+      if (unreadData.success) {
+        app.updateUnreadCount(unreadData.count || 0)
+      }
+    } catch (error) {
+      console.error('标记已读失败:', error)
+    }
+  }
+})

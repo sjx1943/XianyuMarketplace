@@ -1,0 +1,87 @@
+<!--聊天室页面-->
+<view class="page">
+  <!-- 消息列表 -->
+  <scroll-view 
+    class="message-list" 
+    scroll-y="{{true}}" 
+    scroll-into-view="{{scrollToView}}"
+    scroll-with-animation="{{true}}"
+  >
+    <view 
+      wx:for="{{messages}}" 
+      wx:key="id"
+      id="msg-{{item.id}}"
+      class="message-item {{item.sender_id === currentUserId ? 'mine' : 'other'}}"
+    >
+      <image 
+        class="avatar" 
+        src="{{item.sender_id === currentUserId ? myAvatar : friendAvatar}}"
+      ></image>
+      
+      <view class="message-content">
+        <!-- 文本消息 -->
+        <view class="message-bubble" wx:if="{{item.type === 'text' || !item.type}}">
+          <text>{{item.content}}</text>
+        </view>
+        
+        <!-- 图片消息 -->
+        <image 
+          wx:if="{{item.type === 'image'}}"
+          class="message-image" 
+          src="{{item.content}}" 
+          mode="widthFix"
+          bindtap="previewImage"
+          data-url="{{item.content}}"
+        ></image>
+        
+        <!-- 商品卡片 -->
+        <view 
+          wx:if="{{item.type === 'product'}}"
+          class="product-card"
+          bindtap="viewProduct"
+          data-id="{{item.product_id}}"
+        >
+          <image class="product-image" src="{{item.product_image}}"></image>
+          <view class="product-info">
+            <text class="product-name">{{item.product_name}}</text>
+            <text class="product-price">¥{{item.product_price}}</text>
+          </view>
+        </view>
+        
+        <text class="message-time">{{item.time}}</text>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{messages.length === 0 && !loading}}">
+      <text class="empty-icon">💬</text>
+      <text class="empty-text">暂无消息</text>
+      <text class="empty-hint">发送消息开始聊天</text>
+    </view>
+
+    <!-- 占位元素，用于滚动定位 -->
+    <view id="bottom-anchor"></view>
+  </scroll-view>
+
+  <!-- 输入框 -->
+  <view class="input-bar">
+    <button class="tool-btn" bindtap="chooseImage">
+      <text class="icon">🖼</text>
+    </button>
+    
+    <input 
+      class="message-input"
+      type="text"
+      placeholder="输入消息..."
+      value="{{inputText}}"
+      bindinput="onInputChange"
+      bindconfirm="sendMessage"
+      confirm-type="send"
+      cursor-spacing="10"
+    />
+    
+    <button class="send-btn" bindtap="sendMessage">
+      发送
+    </button>
+  </view>
+</view>
