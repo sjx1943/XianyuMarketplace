@@ -9,7 +9,7 @@ import tornado.web
 import requests
 import json
 import os
-import hashlib
+import bcrypt
 import logging
 from sqlalchemy.orm import sessionmaker
 from models.user import User
@@ -157,9 +157,15 @@ class MiniprogramLoginHandler(tornado.web.RequestHandler):
                 import random
                 temp_username = f"mp_{openid[:8]}_{random.randint(1000, 9999)}"
             
+            # 生成安全的随机密码（bcrypt，与标准注册流程保持一致）
+            random_password = f"{openid}{os.urandom(16).hex()}"
+            password_bytes = random_password.encode('utf-8')
+            salt = bcrypt.gensalt()
+            hashed_password = bcrypt.hashpw(password_bytes, salt).decode('utf-8')
+            
             new_user = User(
                 username=temp_username,
-                password=hashlib.md5(f"{openid}{os.urandom(16).hex()}".encode()).hexdigest(),  # 随机密码
+                password=hashed_password,  # bcrypt加密的随机密码（与auth_controller一致）
                 email=f"{openid}@miniprogram.wx",  # 占位邮箱
                 wechat_openid=openid
             )
