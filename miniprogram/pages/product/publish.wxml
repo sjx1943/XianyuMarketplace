@@ -1,0 +1,152 @@
+<!--发布商品页-->
+<view class="page">
+  <form bindsubmit="onSubmit">
+    <!-- 商品图片 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="required">*</text>
+        <text class="section-title">商品图片</text>
+        <text class="section-hint">(最多9张)</text>
+      </view>
+      <view class="image-upload">
+        <view class="image-item" wx:for="{{images}}" wx:key="index">
+          <image src="{{item}}" mode="aspectFill" class="uploaded-image"></image>
+          <view class="image-delete" bindtap="deleteImage" data-index="{{index}}">
+            <text>✕</text>
+          </view>
+        </view>
+        <view class="image-add" wx:if="{{images.length < 9}}" bindtap="chooseImage">
+          <text class="add-icon">+</text>
+          <text class="add-text">添加图片</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 商品名称 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="required">*</text>
+        <text class="section-title">商品名称</text>
+      </view>
+      <input 
+        class="input" 
+        placeholder="请输入商品名称" 
+        value="{{form.name}}"
+        bindinput="onInputChange"
+        data-field="name"
+        maxlength="50"
+      />
+    </view>
+
+    <!-- 商品价格 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="required">*</text>
+        <text class="section-title">商品价格</text>
+      </view>
+      <view class="price-input">
+        <text class="currency">¥</text>
+        <input 
+          class="input" 
+          type="digit"
+          placeholder="请输入价格" 
+          value="{{form.price}}"
+          bindinput="onInputChange"
+          data-field="price"
+        />
+      </view>
+    </view>
+
+    <!-- 商品分类 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="required">*</text>
+        <text class="section-title">商品分类</text>
+      </view>
+      <picker mode="selector" range="{{categories}}" value="{{categoryIndex}}" bindchange="onCategoryChange">
+        <view class="picker">
+          <text class="{{categoryIndex >= 0 ? '' : 'placeholder'}}">
+            {{categoryIndex >= 0 ? categories[categoryIndex] : '请选择分类'}}
+          </text>
+          <text class="arrow">></text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 商品成色 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="required">*</text>
+        <text class="section-title">商品成色</text>
+      </view>
+      <view class="condition-options">
+        <view 
+          class="condition-item {{form.condition === 'new' ? 'active' : ''}}"
+          bindtap="onConditionChange"
+          data-condition="new"
+        >
+          <text class="icon">✨</text>
+          <text>全新</text>
+        </view>
+        <view 
+          class="condition-item {{form.condition === 'like_new' ? 'active' : ''}}"
+          bindtap="onConditionChange"
+          data-condition="like_new"
+        >
+          <text class="icon">🌟</text>
+          <text>几乎全新</text>
+        </view>
+        <view 
+          class="condition-item {{form.condition === 'used' ? 'active' : ''}}"
+          bindtap="onConditionChange"
+          data-condition="used"
+        >
+          <text class="icon">📦</text>
+          <text>二手</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 商品描述 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">商品描述</text>
+      </view>
+      <textarea 
+        class="textarea" 
+        placeholder="请详细描述商品的使用情况、购买时间、新旧程度等"
+        value="{{form.description}}"
+        bindinput="onInputChange"
+        data-field="description"
+        maxlength="500"
+        auto-height
+      />
+      <text class="char-count">{{form.description.length}}/500</text>
+    </view>
+
+    <!-- 标签选择 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">商品标签</text>
+      </view>
+      <view class="tags">
+        <view 
+          wx:for="{{availableTags}}" 
+          wx:key="index"
+          class="tag-item {{form.tags.indexOf(item) > -1 ? 'active' : ''}}"
+          bindtap="onTagToggle"
+          data-tag="{{item}}"
+        >
+          {{item}}
+        </view>
+      </view>
+    </view>
+
+    <!-- 提交按钮 -->
+    <view class="submit-section">
+      <button class="submit-btn" formType="submit" loading="{{submitting}}">
+        {{submitting ? '发布中...' : '发布商品'}}
+      </button>
+    </view>
+  </form>
+</view>
