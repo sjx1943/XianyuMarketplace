@@ -267,7 +267,7 @@ class API {
   // 标记消息已读
   markMessagesRead(friendId) {
     return this.request({
-      url: '/api/messages/read',
+      url: '/api/mark_messages_read',
       method: 'POST',
       data: { friend_id: friendId }
     })
@@ -276,7 +276,7 @@ class API {
   // 删除消息
   deleteMessages(friendId) {
     return this.request({
-      url: '/api/messages/delete',
+      url: '/api/delete_messages',
       method: 'POST',
       data: { friend_id: friendId }
     })

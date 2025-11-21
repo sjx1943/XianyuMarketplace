@@ -65,23 +65,31 @@ Page({
     try {
       this.setData({ loading: true })
 
-      const type = this.data.activeTab === 0 ? 'buyer' : 'seller'
-      const data = await api.getOrderList({ type })
+      const data = await api.getOrderList()
 
-      if (data.success) {
-        this.setData({
-          orderList: data.orders || [],
-          loading: false
-        })
-
-        // 更新未读订单数量
-        if (data.unread_count) {
-          const tabs = this.data.tabs
-          tabs[this.data.activeTab].badge = data.unread_count
-          this.setData({ tabs })
+      // 后端返回的数据可能是数组或对象
+      const orderList = Array.isArray(data) ? data : (data.orders || [])
+      
+      // 根据tab过滤：0=买家，1=卖家
+      const filteredOrders = orderList.filter(order => {
+        if (this.data.activeTab === 0) {
+          return order.buyer_id === app.globalData.userInfo?.id
+        } else {
+          return order.seller_id === app.globalData.userInfo?.id
         }
-      } else {
-        this.setData({ loading: false })
+      })
+
+      this.setData({
+        orderList: filteredOrders,
+        loading: false
+      })
+
+      // 更新未读订单数量
+      const unreadCount = filteredOrders.filter(o => o.unread).length
+      if (unreadCount > 0) {
+        const tabs = this.data.tabs
+        tabs[this.data.activeTab].badge = unreadCount
+        this.setData({ tabs })
       }
     } catch (error) {
       console.error('加载订单失败:', error)

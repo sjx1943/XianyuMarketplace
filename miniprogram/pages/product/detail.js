@@ -30,16 +30,18 @@ Page({
       
       const data = await api.getProductDetail(id)
       
-      if (data.success) {
+      // 后端直接返回商品对象，没有包装在success字段中
+      if (data && data.id) {
         this.setData({
-          product: data.product,
+          product: data,
           loading: false
         })
       } else {
         wx.showToast({
-          title: data.error || '加载失败',
+          title: '商品不存在',
           icon: 'none'
         })
+        setTimeout(() => wx.navigateBack(), 1500)
       }
     } catch (error) {
       console.error('加载商品详情失败:', error)

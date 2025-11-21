@@ -62,7 +62,7 @@ Page({
       this.setData({ loading: true })
 
       const data = await api.request({
-        url: '/api/chat/history',
+        url: '/api/messages',
         method: 'GET',
         data: {
           friend_id: this.data.friendId,
@@ -70,7 +70,7 @@ Page({
         }
       })
 
-      if (data.success) {
+      if (data && data.messages) {
         this.setData({
           messages: data.messages || [],
           friendAvatar: data.friend_avatar || '/images/default-avatar.png',
@@ -79,6 +79,8 @@ Page({
 
         // 滚动到底部
         this.scrollToBottom()
+      } else {
+        this.setData({ loading: false })
       }
     } catch (error) {
       console.error('加载聊天记录失败:', error)
@@ -89,12 +91,15 @@ Page({
   // 连接WebSocket
   connectWebSocket() {
     const config = require('../../utils/config.js')
-    const token = wx.getStorageSync('token')
     
-    const socketUrl = `${config.WS_BASE}/ws/chat?token=${token}`
+    // 后端WebSocket路由是 /ws/chat_room，使用cookie进行身份验证
+    const socketUrl = `${config.WS_BASE}/ws/chat_room`
     
     wx.connectSocket({
       url: socketUrl,
+      header: {
+        'Cookie': wx.getStorageSync('cookie') || ''
+      },
       success: () => {
         console.log('WebSocket连接中...')
       },

@@ -54,15 +54,19 @@ Page({
         this.setData({ userInfo })
       }
 
-      // 加载统计数据
-      const data = await api.request({
-        url: '/api/user/stats',
-        method: 'GET'
-      })
-
-      if (data.success) {
+      // 加载统计数据（从商品列表计算）
+      const products = await api.getProductList({ user_id: userInfo.id })
+      
+      if (products && products.products) {
+        const selling = products.products.filter(p => p.status === 'available').length
+        const sold = products.products.filter(p => p.status === 'sold').length
+        
         this.setData({
-          stats: data.stats
+          stats: {
+            selling: selling,
+            sold: sold,
+            favorites: 0  // 需要后端支持收藏功能
+          }
         })
       }
     } catch (error) {

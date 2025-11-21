@@ -234,11 +234,27 @@ Page({
   // 上传图片
   async uploadImages() {
     const { images } = this.data
-    const uploadPromises = images.map(filePath => {
-      return api.uploadProductImage(filePath)
-    })
+    const imageUrls = []
 
-    const results = await Promise.all(uploadPromises)
-    return results.map(result => result.url || result.path)
+    // 后端通过multipart表单上传，每次上传一张图片
+    for (const filePath of images) {
+      try {
+        const result = await api.uploadFile({
+          url: '/product/upload',
+          filePath: filePath,
+          name: 'images',
+          formData: {}
+        })
+        
+        // 后端返回的格式可能是 { image_url: "..." } 或直接是URL
+        const url = result.image_url || result.url || filePath
+        imageUrls.push(url)
+      } catch (error) {
+        console.error('图片上传失败:', error)
+        throw new Error('图片上传失败')
+      }
+    }
+
+    return imageUrls
   }
 })

@@ -52,17 +52,20 @@ Page({
 
       const data = await api.getChatList()
 
-      if (data.success) {
-        this.setData({
-          chatList: data.chats || [],
-          loading: false
-        })
+      // 后端返回的数据格式可能是数组或对象
+      const chatList = Array.isArray(data) ? data : (data.conversations || data.chats || [])
 
-        // 更新未读消息数
-        const unreadCount = data.chats.reduce((sum, chat) => sum + (chat.unread_count || 0), 0)
-        app.updateUnreadCount(unreadCount)
-      } else {
-        this.setData({ loading: false })
+      this.setData({
+        chatList: chatList,
+        loading: false
+      })
+
+      // 更新未读消息数
+      if (chatList.length > 0) {
+        const unreadCount = chatList.reduce((sum, chat) => sum + (chat.unread_count || 0), 0)
+        if (app.updateUnreadCount) {
+          app.updateUnreadCount(unreadCount)
+        }
       }
     } catch (error) {
       console.error('加载聊天列表失败:', error)
