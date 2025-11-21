@@ -55,17 +55,24 @@ Page({
       }
 
       // 加载统计数据（从商品列表计算）
-      const products = await api.getProductList({ user_id: userInfo.id })
+      const data = await api.getProductList({ user_id: userInfo.id })
       
-      if (products && products.products) {
-        const selling = products.products.filter(p => p.status === 'available').length
-        const sold = products.products.filter(p => p.status === 'sold').length
+      // 后端直接返回数组，不是包装在products字段中
+      const products = Array.isArray(data) ? data : []
+      
+      if (products.length >= 0) {
+        const myProducts = products.filter(p => p.user_id === userInfo.id)
+        const selling = myProducts.filter(p => p.status === '在售').length
+        const sold = myProducts.filter(p => p.status === '已售').length
+        
+        // 从本地存储获取收藏数量
+        const favorites = wx.getStorageSync('favorites') || []
         
         this.setData({
           stats: {
             selling: selling,
             sold: sold,
-            favorites: 0  // 需要后端支持收藏功能
+            favorites: favorites.length
           }
         })
       }

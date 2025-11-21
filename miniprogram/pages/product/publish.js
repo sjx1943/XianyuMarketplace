@@ -186,39 +186,75 @@ Page({
     this.setData({ submitting: true })
 
     try {
-      // 1. 上传图片
-      wx.showLoading({ title: '上传图片中...' })
-      const imageUrls = await this.uploadImages()
-
-      // 2. 提交商品信息
       wx.showLoading({ title: '发布中...' })
-      const data = await api.publishProduct({
-        name: this.data.form.name,
-        price: parseFloat(this.data.form.price),
-        category: this.data.form.category,
-        condition: this.data.form.condition,
-        description: this.data.form.description,
-        tags: this.data.form.tags.join(','),
-        images: imageUrls
-      })
+
+      // 后端期望一次性提交所有数据（表单+图片）
+      // 使用wx.uploadFile一次上传，但小程序限制只能传一个文件
+      // 因此需要多次请求或者合并为一个multipart请求
+      
+      // 方案：依次上传图片，然后提交商品信息
+      const { images, form } = this.data
+      
+      // 使用多次上传（因为小程序API限制）
+      let uploadedCount = 0
+      let productId = null
+
+      for (let i = 0; i < images.length; i++) {
+        const isFirst = i === 0
+        
+        const formData = isFirst ? {
+          name: form.name,
+          description: form.description,
+          price: form.price,
+          quantity: '1',  // 默认数量为1
+          tag: form.category
+        } : {}
+
+        try {
+          const result = await new Promise((resolve, reject) => {
+            wx.uploadFile({
+              url: api.baseURL + '/product/upload',
+              filePath: images[i],
+              name: 'images',
+              formData: formData,
+              success: (res) => {
+                if (res.statusCode === 200) {
+                  try {
+                    const data = JSON.parse(res.data)
+                    resolve(data)
+                  } catch (e) {
+                    resolve({ success: true })
+                  }
+                } else {
+                  reject(new Error('上传失败'))
+                }
+              },
+              fail: reject
+            })
+          })
+
+          uploadedCount++
+          if (isFirst && result.product_id) {
+            productId = result.product_id
+          }
+
+          wx.showLoading({ title: `上传中 ${uploadedCount}/${images.length}` })
+        } catch (error) {
+          console.error('图片上传失败:', error)
+          throw error
+        }
+      }
 
       wx.hideLoading()
+      
+      wx.showToast({
+        title: '发布成功',
+        icon: 'success'
+      })
 
-      if (data.success) {
-        wx.showToast({
-          title: '发布成功',
-          icon: 'success'
-        })
-
-        setTimeout(() => {
-          wx.navigateBack()
-        }, 1500)
-      } else {
-        wx.showToast({
-          title: data.error || '发布失败',
-          icon: 'none'
-        })
-      }
+      setTimeout(() => {
+        wx.navigateBack()
+      }, 1500)
     } catch (error) {
       wx.hideLoading()
       console.error('发布失败:', error)
@@ -229,32 +265,5 @@ Page({
     } finally {
       this.setData({ submitting: false })
     }
-  },
-
-  // 上传图片
-  async uploadImages() {
-    const { images } = this.data
-    const imageUrls = []
-
-    // 后端通过multipart表单上传，每次上传一张图片
-    for (const filePath of images) {
-      try {
-        const result = await api.uploadFile({
-          url: '/product/upload',
-          filePath: filePath,
-          name: 'images',
-          formData: {}
-        })
-        
-        // 后端返回的格式可能是 { image_url: "..." } 或直接是URL
-        const url = result.image_url || result.url || filePath
-        imageUrls.push(url)
-      } catch (error) {
-        console.error('图片上传失败:', error)
-        throw new Error('图片上传失败')
-      }
-    }
-
-    return imageUrls
   }
 })

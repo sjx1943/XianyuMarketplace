@@ -70,7 +70,7 @@ Page({
     })
   },
 
-  // 收藏/取消收藏
+  // 收藏/取消收藏（暂未实现后端API，本地模拟）
   async onFavorite() {
     if (!app.globalData.isLogin) {
       wx.navigateTo({
@@ -81,24 +81,27 @@ Page({
 
     try {
       const { product } = this.data
-      const data = await api.request({
-        url: '/api/product/favorite',
-        method: 'POST',
-        data: {
-          product_id: product.id,
-          action: product.is_favorited ? 'remove' : 'add'
-        }
+      
+      // TODO: 后端需要添加收藏功能API `/api/product/favorite`
+      // 暂时只做本地状态切换
+      this.setData({
+        'product.is_favorited': !product.is_favorited
       })
-
-      if (data.success) {
-        this.setData({
-          'product.is_favorited': !product.is_favorited
-        })
-        wx.showToast({
-          title: product.is_favorited ? '已取消收藏' : '收藏成功',
-          icon: 'success'
-        })
+      
+      wx.showToast({
+        title: product.is_favorited ? '收藏成功' : '已取消收藏',
+        icon: 'success'
+      })
+      
+      // 保存到本地存储
+      const favorites = wx.getStorageSync('favorites') || []
+      if (product.is_favorited) {
+        favorites.push(product.id)
+      } else {
+        const index = favorites.indexOf(product.id)
+        if (index > -1) favorites.splice(index, 1)
       }
+      wx.setStorageSync('favorites', favorites)
     } catch (error) {
       console.error('收藏失败:', error)
     }
