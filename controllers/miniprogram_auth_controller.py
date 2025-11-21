@@ -1,0 +1,232 @@
+#coding=utf-8
+
+"""
+微信小程序登录控制器
+处理小程序wx.login()的code换取session_key和openid
+"""
+
+import tornado.web
+import requests
+import json
+import os
+import hashlib
+import logging
+from sqlalchemy.orm import sessionmaker
+from models.user import User
+from base.base import engine
+
+Session = sessionmaker(bind=engine)
+
+# 微信小程序配置（从环境变量获取）
+WX_MINIPROGRAM_APP_ID = os.environ.get('WX_MINIPROGRAM_APP_ID', '')
+WX_MINIPROGRAM_APP_SECRET = os.environ.get('WX_MINIPROGRAM_APP_SECRET', '')
+
+# 微信小程序登录API
+WX_LOGIN_URL = 'https://api.weixin.qq.com/sns/jscode2session'
+
+
+class MiniprogramLoginHandler(tornado.web.RequestHandler):
+    """小程序微信登录处理器"""
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def post(self):
+        """处理小程序登录请求"""
+        try:
+            # 获取前端传来的code
+            data = json.loads(self.request.body)
+            code = data.get('code')
+            
+            if not code:
+                self.write(json.dumps({
+                    'success': False,
+                    'error': '缺少code参数'
+                }))
+                return
+            
+            # 检查小程序配置
+            if not WX_MINIPROGRAM_APP_ID or not WX_MINIPROGRAM_APP_SECRET:
+                logging.error("小程序AppID或AppSecret未配置")
+                self.write(json.dumps({
+                    'success': False,
+                    'error': '小程序配置错误，请联系管理员'
+                }))
+                return
+            
+            # 向微信服务器换取session_key和openid
+            wx_response = self._get_wx_session(code)
+            
+            if not wx_response or 'openid' not in wx_response:
+                logging.error(f"微信登录失败: {wx_response}")
+                self.write(json.dumps({
+                    'success': False,
+                    'error': '微信登录失败，请重试'
+                }))
+                return
+            
+            openid = wx_response['openid']
+            session_key = wx_response.get('session_key', '')
+            
+            # 查找或创建用户
+            user = self._find_or_create_user(openid)
+            
+            if not user:
+                self.write(json.dumps({
+                    'success': False,
+                    'error': '创建用户失败'
+                }))
+                return
+            
+            # 设置登录Cookie
+            self.set_secure_cookie("user_id", str(user.id))
+            self.set_secure_cookie("username", user.username or "")
+            
+            # 返回用户信息
+            self.write(json.dumps({
+                'success': True,
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'room_number': user.room_number,
+                    'wechat_openid': user.wechat_openid,
+                    'wechat_nickname': user.wechat_nickname,
+                    'wechat_avatar': user.wechat_avatar
+                },
+                'session_key': session_key
+            }))
+            
+        except Exception as e:
+            logging.error(f"小程序登录异常: {e}")
+            self.write(json.dumps({
+                'success': False,
+                'error': f'登录处理失败: {str(e)}'
+            }))
+    
+    def _get_wx_session(self, code):
+        """通过code获取session_key和openid"""
+        try:
+            params = {
+                'appid': WX_MINIPROGRAM_APP_ID,
+                'secret': WX_MINIPROGRAM_APP_SECRET,
+                'js_code': code,
+                'grant_type': 'authorization_code'
+            }
+            
+            response = requests.get(WX_LOGIN_URL, params=params, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            
+            if 'errcode' in data and data['errcode'] != 0:
+                logging.error(f"微信登录API错误: errcode={data.get('errcode')}, errmsg={data.get('errmsg')}")
+                return None
+            
+            return data
+            
+        except requests.exceptions.Timeout as e:
+            logging.error(f"请求微信登录API超时: {e}")
+            return None
+        except requests.exceptions.RequestException as e:
+            logging.error(f"请求微信登录API网络异常: {e}")
+            return None
+        except (ValueError, KeyError) as e:
+            logging.error(f"解析微信登录API响应失败: {e}")
+            return None
+        except Exception as e:
+            logging.error(f"获取微信session未知异常: {e}")
+            return None
+    
+    def _find_or_create_user(self, openid):
+        """查找或创建用户"""
+        try:
+            # 查找是否已存在该微信用户
+            user = self.session.query(User).filter_by(wechat_openid=openid).first()
+            
+            if user:
+                logging.info(f"用户已存在: {user.username}")
+                return user
+            
+            # 创建新用户
+            # 生成临时用户名（用户需要后续设置房间号）
+            temp_username = f"mp_{openid[:12]}"
+            
+            # 检查用户名是否已存在
+            existing_user = self.session.query(User).filter_by(username=temp_username).first()
+            if existing_user:
+                # 添加随机后缀
+                import random
+                temp_username = f"mp_{openid[:8]}_{random.randint(1000, 9999)}"
+            
+            new_user = User(
+                username=temp_username,
+                password=hashlib.md5(f"{openid}{os.urandom(16).hex()}".encode()).hexdigest(),  # 随机密码
+                email=f"{openid}@miniprogram.wx",  # 占位邮箱
+                wechat_openid=openid
+            )
+            
+            self.session.add(new_user)
+            self.session.commit()
+            
+            logging.info(f"创建小程序用户成功: {temp_username}")
+            return new_user
+            
+        except Exception as e:
+            self.session.rollback()
+            logging.error(f"创建小程序用户失败: {e}")
+            return None
+    
+    def on_finish(self):
+        self.session.close()
+
+
+class MiniprogramUserInfoHandler(tornado.web.RequestHandler):
+    """小程序获取用户信息接口"""
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def get(self):
+        """获取当前登录用户信息"""
+        try:
+            user_id = self.get_secure_cookie("user_id")
+            
+            if not user_id:
+                self.write(json.dumps({
+                    'success': False,
+                    'error': '未登录'
+                }))
+                return
+            
+            user = self.session.query(User).filter_by(id=int(user_id)).first()
+            
+            if not user:
+                self.write(json.dumps({
+                    'success': False,
+                    'error': '用户不存在'
+                }))
+                return
+            
+            self.write(json.dumps({
+                'success': True,
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'room_number': user.room_number,
+                    'phone': user.phone,
+                    'email': user.email,
+                    'wechat_openid': user.wechat_openid,
+                    'wechat_nickname': user.wechat_nickname,
+                    'wechat_avatar': user.wechat_avatar,
+                    'is_admin': user.is_admin
+                }
+            }))
+            
+        except Exception as e:
+            logging.error(f"获取用户信息异常: {e}")
+            self.write(json.dumps({
+                'success': False,
+                'error': str(e)
+            }))
+    
+    def on_finish(self):
+        self.session.close()

@@ -1,0 +1,150 @@
+/* 登录页面样式 */
+.container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 600rpx;
+  background: white;
+  border-radius: 40rpx;
+  padding: 60rpx 40rpx;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.2);
+}
+
+.logo-section {
+  text-align: center;
+  margin-bottom: 60rpx;
+}
+
+.logo {
+  width: 160rpx;
+  height: 160rpx;
+  margin-bottom: 20rpx;
+}
+
+.app-name {
+  display: block;
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.app-desc {
+  display: block;
+  font-size: 28rpx;
+  color: #999;
+}
+
+.features {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 60rpx;
+}
+
+.feature-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.feature-icon {
+  font-size: 60rpx;
+  margin-bottom: 10rpx;
+}
+
+.feature-text {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.login-btn {
+  width: 100%;
+  height: 90rpx;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border-radius: 45rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  margin-bottom: 30rpx;
+  box-shadow: 0 10rpx 30rpx rgba(102, 126, 234, 0.3);
+}
+
+.login-btn::after {
+  border: none;
+}
+
+.wechat-icon {
+  margin-right: 10rpx;
+  font-size: 36rpx;
+}
+
+.room-section {
+  margin-top: 40rpx;
+  padding: 30rpx;
+  background: #f8f9fa;
+  border-radius: 20rpx;
+}
+
+.room-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+  text-align: center;
+}
+
+.room-hint {
+  font-size: 24rpx;
+  color: #999;
+  text-align: center;
+  margin-bottom: 30rpx;
+}
+
+.room-input {
+  width: 100%;
+  height: 80rpx;
+  background: white;
+  border-radius: 40rpx;
+  padding: 0 30rpx;
+  font-size: 28rpx;
+  border: 2rpx solid #e0e0e0;
+  margin-bottom: 20rpx;
+}
+
+.confirm-btn {
+  width: 100%;
+  height: 80rpx;
+  background: #667eea;
+  color: white;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+  font-weight: bold;
+  border: none;
+}
+
+.confirm-btn::after {
+  border: none;
+}
+
+.privacy-text {
+  font-size: 22rpx;
+  color: #999;
+  text-align: center;
+  margin-top: 30rpx;
+  line-height: 40rpx;
+}
+
+.link {
+  color: #667eea;
+}
