@@ -1,0 +1,95 @@
+/* 聊天列表页样式 */
+.page {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.chat-list {
+  background: white;
+}
+
+.chat-item {
+  display: flex;
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  transition: background-color 0.3s;
+  position: relative;
+}
+
+.chat-item:active {
+  background-color: #f8f9fa;
+}
+
+.chat-item:last-child {
+  border-bottom: none;
+}
+
+.avatar {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 12rpx;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+}
+
+.chat-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10rpx;
+}
+
+.friend-name {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #333;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-time {
+  font-size: 22rpx;
+  color: #999;
+  margin-left: 15rpx;
+  flex-shrink: 0;
+}
+
+.chat-preview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.last-message {
+  flex: 1;
+  font-size: 26rpx;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.unread-badge {
+  background: #ff6b35;
+  color: white;
+  min-width: 36rpx;
+  height: 36rpx;
+  border-radius: 18rpx;
+  padding: 0 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20rpx;
+  margin-left: 15rpx;
+  flex-shrink: 0;
+}
