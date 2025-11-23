@@ -1,0 +1,136 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.env.local
+.env.*.local
+
+# 环境变量文件 (敏感信息)
+.env
+.env.prod
+.env.*.prod
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 配置文件敏感部分 (仅.env.prod)
+deploy/.env.prod
+
+# 日志文件
+*.log
+logs/
+*.log.gz
+deploy.log
+
+# 临时文件
+*.tmp
+*.temp
+.tmp/
+temp/
+
+# Node modules (如果有前端)
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# 数据库备份
+db_backups/
+*.sql
+*.sql.gz
+mongo_backup/
+
+# 上传的文件 (用户生成内容)
+mystatics/images/uploads/
+mystatics/images/*.jpg
+mystatics/images/*.jpeg
+mystatics/images/*.png
+mystatics/images/*.gif
+
+# 数据库文件 (本地开发)
+*.db
+*.sqlite
+*.sqlite3
+
+# 缓存
+.cache/
+.pytest_cache/
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE特定文件
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/*
+*.iml
+*.sublime-project
+*.sublime-workspace
+
+# 系统文件
+.DS_Store
+Thumbs.db
+.env~
+
+# Replit特定
+.replit
+.upm
+
+# VPS备份
+/var/backups/secondhand-platform/
+/var/lib/secondhand-platform/
+
+# CI/CD
+.github/workflows/*.local.yml
+
+# 不要忽略的文件 (明确声明)
+!.gitkeep
+!.github/
+!.github/workflows/
+!deploy/
+!requirements.txt
+!config.ini
+!replit.md
