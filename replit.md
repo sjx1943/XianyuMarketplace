@@ -61,6 +61,15 @@ The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
 -   **WeChat Mini Program**: Requires separate registration and AppID/AppSecret from WeChat Mini Program platform (mp.weixin.qq.com). Environment variables: `WX_MINIPROGRAM_APP_ID`, `WX_MINIPROGRAM_APP_SECRET`.
 
 ## Recent Changes (Nov 23, 2025)
+
+### 项目结构清理
+-   **删除重复代码**: 清理了过时的 `mytornado/xianyu/agent_mvc/` 重复项目目录
+    -   ✅ 删除了旧版 app.py（该版本缺少手机号登录、微信OAuth、小程序支持、管理员功能）
+    -   ✅ 保留根目录的主应用 (`app.py`) - 包含所有最新功能
+    -   ✅ 删除了 `templates/publish_product.html.backup` 备份文件
+    -   ✅ 删除了过时的测试结果文件 (`test_results_*.txt`)
+    -   ✅ 项目结构已规范化，便于维护和开发
+
 -   **生产环境迁移**: 创建完整的Replit → VPS迁移方案
     -   ✅ VPS一键部署脚本 (`deploy/vps-install.sh`)
     -   ✅ 数据库迁移脚本 (`deploy/migrate-db.sh`) 
