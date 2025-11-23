@@ -79,7 +79,16 @@ def make_app():
     
     tornado.ioloop.IOLoop.current().add_callback(create_indexes)
 
-    redis_client = redis.StrictRedis()
+    # Redis连接配置（可选，用于缓存）
+    redis_host = os.environ.get('REDIS_HOST', 'localhost')
+    redis_port = int(os.environ.get('REDIS_PORT', 6379))
+    redis_db = int(os.environ.get('REDIS_DB', 0))
+    try:
+        redis_client = redis.StrictRedis(host=redis_host, port=redis_port, db=redis_db, decode_responses=True)
+        redis_client.ping()
+    except Exception as e:
+        print(f"Warning: Redis connection failed ({e}), continuing without cache")
+        redis_client = None
 
     return Application([
         (r"/health", HealthCheckHandler),
@@ -168,14 +177,44 @@ def make_app():
 
 if __name__ == "__main__":
     import argparse
+    import signal
     
     # 解析命令行参数
     parser = argparse.ArgumentParser(description='Tornado Application')
     parser.add_argument('--port', type=int, default=5000, help='Port to listen on')
     args = parser.parse_args()
     
-    app = make_app()
-    # Bind to 0.0.0.0 for Autoscale deployments
-    app.listen(args.port, address="0.0.0.0")
-    print(f"后端已在端口 {args.port} 启动,可通过远程开发工具运行服务")
-    tornado.ioloop.IOLoop.current().start()
+    print("=" * 60)
+    print("🚀 Tornado应用启动中...")
+    print("=" * 60)
+    print(f"📦 环境: {'Production' if os.environ.get('ENV') == 'prod' else 'Development'}")
+    print(f"🌐 端口: {args.port}")
+    print(f"🗄️  数据库: {os.environ.get('DATABASE_URL', 'SQLite (Local)')}")
+    print(f"📊 MongoDB: {os.environ.get('MONGODB_URI', 'Local (Replit)')}")
+    print("=" * 60)
+    
+    try:
+        app = make_app()
+        # Bind to 0.0.0.0 for Autoscale deployments
+        app.listen(args.port, address="0.0.0.0")
+        print(f"✅ Tornado应用已在 http://0.0.0.0:{args.port} 启动")
+        print(f"🔗 健康检查: http://localhost:{args.port}/health")
+        print("⏹️  按 Ctrl+C 停止服务")
+        print("=" * 60)
+        
+        # 优雅关闭处理
+        def handle_signal(signum, frame):
+            print("\n⚠️  接收到关闭信号，正在优雅关闭...")
+            tornado.ioloop.IOLoop.current().stop()
+        
+        signal.signal(signal.SIGINT, handle_signal)
+        signal.signal(signal.SIGTERM, handle_signal)
+        
+        tornado.ioloop.IOLoop.current().start()
+    except KeyboardInterrupt:
+        print("\n✋ 应用已停止")
+    except Exception as e:
+        print(f"\n❌ 应用启动失败: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)

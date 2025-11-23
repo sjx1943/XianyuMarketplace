@@ -14,11 +14,28 @@ from models.blacklist import Blacklist
 from models.chat_message import ChatMessage
 from models.verification_code import VerificationCode
 
-print("Creating database tables...")
+print("=" * 60)
+print("🗄️  数据库初始化中...")
+print("=" * 60)
+
 try:
+    # 创建所有表（如果已存在则跳过）
     Base.metadata.create_all(engine)
-    print("Database tables created successfully!")
-    print("Tables created: xu_user, xu_product, xu_product_image, xu_order, xu_comment, xu_friendship, xu_blacklist, xu_chat_message, xu_verification_code")
+    print("✅ 数据库表初始化成功！")
+    print("\n📋 已创建的表:")
+    print("  - xu_user (用户)")
+    print("  - xu_product (商品)")
+    print("  - xu_product_image (商品图片)")
+    print("  - xu_order (订单)")
+    print("  - xu_comment (评论)")
+    print("  - xu_friendship (好友关系)")
+    print("  - xu_blacklist (黑名单)")
+    print("  - xu_chat_message (聊天消息)")
+    print("  - xu_verification_code (验证码)")
+    print("=" * 60)
+    
 except Exception as e:
-    print(f"Error creating tables: {e}")
+    print(f"❌ 数据库初始化失败: {e}")
+    import traceback
+    traceback.print_exc()
     sys.exit(1)
