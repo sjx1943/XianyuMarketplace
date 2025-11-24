@@ -183,6 +183,11 @@ class OrderHandler(tornado.web.RequestHandler):
             contact_phone = self.get_argument("contact_phone", "")
             order_note = self.get_argument("order_note", "")
 
+            # 验证购买数量（必须大于0）
+            if quantity <= 0:
+                self.write(json.dumps({'success': False, 'error': '购买数量必须大于0'}))
+                return
+
             # 验证商品是否存在
             product = self.session.query(Product).filter_by(id=product_id).first()
             if not product:

@@ -1,0 +1,81 @@
+platform linux -- Python 3.11.13, pytest-9.0.1, pluggy-1.6.0 -- /nix/store/2lcqw1d28vklbk8ikiwad28iq2smwndv-python-wrapped-0.1.0/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/runner/workspace
+collected 17 items                                                                                                                     
+
+tests/test_boundary_scenarios.py::TestOrderBoundary::test_order_with_deleted_product PASSED                                      [  5%]
+tests/test_boundary_scenarios.py::TestOrderBoundary::test_order_with_zero_quantity PASSED                                        [ 11%]
+tests/test_boundary_scenarios.py::TestOrderBoundary::test_order_exceed_stock PASSED                                              [ 17%]
+tests/test_boundary_scenarios.py::TestOrderBoundary::test_cancel_already_shipped_order PASSED                                    [ 23%]
+tests/test_boundary_scenarios.py::TestOrderBoundary::test_confirm_unpaid_order PASSED                                            [ 29%]
+tests/test_boundary_scenarios.py::TestUserBoundary::test_register_duplicate_username PASSED                                      [ 35%]
+tests/test_boundary_scenarios.py::TestUserBoundary::test_invalid_room_number_format PASSED                                       [ 41%]
+tests/test_boundary_scenarios.py::TestProductBoundary::test_create_product_zero_price PASSED                                     [ 47%]
+tests/test_boundary_scenarios.py::TestProductBoundary::test_create_product_negative_price PASSED                                 [ 52%]
+tests/test_boundary_scenarios.py::TestProductBoundary::test_create_product_very_long_description FAILED                          [ 58%]
+tests/test_boundary_scenarios.py::TestProductBoundary::test_product_without_images PASSED                                        [ 64%]
+tests/test_boundary_scenarios.py::TestAuthenticationBoundary::test_access_protected_route_without_login PASSED                   [ 70%]
+tests/test_boundary_scenarios.py::TestAuthenticationBoundary::test_login_with_wrong_password PASSED                              [ 76%]
+tests/test_boundary_scenarios.py::TestAPISecurity::test_api_without_xsrf_token PASSED                                            [ 82%]
+tests/test_boundary_scenarios.py::TestAPISecurity::test_access_other_user_order PASSED                                           [ 88%]
+tests/test_boundary_scenarios.py::TestUnreadNotifications::test_unread_orders_count_for_buyer PASSED                             [ 94%]
+tests/test_boundary_scenarios.py::TestUnreadNotifications::test_unread_messages_count_format FAILED                              [100%]
+
+=============================================================== FAILURES ===============================================================
+____________________________________ TestProductBoundary.test_create_product_very_long_description _____________________________________
+
+self = <test_boundary_scenarios.TestProductBoundary object at 0x7f0ba7318250>
+
+    def test_create_product_very_long_description(self):
+        """测试：超长商品描述"""
+        session = TestSession.create_authenticated_session("testuser1", "Test123456")
+        if not session:
+            pytest.skip("无法创建测试会话")
+    
+        upload_page = session.get(f"{BASE_URL}/product/upload")
+        soup = BeautifulSoup(upload_page.text, 'html.parser')
+        xsrf_input = soup.find('input', {'name': '_xsrf'})
+        if not xsrf_input:
+            pytest.skip("未找到XSRF token")
+    
+        product_data = {
+            "name": "Long Description Product",
+            "description": "A" * 10000,  # 边界：超长描述
+            "price": "99.99",
+            "quantity": "10",
+            "tag": "其他",
+            "_xsrf": xsrf_input['value']
+        }
+    
+        files = {'images': ('test.jpg', b'fake_image_content', 'image/jpeg')}
+        response = session.post(f"{BASE_URL}/product/upload", data=product_data, files=files)
+    
+        # 系统应该能处理或限制描述长度
+>       assert response.status_code in [200, 302, 400]
+E       assert 500 in [200, 302, 400]
+E        +  where 500 = <Response [500]>.status_code
+
+tests/test_boundary_scenarios.py:283: AssertionError
+______________________________________ TestUnreadNotifications.test_unread_messages_count_format _______________________________________
+
+self = <test_boundary_scenarios.TestUnreadNotifications object at 0x7f0ba7480890>
+
+    def test_unread_messages_count_format(self):
+        """测试：未读消息数量格式（超过99显示99+）"""
+        session = TestSession.create_authenticated_session("testuser1", "Test123456")
+        if not session:
+            pytest.skip("无法创建测试会话")
+    
+        response = session.get(f"{BASE_URL}/api/unread_count")
+    
+        if response.status_code == 200:
+            data = response.json()
+            # 应该包含total_unread字段
+>           assert 'total_unread' in data
+E           AssertionError: assert 'total_unread' in {'counts': {}, 'status': 'success', 'total_count': 0}
+
+tests/test_boundary_scenarios.py:419: AssertionError
+======================================================= short test summary info ========================================================
+FAILED tests/test_boundary_scenarios.py::TestProductBoundary::test_create_product_very_long_description - assert 500 in [200, 302, 400]
+FAILED tests/test_boundary_scenarios.py::TestUnreadNotifications::test_unread_messages_count_format - AssertionError: assert 'total_unread' in {'counts': {}, 'status': 'success', 'total_count': 0}
+===================================================== 2 failed, 15 passed in 6.03s =====================================================

@@ -60,6 +60,32 @@ The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
 -   **WeChat Open Platform OAuth**: Integrated for WeChat login (web version), requiring `WECHAT_APP_ID`, `WECHAT_APP_SECRET`, `WECHAT_REDIRECT_URI`.
 -   **WeChat Mini Program**: Requires separate registration and AppID/AppSecret from WeChat Mini Program platform (mp.weixin.qq.com). Environment variables: `WX_MINIPROGRAM_APP_ID`, `WX_MINIPROGRAM_APP_SECRET`.
 
+## Recent Changes (Nov 24, 2025 - Final Update)
+
+### 自动化测试修复 - 所有17个测试通过 ✅
+-   **修复1: 超长商品描述返回500错误**
+    -   问题: ProductUploadHandler未验证描述长度
+    -   解决: 添加5000字符限制，超长返回400而不是500
+    -   代码: `controllers/product_controller.py` 第76-80行
+
+-   **修复2: 未读消息API响应字段缺失**
+    -   问题: UnreadCountHandler返回'total_count'但测试期望'total_unread'
+    -   解决: 添加'total_unread'字段作为别名
+    -   代码: `controllers/chat_controller.py` 第572行
+
+-   **修复3: 零数量订单允许创建**
+    -   问题: CreateOrderHandler未验证quantity > 0
+    -   解决: 添加数量验证，拒绝0或负数订单
+    -   代码: `controllers/order_controller.py` 第189-192行
+
+-   **测试覆盖**: 17/17 测试通过 (100%)
+    -   5个订单边界场景测试
+    -   2个用户边界场景测试
+    -   4个产品边界场景测试
+    -   2个认证边界场景测试
+    -   2个API安全测试
+    -   2个未读通知测试
+
 ## Recent Changes (Nov 24, 2025 - Updated)
 
 ### 紧急修复 - 解决关键Bug和文件清理

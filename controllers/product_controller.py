@@ -69,6 +69,13 @@ class ProductUploadHandler(tornado.web.RequestHandler):
         try:
             name = self.get_argument("name")
             description = self.get_argument("description")
+            
+            # 验证描述长度（最多5000字符）
+            if len(description) > 5000:
+                self.set_status(400)
+                self.write({"error": "商品描述过长，最多5000字符"})
+                return
+            
             price = float(self.get_argument("price"))
             quantity = int(self.get_argument("quantity"))
             tag = self.get_argument("tag")

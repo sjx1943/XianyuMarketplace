@@ -566,6 +566,7 @@ class UnreadCountHandler(tornado.web.RequestHandler):
             self.write({
                 "status": "success",
                 "total_count": total_count,
+                "total_unread": total_count,  # 兼容前端期望的字段名
                 "counts": counts_by_friend
             })
         except Exception as e:
