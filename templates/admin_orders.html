@@ -32,11 +32,9 @@
                         <option value="shipped" {{ 'selected' if status_filter == 'shipped' else '' }}>已发货</option>
                         <option value="completed" {{ 'selected' if status_filter == 'completed' else '' }}>已完成</option>
                     </select>
-                    {% if old_orders_count and old_orders_count > 0 %}
-                    <button onclick="deleteOldOrders()" class="btn-delete-old" style="background-color: #dc3545; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
-                        🗑️ 删除1年以上订单 ({{ old_orders_count }})
+                    <button onclick="deleteOldOrders()" class="btn-delete-old" style="background-color: #dc3545; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                        🗑️ 删除1年以上订单 {% if old_orders_count %}({{ old_orders_count }}){% else %}(检查中...){% end %}
                     </button>
-                    {% end %}
                     <a href="/admin/dashboard" class="btn-back">返回Dashboard</a>
                 </div>
             </div>

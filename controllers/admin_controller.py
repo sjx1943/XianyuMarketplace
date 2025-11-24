@@ -1,6 +1,7 @@
 import tornado.web
 import json
 import logging
+from datetime import datetime, timedelta
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import func, or_
 from base.base import engine
@@ -302,7 +303,6 @@ class AdminOrderManagementHandler(AdminBaseHandler):
             orders = query.order_by(Order.id.desc()).offset(offset).limit(per_page).all()
             
             # 统计1年以上的订单数量
-            from datetime import datetime, timedelta
             one_year_ago = datetime.now() - timedelta(days=365)
             old_orders_count = self.session.query(func.count(Order.id)).filter(Order.created_at <= one_year_ago).scalar()
             
@@ -339,7 +339,6 @@ class AdminOrderManagementHandler(AdminBaseHandler):
                 
             elif action == 'delete_old_orders':
                 # 删除1年以上的订单
-                from datetime import datetime, timedelta
                 one_year_ago = datetime.now() - timedelta(days=365)
                 old_orders = self.session.query(Order).filter(Order.created_at <= one_year_ago).all()
                 deleted_count = len(old_orders)
