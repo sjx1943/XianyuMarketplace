@@ -60,6 +60,25 @@ The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
 -   **WeChat Open Platform OAuth**: Integrated for WeChat login (web version), requiring `WECHAT_APP_ID`, `WECHAT_APP_SECRET`, `WECHAT_REDIRECT_URI`.
 -   **WeChat Mini Program**: Requires separate registration and AppID/AppSecret from WeChat Mini Program platform (mp.weixin.qq.com). Environment variables: `WX_MINIPROGRAM_APP_ID`, `WX_MINIPROGRAM_APP_SECRET`.
 
+## Recent Changes (Nov 24, 2025 - Updated)
+
+### 紧急修复 - 解决关键Bug和文件清理
+-   **AsyncIOMainLoop Sleep错误修复** ✅
+    -   问题: `await IOLoop.current().sleep()` 在Tornado中不存在
+    -   解决: 改用 `IOLoop.current().call_later()` + callback方式
+    -   代码位置: `controllers/order_controller.py` 行437-474
+    -   改进: 使用 `sys.stderr.write()` 避免reentrant print错误
+    -   验证: 应用正常启动，订单自动完成调度器成功初始化
+
+-   **pytest命令行工具** ✅
+    -   安装版本: pytest 9.0.1
+    -   使用: `pytest tests/test_boundary_scenarios.py -v`
+
+-   **部署文件结构清理** ✅
+    -   删除6个多余文件: nginx.conf, default.conf, VPS_DEPLOYMENT_GUIDE.md等
+    -   保留仅腾讯云相关: nginx-tencent.conf, TENCENT_CLOUD_DEPLOYMENT.md
+    -   多云部署脚本: vps-install.sh (支持腾讯云/阿里云/AWS)
+
 ## Recent Changes (Nov 24, 2025)
 
 ### 功能修复与测试

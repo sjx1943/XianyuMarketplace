@@ -432,38 +432,43 @@ def complete_order(order_id):
 
 
 def start_order_auto_completion_scheduler():
-    """启动订单自动完成调度器"""
-    async def check_orders_for_auto_completion():
-        """每15分钟检查一次需要自动完成的订单"""
-        while True:
-            try:
-                await IOLoop.current().sleep(900)  # 15分钟检查一次
-                session = Session()
-                
-                # 查找所有已发货且超过24小时的订单
-                from datetime import timedelta
-                now = dt_class.now()
-                cutoff_time = now - timedelta(hours=24)
-                
-                orders_to_complete = session.query(Order).filter(
-                    Order.status == 'shipped',
-                    Order.shipped_at < cutoff_time
-                ).all()
-                
-                for order in orders_to_complete:
-                    order.status = 'completed'
-                    order.completed_at = now
-                    print(f"✅ 自动确认订单 {order.id}（发货时间：{order.shipped_at}）")
-                
-                if orders_to_complete:
-                    session.commit()
-                    print(f"📦 批量自动完成 {len(orders_to_complete)} 个订单")
-                
-                session.close()
-            except Exception as e:
-                print(f"❌ 订单自动完成检查失败: {str(e)}")
+    """启动订单自动完成调度器 - 使用IOLoop.call_later实现定期检查"""
+    def check_and_reschedule():
+        """检查需要自动完成的订单，然后重新调度"""
+        try:
+            from datetime import timedelta
+            session = Session()
+            now = dt_class.now()
+            cutoff_time = now - timedelta(hours=24)
+            
+            # 查找所有已发货且超过24小时的订单
+            orders_to_complete = session.query(Order).filter(
+                Order.status == 'shipped',
+                Order.shipped_at < cutoff_time
+            ).all()
+            
+            for order in orders_to_complete:
+                order.status = 'completed'
+                order.completed_at = now
+            
+            if orders_to_complete:
+                session.commit()
+                import sys
+                # 使用logging避免reentrant print错误
+                sys.stderr.write(f"📦 自动完成 {len(orders_to_complete)} 个订单\n")
+                sys.stderr.flush()
+            
+            session.close()
+        except Exception as e:
+            import sys
+            sys.stderr.write(f"❌ 订单自动完成检查失败: {str(e)}\n")
+            sys.stderr.flush()
+        finally:
+            # 15分钟后再次执行（900秒）
+            IOLoop.current().call_later(900, check_and_reschedule)
     
-    IOLoop.current().add_callback(check_orders_for_auto_completion)
+    # 启动第一次检查
+    IOLoop.current().call_later(900, check_and_reschedule)
 
 
 class ConfirmTransactionHandler(tornado.web.RequestHandler):
