@@ -1,25 +1,76 @@
-// 小程序配置文件
+// 配置文件
+const isDev = false // 是否为开发环境
+
+// API配置
 const config = {
-  // API基础URL - 替换为您的Replit应用域名
-  API_BASE: 'https://your-app.replit.app',
+  isDev: isDev,
   
-  // WebSocket URL（聊天功能）
-  WS_BASE: 'wss://your-app.replit.app',
-  
-  // 微信小程序AppID - 替换为您的小程序AppID
-  WX_APP_ID: 'wx1234567890abcdef',
-  
-  // 请求超时时间（毫秒）
-  REQUEST_TIMEOUT: 10000,
-  
-  // 图片上传大小限制（字节，默认10MB）
-  MAX_IMAGE_SIZE: 10 * 1024 * 1024,
-  
-  // 每次加载商品数量
-  PAGE_SIZE: 20,
-  
-  // 默认商品封面
-  DEFAULT_PRODUCT_IMAGE: '/images/default-product.png'
+  // API域名配置
+  api: {
+    // 生产环境
+    production: {
+      host: 'https://your-production-domain.com',
+      apiBase: '/api',
+      wsBase: '/ws'
+    },
+    // 开发环境
+    development: {
+      host: 'http://localhost:5000',
+      apiBase: '/api',
+      wsBase: '/ws'
+    }
+  },
+
+  // 应用配置
+  app: {
+    name: '小区二手交易',
+    version: '1.0.0',
+    platform: 'WeChat MiniProgram'
+  },
+
+  // 请求超时配置（毫秒）
+  timeout: {
+    request: 10000,
+    upload: 30000,
+    download: 10000
+  },
+
+  // 重试配置
+  retry: {
+    maxAttempts: 3,
+    delay: 1000 // 初始延迟时间
+  },
+
+  // 缓存配置
+  cache: {
+    enabled: true,
+    ttl: 3600000 // 1小时（毫秒）
+  },
+
+  // 分页配置
+  pagination: {
+    pageSize: 20,
+    maxPages: 100
+  }
 }
 
-module.exports = config
+// 获取API基础URL
+function getApiBase() {
+  const env = isDev ? 'development' : 'production'
+  const apiConfig = config.api[env]
+  return apiConfig.host + apiConfig.apiBase
+}
+
+// 获取WebSocket基础URL
+function getWsBase() {
+  const env = isDev ? 'development' : 'production'
+  const apiConfig = config.api[env]
+  return apiConfig.host.replace(/^http/, 'ws') + apiConfig.wsBase
+}
+
+module.exports = {
+  config,
+  getApiBase,
+  getWsBase,
+  isDev
+}
