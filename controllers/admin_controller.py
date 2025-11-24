@@ -301,16 +301,65 @@ class AdminOrderManagementHandler(AdminBaseHandler):
             
             orders = query.order_by(Order.id.desc()).offset(offset).limit(per_page).all()
             
+            # 统计1年以上的订单数量
+            from datetime import datetime, timedelta
+            one_year_ago = datetime.now() - timedelta(days=365)
+            old_orders_count = self.session.query(func.count(Order.id)).filter(Order.created_at <= one_year_ago).scalar()
+            
             self.render('admin_orders.html',
                        admin=self.current_admin,
                        orders=orders,
                        page=page,
                        status_filter=status_filter,
-                       total_pages=total_pages)
+                       total_pages=total_pages,
+                       old_orders_count=old_orders_count)
             
         except Exception as e:
             logging.error(f"订单管理加载错误: {e}")
             self.write("加载错误")
+    
+    async def post(self):
+        """处理订单操作（删除等）"""
+        self.set_header('Content-Type', 'application/json')
+        try:
+            data = json.loads(self.request.body)
+            action = data.get('action')
+            order_id = data.get('order_id')
+            
+            if action == 'delete' and order_id:
+                # 删除单个订单
+                order = self.session.query(Order).filter_by(id=order_id).first()
+                if not order:
+                    self.write({'success': False, 'message': '订单不存在'})
+                    return
+                
+                self.session.delete(order)
+                self.session.commit()
+                self.write({'success': True, 'message': '订单已删除'})
+                
+            elif action == 'delete_old_orders':
+                # 删除1年以上的订单
+                from datetime import datetime, timedelta
+                one_year_ago = datetime.now() - timedelta(days=365)
+                old_orders = self.session.query(Order).filter(Order.created_at <= one_year_ago).all()
+                deleted_count = len(old_orders)
+                
+                for order in old_orders:
+                    self.session.delete(order)
+                
+                self.session.commit()
+                self.write({
+                    'success': True,
+                    'message': f'已删除 {deleted_count} 个订单',
+                    'deleted_count': deleted_count
+                })
+            else:
+                self.write({'success': False, 'message': '无效操作'})
+                
+        except Exception as e:
+            logging.error(f"订单操作错误: {e}")
+            self.session.rollback()
+            self.write({'success': False, 'message': f'操作失败: {str(e)}'})
 
 class AdminOrderDetailHandler(AdminBaseHandler):
     """管理员订单详情查看"""

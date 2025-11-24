@@ -32,6 +32,11 @@
                         <option value="shipped" {{ 'selected' if status_filter == 'shipped' else '' }}>已发货</option>
                         <option value="completed" {{ 'selected' if status_filter == 'completed' else '' }}>已完成</option>
                     </select>
+                    {% if old_orders_count and old_orders_count > 0 %}
+                    <button onclick="deleteOldOrders()" class="btn-delete-old" style="background-color: #dc3545; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
+                        🗑️ 删除1年以上订单 ({{ old_orders_count }})
+                    </button>
+                    {% end %}
                     <a href="/admin/dashboard" class="btn-back">返回Dashboard</a>
                 </div>
             </div>
@@ -47,12 +52,13 @@
                             <th>数量</th>
                             <th>状态</th>
                             <th>创建时间</th>
+                            <th>操作</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% if orders %}
                             {% for order in orders %}
-                            <tr onclick="location.href='/admin/order/{{ order.id }}'" style="cursor: pointer;">
+                            <tr style="hover: {background-color: #f5f5f5;}">
                                 <td><a href="/admin/order/{{ order.id }}" style="color: #007bff; text-decoration: none;">{{ order.id }}</a></td>
                                 <td>{{ order.product_name if order.product_name else '-' }}</td>
                                 <td>{{ order.user_id }}</td>
@@ -64,10 +70,15 @@
                                     </span>
                                 </td>
                                 <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '-' }}</td>
+                                <td>
+                                    <button onclick="deleteOrder(event, {{ order.id }})" class="btn-delete-order" style="background-color: #ff6b6b; color: white; padding: 4px 8px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;">
+                                        删除
+                                    </button>
+                                </td>
                             </tr>
                             {% end %}
                         {% else %}
-                            <tr><td colspan="7">暂无订单数据</td></tr>
+                            <tr><td colspan="8">暂无订单数据</td></tr>
                         {% end %}
                     </tbody>
                 </table>
@@ -84,5 +95,88 @@
             </div>
         </main>
     </div>
+
+    <script>
+        // 删除单个订单
+        function deleteOrder(event, orderId) {
+            event.stopPropagation();
+            if (confirm(`确定要删除订单 #${orderId} 吗？此操作无法撤销！`)) {
+                fetch('/admin/orders', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-XSRFToken': getCookie('_xsrf')
+                    },
+                    body: JSON.stringify({
+                        action: 'delete',
+                        order_id: orderId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ ' + data.message);
+                        location.reload();
+                    } else {
+                        alert('❌ ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('❌ 删除失败: ' + error);
+                });
+            }
+        }
+
+        // 删除1年以上的所有订单
+        function deleteOldOrders() {
+            if (confirm('⚠️ 确定要删除所有1年以上的订单吗？\n\n此操作将：\n• 永久删除所有创建时间超过1年的订单\n• 此操作无法撤销！\n\n请仔细确认！')) {
+                const confirmAgain = prompt('请输入 "确认删除" 来确认删除1年以上的订单：');
+                if (confirmAgain === '确认删除') {
+                    fetch('/admin/orders', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-XSRFToken': getCookie('_xsrf')
+                        },
+                        body: JSON.stringify({
+                            action: 'delete_old_orders'
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('✅ ' + data.message + '\n\n已删除: ' + data.deleted_count + ' 个订单');
+                            location.reload();
+                        } else {
+                            alert('❌ ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('❌ 删除失败: ' + error);
+                    });
+                } else {
+                    alert('❌ 取消删除');
+                }
+            }
+        }
+
+        // 获取CSRF Token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
 </body>
 </html>
