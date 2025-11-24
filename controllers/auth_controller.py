@@ -343,10 +343,30 @@ class ForgotPasswordHandler(tornado.web.RequestHandler):
                 self.render("password_reset_success.html")
             
             else:
-                # 邮箱重置密码（原有逻辑）
-                email = self.get_argument("email")
+                # 邮箱重置密码
+                email = self.get_argument("email", "").strip()
+                
+                # 验证邮箱是否为空
+                if not email:
+                    self.render("forgot_password.html", result="⚠️ 请输入邮箱地址")
+                    return
+                
+                # 验证邮箱格式
+                import re
+                email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+                if not re.match(email_pattern, email):
+                    self.render("forgot_password.html", result="⚠️ 邮箱格式不正确，请输入有效的邮箱地址")
+                    return
+                
+                # 查找用户
                 user = self.session.query(User).filter_by(email=email).first()
+                
                 if user is not None:
+                    # 验证输入邮箱是否与注册邮箱一致
+                    if user.email != email:
+                        self.render("forgot_password.html", result="⚠️ 请确认重置输入邮箱应与注册邮箱保持一致，如有疑问请联系管理员")
+                        return
+                    
                     reset_token = generate_reset_token()
                     user.reset_token = reset_token
                     self.session.commit()
@@ -365,7 +385,7 @@ class ForgotPasswordHandler(tornado.web.RequestHandler):
                         self.session.commit()
                         self.render("forgot_password.html", result="发送邮件失败，请稍后重试或联系管理员")
                 else:
-                    self.render("forgot_password.html", result="未查到关联邮箱，请核实后输入正确邮箱")
+                    self.render("forgot_password.html", result="⚠️ 该邮箱未注册，请确认邮箱地址是否正确")
         
         except Exception as e:
             logging.error(f"密码重置错误: {e}")

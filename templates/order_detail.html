@@ -26,7 +26,7 @@
                     <a href="/product/detail/{{ product.id }}">{{ product.name }}</a>
                 {% else %}
                     {{ order.product_name }} (商品已下架)
-                {% endif %}
+                {% end %}
             </p>
             <p><strong>价格:</strong> ¥{{ product.price if product else 'N/A' }}</p>
             <p><strong>数量:</strong> {{ order.quantity }}</p>

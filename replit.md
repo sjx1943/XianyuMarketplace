@@ -60,7 +60,34 @@ The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
 -   **WeChat Open Platform OAuth**: Integrated for WeChat login (web version), requiring `WECHAT_APP_ID`, `WECHAT_APP_SECRET`, `WECHAT_REDIRECT_URI`.
 -   **WeChat Mini Program**: Requires separate registration and AppID/AppSecret from WeChat Mini Program platform (mp.weixin.qq.com). Environment variables: `WX_MINIPROGRAM_APP_ID`, `WX_MINIPROGRAM_APP_SECRET`.
 
-## Recent Changes (Nov 24, 2025 - Final Update)
+## Recent Changes (Nov 24, 2025 - 三个关键修复完成)
+
+### 功能修复 - 订单详情 + 倒计时 + 邮箱验证 ✅
+
+-   **修复1: 订单详情页模板错误**
+    -   问题: "unknown operator: 'endif' at order_detail.html:29"
+    -   根因: Tornado模板使用 {% end %} 而非 {% endif %}
+    -   解决: 修改第29行 {% endif %} → {% end %}
+    -   代码: `templates/order_detail.html` 第29行
+    -   影响: 订单详情页现在可正常访问
+
+-   **新增功能: 24小时自动确认倒计时**
+    -   功能: 卖家发货后，买家在订单列表看到倒计时
+    -   显示格式: "⏱️ 自动确认倒计时: X小时Y分Z秒"
+    -   实时更新: 每秒刷新一次
+    -   倒计时完成提示: "确认收货期已满，系统将自动确认"
+    -   代码: `templates/orders_list.html` 
+      - 第187-193行: 添加倒计时显示元素
+      - 第224-256行: updateCountdown() JavaScript函数
+      - 第278-282行: 初始化倒计时
+
+-   **修复3: 邮箱密码重置验证与警告**
+    -   功能: 多层邮箱验证，确保用户输入正确邮箱
+    -   验证1: 邮箱不能为空 → 提示 "⚠️ 请输入邮箱地址"
+    -   验证2: 邮箱格式检查 → 提示 "⚠️ 邮箱格式不正确"
+    -   验证3: 邮箱与注册邮箱一致性 → 提示 "⚠️ 请确认重置输入邮箱应与注册邮箱保持一致"
+    -   验证4: 邮箱是否已注册 → 提示 "⚠️ 该邮箱未注册"
+    -   代码: `controllers/auth_controller.py` 第349-391行
 
 ### 自动化测试修复 - 所有17个测试通过 ✅
 -   **修复1: 超长商品描述返回500错误**

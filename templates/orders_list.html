@@ -182,7 +182,12 @@
                                     {% if item['order'].status == 'pending' %}
                                         <button class="btn btn-danger cancel-btn" data-order-id="{{ item['order'].id }}">取消订单</button>
                                     {% elif item['order'].status == 'shipped' %}
-                                        <button class="btn btn-primary confirm-btn" data-order-id="{{ item['order'].id }}">确认收货</button>
+                                        <div>
+                                            <button class="btn btn-primary confirm-btn" data-order-id="{{ item['order'].id }}">确认收货</button>
+                                            <p class="countdown" data-order-id="{{ item['order'].id }}" data-shipped-at="{{ item['order'].shipped_at.isoformat() if item['order'].shipped_at else '' }}">
+                                                <span class="countdown-text"></span>
+                                            </p>
+                                        </div>
                                     {% end %}
                                 <!-- 卖家操作 -->
                                 {% else %}
@@ -216,6 +221,37 @@
                 return cookieValue;
             }
 
+            // 倒计时功能
+            function updateCountdown() {
+                document.querySelectorAll('.countdown').forEach(element => {
+                    const shippedAt = element.dataset.shippedAt;
+                    if (!shippedAt) return;
+
+                    const shippedTime = new Date(shippedAt).getTime();
+                    const autoConfirmTime = shippedTime + 24 * 60 * 60 * 1000; // 24小时后
+
+                    function updateTimer() {
+                        const now = new Date().getTime();
+                        const remaining = autoConfirmTime - now;
+
+                        if (remaining <= 0) {
+                            element.querySelector('.countdown-text').textContent = '⏱️ 确认收货期已满，系统将自动确认（如未确认请刷新页面）';
+                            element.style.color = '#dc3545';
+                        } else {
+                            const hours = Math.floor(remaining / (60 * 60 * 1000));
+                            const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+                            const seconds = Math.floor((remaining % (60 * 1000)) / 1000);
+                            element.querySelector('.countdown-text').textContent = 
+                                `⏱️ 自动确认倒计时: ${hours}小时${minutes}分${seconds}秒`;
+                            element.style.color = '#ff9800';
+                        }
+                    }
+
+                    updateTimer();
+                    setInterval(updateTimer, 1000);
+                });
+            }
+
             // 处理买家确认收货
             document.querySelectorAll('.confirm-btn').forEach(button => {
                 button.addEventListener('click', function() {
@@ -238,6 +274,9 @@
                     }
                 });
             });
+
+            // 初始化倒计时
+            updateCountdown();
 
             // 处理卖家更新订单状态（确认订单、发货）
             document.querySelectorAll('.update-status-btn').forEach(button => {
