@@ -178,6 +178,7 @@ def make_app():
 if __name__ == "__main__":
     import argparse
     import signal
+    from controllers.order_controller import start_order_auto_completion_scheduler
     
     # 解析命令行参数
     parser = argparse.ArgumentParser(description='Tornado Application')
@@ -201,6 +202,11 @@ if __name__ == "__main__":
         print(f"🔗 健康检查: http://localhost:{args.port}/health")
         print("⏹️  按 Ctrl+C 停止服务")
         print("=" * 60)
+        
+        # 启动订单自动完成调度器（每15分钟检查一次是否有超过24小时的订单）
+        print("📦 启动订单自动完成调度器...")
+        start_order_auto_completion_scheduler()
+        print("✅ 订单自动完成调度器已启动（24小时自动确认订单）")
         
         # 优雅关闭处理
         def handle_signal(signum, frame):

@@ -16,8 +16,11 @@ from base.base import engine
 from sqlalchemy import desc, or_, and_, func
 from motor import motor_tornado
 from tornado.ioloop import IOLoop
+from tornado.concurrent import run_on_executor
+from concurrent.futures import ThreadPoolExecutor
 
 Session = sessionmaker(bind=engine)
+executor = ThreadPoolExecutor(max_workers=10)
 
 # MongoDB连接配置（用于存储通知）
 mongo_host = os.getenv('MONGO_HOST', 'localhost')
@@ -399,6 +402,68 @@ class CreateOrderHandler(tornado.web.RequestHandler):
 
     def on_finish(self):
         self.session.close()
+
+
+def complete_order(order_id):
+    """后台任务：自动完成订单（24小时后）"""
+    try:
+        session = Session()
+        order = session.query(Order).filter_by(id=order_id).first()
+        
+        if not order:
+            return
+        
+        # 检查订单是否已发货且已超过24小时
+        if order.status == 'shipped' and order.shipped_at:
+            from datetime import timedelta
+            now = dt_class.now()
+            elapsed = now - order.shipped_at
+            
+            # 如果已发货超过24小时，自动完成订单
+            if elapsed > timedelta(hours=24):
+                order.status = 'completed'
+                order.completed_at = now
+                session.commit()
+                print(f"✅ 订单 {order_id} 已自动确认收货（发货后超过24小时）")
+        
+        session.close()
+    except Exception as e:
+        print(f"❌ 自动完成订单失败: {str(e)}")
+
+
+def start_order_auto_completion_scheduler():
+    """启动订单自动完成调度器"""
+    async def check_orders_for_auto_completion():
+        """每15分钟检查一次需要自动完成的订单"""
+        while True:
+            try:
+                await IOLoop.current().sleep(900)  # 15分钟检查一次
+                session = Session()
+                
+                # 查找所有已发货且超过24小时的订单
+                from datetime import timedelta
+                now = dt_class.now()
+                cutoff_time = now - timedelta(hours=24)
+                
+                orders_to_complete = session.query(Order).filter(
+                    Order.status == 'shipped',
+                    Order.shipped_at < cutoff_time
+                ).all()
+                
+                for order in orders_to_complete:
+                    order.status = 'completed'
+                    order.completed_at = now
+                    print(f"✅ 自动确认订单 {order.id}（发货时间：{order.shipped_at}）")
+                
+                if orders_to_complete:
+                    session.commit()
+                    print(f"📦 批量自动完成 {len(orders_to_complete)} 个订单")
+                
+                session.close()
+            except Exception as e:
+                print(f"❌ 订单自动完成检查失败: {str(e)}")
+    
+    IOLoop.current().add_callback(check_orders_for_auto_completion)
 
 
 class ConfirmTransactionHandler(tornado.web.RequestHandler):

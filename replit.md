@@ -60,9 +60,31 @@ The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
 -   **WeChat Open Platform OAuth**: Integrated for WeChat login (web version), requiring `WECHAT_APP_ID`, `WECHAT_APP_SECRET`, `WECHAT_REDIRECT_URI`.
 -   **WeChat Mini Program**: Requires separate registration and AppID/AppSecret from WeChat Mini Program platform (mp.weixin.qq.com). Environment variables: `WX_MINIPROGRAM_APP_ID`, `WX_MINIPROGRAM_APP_SECRET`.
 
-## Recent Changes (Nov 23, 2025)
+## Recent Changes (Nov 24, 2025)
 
-### 项目结构清理
+### 功能修复与测试
+-   **订单交易流程完善**：
+    -   ✅ 实现24小时自动确认收货：后台任务（`start_order_auto_completion_scheduler`）每15分钟检查发货超过24小时的订单，自动完成
+    -   ✅ 买家可手动点击"确认收货"提前完成交易（`ConfirmTransactionHandler`）
+    -   ✅ 在app.py启动时初始化订单自动完成调度器
+    -   ✅ 订单模型支持 `shipped_at` 和 `completed_at` 时间戳追踪
+
+-   **用户体验改进**：
+    -   ✅ 邮箱密码重置：添加5-10分钟延迟提醒和垃圾箱检查提示
+    -   ✅ 改善忘记密码流程的用户友好度（`ForgotPasswordHandler`）
+
+-   **自动化测试增强**：
+    -   ✅ 完善边界场景测试 (`tests/test_boundary_scenarios.py`)
+    -   ✅ 覆盖订单、商品、认证、安全、通知等5大类功能模块
+    -   ✅ 修复测试中的变量引用bug，增强异常处理
+
+-   **腾讯云部署支持**：
+    -   ✅ 创建 `deploy/nginx-tencent.conf`：支持HTTP/HTTPS、WebSocket、静态资源缓存、SSL证书配置
+    -   ✅ 创建 `deploy/TENCENT_CLOUD_DEPLOYMENT.md`：完整的腾讯云部署指南（购买、域名、证书、部署步骤、监控、安全建议）
+    -   ✅ 升级 `deploy/vps-install.sh`：支持腾讯云/阿里云/AWS多云部署（--provider参数）
+    -   ✅ 自动检测云服务商并配置对应的镜像源（腾讯云/阿里云）和Docker加速
+
+### 项目结构清理 (Nov 23, 2025)
 -   **删除重复代码**: 清理了过时的 `mytornado/xianyu/agent_mvc/` 重复项目目录
     -   ✅ 删除了旧版 app.py（该版本缺少手机号登录、微信OAuth、小程序支持、管理员功能）
     -   ✅ 保留根目录的主应用 (`app.py`) - 包含所有最新功能

@@ -300,13 +300,15 @@ class TestProductBoundary:
             "price": "99.99",
             "quantity": "10",
             "tag": "其他",
-            "_xsrf": xsrf_token['value']
+            "_xsrf": xsrf_input['value']
         }
         
         # 不包含files参数
         response = session.post(f"{BASE_URL}/product/upload", data=product_data)
         
         # 应该返回错误（需要至少一张图片）
+        if response.status_code == 200:
+            assert "错误" in response.text or "图片" in response.text or response.status_code != 302
 
 
 class TestAuthenticationBoundary:

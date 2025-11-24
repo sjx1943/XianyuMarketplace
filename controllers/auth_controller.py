@@ -356,7 +356,8 @@ class ForgotPasswordHandler(tornado.web.RequestHandler):
                         base_url = f"{self.request.protocol}://{self.request.host}"
                         send_reset_email(email, reset_token, base_url)
                         logging.info(f"邮箱重置密码邮件已发送: {email}")
-                        self.render("token_input.html", result="请输入您的邮箱中的验证码和新密码")
+                        result_msg = "✅ 邮件已发送！由于邮件服务处理延迟，请等待 5-10 分钟后查收。\n请检查您的邮箱（包括垃圾箱）并点击重置链接。"
+                        self.render("token_input.html", result=result_msg, email=email, reset_token=reset_token)
                     except Exception as e:
                         logging.error(f"发送重置邮件失败: {e}")
                         # 失败时清除reset_token，避免用户无法重新请求
