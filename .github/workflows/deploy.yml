@@ -1,4 +1,4 @@
-name: 自动部署到VPS
+name: 自动部署到VPS上，用于后端迁移
 
 on:
   push:
