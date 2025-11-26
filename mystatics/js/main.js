@@ -45,19 +45,49 @@ function loadProducts(tag = 'all') {
             products.forEach(product => {
                 const productDiv = document.createElement('div');
                 productDiv.className = 'product-item';
-                productDiv.innerHTML = `
-                    <div class="product-info">
-                        <a href="/product/detail/${product.id}">
-                            <img src="/static/images/${product.image}" alt="${product.name}">
-                        </a>
-                        <h2>${product.name}</h2>
-                        <p>￥${product.price}</p>
-                        <p>数量：${product.quantity}</p>
-                        <p>标签：${product.tag}</p>
-                        ${product.user_id === window.currentUserId ?
-                          `<a href="/product/edit/${product.id}" class="edit-product button-link">编辑</a>` : ''}
-                    </div>
-                `;
+                
+                const productInfo = document.createElement('div');
+                productInfo.className = 'product-info';
+                
+                // Product link and image
+                const link = document.createElement('a');
+                link.href = `/product/detail/${encodeURIComponent(product.id)}`;
+                const img = document.createElement('img');
+                img.src = `/static/images/${encodeURIComponent(product.image)}`;
+                img.alt = product.name;
+                link.appendChild(img);
+                productInfo.appendChild(link);
+                
+                // Product name
+                const name = document.createElement('h2');
+                name.textContent = product.name;
+                productInfo.appendChild(name);
+                
+                // Price
+                const price = document.createElement('p');
+                price.textContent = `￥${product.price}`;
+                productInfo.appendChild(price);
+                
+                // Quantity
+                const quantity = document.createElement('p');
+                quantity.textContent = `数量：${product.quantity}`;
+                productInfo.appendChild(quantity);
+                
+                // Tag
+                const tag = document.createElement('p');
+                tag.textContent = `标签：${product.tag}`;
+                productInfo.appendChild(tag);
+                
+                // Edit link (only for owner)
+                if (product.user_id === window.currentUserId) {
+                    const editLink = document.createElement('a');
+                    editLink.href = `/product/edit/${encodeURIComponent(product.id)}`;
+                    editLink.className = 'edit-product button-link';
+                    editLink.textContent = '编辑';
+                    productInfo.appendChild(editLink);
+                }
+                
+                productDiv.appendChild(productInfo);
                 productListDiv.appendChild(productDiv);
             });
 
