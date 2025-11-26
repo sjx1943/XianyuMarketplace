@@ -4,7 +4,7 @@ import json
 import time
 from bs4 import BeautifulSoup
 
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = "http://127.0.0.1:5000"
 TEST_USER = {
     "username": f"testuser_{int(time.time())}",
     "password": "password123",
@@ -43,9 +43,20 @@ def authenticated_session():
     }
     login_response = session.post(f"{BASE_URL}/login", data=login_data, allow_redirects=True)
     
-    # A successful login should redirect to the main page
+    # A successful login should redirect to either /main or /set_room_number (for new users)
     assert login_response.status_code == 200
-    assert "/main" in login_response.url
+    assert "/main" in login_response.url or "/set_room_number" in login_response.url
+    
+    # If redirected to set_room_number, set a room number and proceed
+    if "/set_room_number" in login_response.url:
+        soup = BeautifulSoup(login_response.text, 'html.parser')
+        xsrf_token = soup.find('input', {'name': '_xsrf'})['value']
+        room_data = {
+            "room_number": f"Room-{int(time.time())}",
+            "_xsrf": xsrf_token
+        }
+        room_response = session.post(f"{BASE_URL}/set_room_number", data=room_data, allow_redirects=True)
+        assert room_response.status_code == 200
 
     return session
 
