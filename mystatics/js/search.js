@@ -103,19 +103,45 @@ function updateProductList(products) {
     products.forEach(product => {
         const productDiv = document.createElement('div');
         productDiv.className = 'product-item';
-        productDiv.innerHTML = `
-            <div class="product-info">
-                <a href="/product/detail/${product.id}">
-                    <img src="/static/images/${product.image}" alt="${product.name}">
-                </a>  
-                <h2>${product.name}</h2>
-                <p>￥${product.price}</p>
-                <p>数量：${product.quantity}</p>
-                <p>标签：${product.tag}</p>
-                ${currentUserId && product.user_id === currentUserId ? 
-                  `<button class="edit-product" data-id="${product.id}">编辑</button>` : ''}
-            </div>
-        `;
+        
+        const productInfo = document.createElement('div');
+        productInfo.className = 'product-info';
+        
+        const link = document.createElement('a');
+        link.href = `/product/detail/${product.id}`;
+        
+        const img = document.createElement('img');
+        img.src = `/static/images/${product.image}`;
+        img.alt = product.name;
+        
+        link.appendChild(img);
+        productInfo.appendChild(link);
+        
+        const h2 = document.createElement('h2');
+        h2.textContent = product.name;
+        productInfo.appendChild(h2);
+        
+        const priceP = document.createElement('p');
+        priceP.textContent = `￥${product.price}`;
+        productInfo.appendChild(priceP);
+        
+        const quantityP = document.createElement('p');
+        quantityP.textContent = `数量：${product.quantity}`;
+        productInfo.appendChild(quantityP);
+        
+        const tagP = document.createElement('p');
+        tagP.textContent = `标签：${product.tag}`;
+        productInfo.appendChild(tagP);
+        
+        if (currentUserId && product.user_id === currentUserId) {
+            const editBtn = document.createElement('button');
+            editBtn.className = 'edit-product';
+            editBtn.setAttribute('data-id', product.id);
+            editBtn.textContent = '编辑';
+            productInfo.appendChild(editBtn);
+        }
+        
+        productDiv.appendChild(productInfo);
         productListDiv.appendChild(productDiv);
     });
 }
