@@ -74,7 +74,11 @@ function performSearch(query) {
         })
         .catch(error => {
             console.error('搜索错误:', error);
-            searchResults.innerHTML = `<p class="error-msg">${error.message}</p>`;
+            searchResults.innerHTML = '';
+            const errorP = document.createElement('p');
+            errorP.className = 'error-msg';
+            errorP.textContent = error.message;
+            searchResults.appendChild(errorP);
 
             // 5秒后自动隐藏错误信息
             setTimeout(() => {
