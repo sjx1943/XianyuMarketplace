@@ -44,7 +44,10 @@ function performSearch(query) {
     const searchResults = document.getElementById('search-results');
 
     // 显示加载状态
-    searchResults.innerHTML = '<p>正在搜索...</p>';
+    searchResults.textContent = '';
+    const loadingP = document.createElement('p');
+    loadingP.textContent = '正在搜索...';
+    searchResults.appendChild(loadingP);
 
     fetch(`/api/search?q=${encodeURIComponent(query)}`)
         .then(response => {
@@ -55,26 +58,30 @@ function performSearch(query) {
         })
         .then(products => {
             // 清空搜索结果容器
-            searchResults.innerHTML = '';
+            searchResults.textContent = '';
 
             // 更新主界面产品列表
             updateProductList(products);
 
             // 如果没有搜索结果
             if (products.length === 0) {
-                searchResults.innerHTML = '<p>没有找到相关商品</p>';
+                const noResultP = document.createElement('p');
+                noResultP.textContent = '没有找到相关商品';
+                searchResults.appendChild(noResultP);
             } else {
                 // 显示搜索结果数量
-                searchResults.innerHTML = `<p>找到 ${products.length} 个相关商品</p>`;
+                const resultP = document.createElement('p');
+                resultP.textContent = `找到 ${products.length} 个相关商品`;
+                searchResults.appendChild(resultP);
                 // 3秒后自动隐藏搜索结果提示
                 setTimeout(() => {
-                    searchResults.innerHTML = '';
+                    searchResults.textContent = '';
                 }, 3000);
             }
         })
         .catch(error => {
             console.error('搜索错误:', error);
-            searchResults.innerHTML = '';
+            searchResults.textContent = '';
             const errorP = document.createElement('p');
             errorP.className = 'error-msg';
             errorP.textContent = error.message;
@@ -82,7 +89,7 @@ function performSearch(query) {
 
             // 5秒后自动隐藏错误信息
             setTimeout(() => {
-                searchResults.innerHTML = '';
+                searchResults.textContent = '';
             }, 5000);
         });
 }
