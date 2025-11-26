@@ -116,7 +116,28 @@ class LoginHandler(tornado.web.RequestHandler):
                     )
                 ).first()
                 
-                if user and bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
+                if not user:
+                    self.render("login.html", message="", result=f"用户 {identifier} 尚未注册，请注册后再登录")
+                    return
+                
+                # 验证密码 - 支持bcrypt和legacy MD5哈希
+                password_valid = False
+                try:
+                    # 首先尝试bcrypt验证
+                    password_valid = bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8'))
+                except (ValueError, TypeError):
+                    # bcrypt验证失败，尝试MD5哈希验证（legacy支持）
+                    md5_hash = hashlib.md5(password.encode()).hexdigest()
+                    password_valid = (user.password == md5_hash)
+                    
+                    # 如果MD5验证成功，升级到bcrypt哈希
+                    if password_valid:
+                        new_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                        user.password = new_hash
+                        self.session.commit()
+                        logging.info(f"用户 {user.username} 的密码已从MD5升级到bcrypt")
+                
+                if password_valid:
                     if user.is_active == 0:
                         self.render("login.html", message="", result="账号已被禁用，请联系管理员")
                         return
@@ -130,7 +151,7 @@ class LoginHandler(tornado.web.RequestHandler):
                         self.set_secure_cookie("username", user.room_number, expires_days=1)
                         self.redirect("/main")
                 else:
-                    self.render("login.html", message="", result="用户名/房间号/手机号或密码错误")
+                    self.render("login.html", message="", result="密码错误，请重新输入")
                     
         except Exception as e:
             logging.error(f"登录错误: {e}")
@@ -463,7 +484,6 @@ class RegisterHandler(tornado.web.RequestHandler):
             self.session.add(new_user)
             try:
                 self.session.commit()
-                self.clear()
                 self.redirect("/login?message=注册成功，请登录")
             except Exception as e:
                 self.session.rollback()

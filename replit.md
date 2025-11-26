@@ -60,6 +60,66 @@ The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
 -   **WeChat Open Platform OAuth**: Integrated for WeChat login (web version), requiring `WECHAT_APP_ID`, `WECHAT_APP_SECRET`, `WECHAT_REDIRECT_URI`.
 -   **WeChat Mini Program**: Requires separate registration and AppID/AppSecret from WeChat Mini Program platform (mp.weixin.qq.com). Environment variables: `WX_MINIPROGRAM_APP_ID`, `WX_MINIPROGRAM_APP_SECRET`.
 
+## Recent Changes (Nov 26, 2025 - UX改进与登录流程优化)
+
+### 用户体验改进
+-   **登录流程优化** ✅
+    -   修复: 未注册用户登录时显示特定错误消息 "用户 XXX 尚未注册，请注册后再登录"
+    -   修复: 密码错误时显示 "密码错误，请重新输入"
+    -   修复: 支持legacy MD5哈希密码验证，自动升级到bcrypt
+    -   代码: `controllers/auth_controller.py` 第119-157行
+
+-   **注册流程优化** ✅
+    -   修复: 注册成功后正确重定向到登录页面
+    -   代码: `controllers/auth_controller.py` 第468行 (移除self.clear())
+
+### 视觉与交互改进
+-   **未读消息红色徽章** ✅
+    -   新增: 红色圆形徽章样式，带脉冲动画效果
+    -   代码: `mystatics/css/main.css` 第136-163行
+
+-   **导航栏居中对齐** ✅
+    -   新增: header-nav 菜单居中显示
+    -   代码: `mystatics/css/main.css` 第129-133行
+
+-   **移动端响应式字体** ✅
+    -   新增: 使用clamp()函数实现灵活字体大小
+    -   支持: 欢迎消息、导航按钮、商品名称、价格、标签等
+    -   代码: `mystatics/css/main.css` 第245-304行
+
+### 页面功能增强
+-   **商品详情页导航** ✅
+    -   新增: "返回首页"和"返回上一页"按钮
+    -   代码: `templates/product_detail.html` 第225-232行
+
+-   **商品上传加载状态** ✅
+    -   新增: 上传时显示遮罩层和旋转动画
+    -   新增: 提交按钮禁用和文本变更
+    -   代码: `templates/publish_product.html` 第485-528行
+
+-   **聊天室自动选择好友** ✅
+    -   新增: 打开聊天室时自动选择有未读消息的好友
+    -   回退: 若无未读消息则选择第一个好友
+    -   代码: `mystatics/js/chat.js` 第75-131行
+
+-   **订单评价入口** ✅
+    -   新增: 已完成订单显示"评价商品"按钮
+    -   链接: 跳转到商品详情页评论区
+    -   代码: `templates/orders_list.html` 第194-199行
+
+### 卖家主页重构
+-   **全新设计** ✅
+    -   新增: 渐变色header设计
+    -   新增: 商品网格布局 (grid)
+    -   新增: 买家评价展示区
+    -   新增: 响应式移动端适配
+    -   代码: `templates/profile.html` (完全重写)
+
+-   **评价数据支持** ✅
+    -   新增: 后端查询卖家商品的所有评论
+    -   传递: 评价者昵称、评分、内容、商品名称
+    -   代码: `controllers/friend_profile_controller.py` 第228-247行
+
 ## Recent Changes (Nov 24, 2025 - 三个关键修复完成)
 
 ### 功能修复 - 订单详情 + 倒计时 + 邮箱验证 ✅

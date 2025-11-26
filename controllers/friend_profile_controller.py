@@ -221,6 +221,27 @@ class FriendProfileHandler(tornado.web.RequestHandler):
 
             # Fetch friend's products
             products = self.session.query(Product).filter(Product.user_id == friend.id).all()
+            
+            # Fetch buyer reviews for seller's products
+            from models.comment import Comment
+            reviews = []
+            product_ids = [p.id for p in products]
+            if product_ids:
+                comments = self.session.query(Comment, User, Product).join(
+                    User, Comment.user_id == User.id
+                ).join(
+                    Product, Comment.product_id == Product.id
+                ).filter(
+                    Comment.product_id.in_(product_ids)
+                ).order_by(Comment.created_at.desc()).limit(20).all()
+                
+                for comment, reviewer, product in comments:
+                    reviews.append({
+                        'user_name': reviewer.room_number or reviewer.username,
+                        'rating': int(comment.rating),
+                        'content': comment.text,
+                        'product_name': product.name
+                    })
 
             self.render("profile.html",
                         current_user=self.get_secure_cookie("username").decode("utf-8"),
@@ -230,7 +251,8 @@ class FriendProfileHandler(tornado.web.RequestHandler):
                         products=products,
                         is_friend=is_friend,
                         i_am_blocking=i_am_blocking,
-                        i_am_blocked=i_am_blocked
+                        i_am_blocked=i_am_blocked,
+                        reviews=reviews
                         )
 
         except Exception as e:

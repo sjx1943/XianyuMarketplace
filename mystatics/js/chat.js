@@ -63,8 +63,69 @@ document.addEventListener('DOMContentLoaded', function() {
     if (friendId) {
         const friendElement = document.querySelector(`.friend-item[data-friend-id="${friendId}"]`);
         if (friendElement) selectFriend(friendId, friendElement);
+    } else {
+        // Auto-select friend with unread messages
+        autoSelectFriendWithUnread();
     }
 });
+
+// Auto-select friend with unread messages or most recent friend
+function autoSelectFriendWithUnread() {
+    // First, check for friend with unread messages (has red dot visible)
+    const friendWithUnread = document.querySelector('.friend-item .red-dot[style*="display: block"]') || 
+                             document.querySelector('.friend-item .red-dot:not([style*="display: none"])');
+    
+    if (friendWithUnread) {
+        const friendItem = friendWithUnread.closest('.friend-item');
+        if (friendItem) {
+            const friendId = friendItem.dataset.friendId;
+            selectFriend(friendId, friendItem);
+            return;
+        }
+    }
+    
+    // Fetch unread counts to find friend with unread messages
+    fetch('/api/unread_count')
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success' && data.counts) {
+                // Find friend with highest unread count
+                let maxUnread = 0;
+                let friendIdWithUnread = null;
+                
+                for (const [fid, count] of Object.entries(data.counts)) {
+                    if (count > maxUnread) {
+                        maxUnread = count;
+                        friendIdWithUnread = fid;
+                    }
+                }
+                
+                if (friendIdWithUnread) {
+                    const friendElement = document.querySelector(`.friend-item[data-friend-id="${friendIdWithUnread}"]`);
+                    if (friendElement) {
+                        selectFriend(friendIdWithUnread, friendElement);
+                        return;
+                    }
+                }
+            }
+            
+            // Fallback: select first friend in list
+            const firstFriend = document.querySelector('.friend-item');
+            if (firstFriend) {
+                const friendId = firstFriend.dataset.friendId;
+                selectFriend(friendId, firstFriend);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching unread counts:', error);
+            // Fallback: select first friend
+            const firstFriend = document.querySelector('.friend-item');
+            if (firstFriend) {
+                const friendId = firstFriend.dataset.friendId;
+                selectFriend(friendId, firstFriend);
+            }
+        });
+}
 
 function initEventListeners() {
     document.getElementById('send-button')?.addEventListener('click', sendMessage);

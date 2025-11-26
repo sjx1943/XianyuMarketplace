@@ -219,6 +219,14 @@
 </head>
 <body>
     <div class="container">
+        <div class="page-navigation" style="margin-bottom: 20px; padding: 10px 0; border-bottom: 1px solid #eee;">
+            <a href="/main" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 5px;">
+                <span>←</span> 返回首页
+            </a>
+            <a href="javascript:history.back()" class="btn" style="background-color: #f0f0f0; color: #333; margin-left: 10px;">
+                返回上一页
+            </a>
+        </div>
         <div class="product-main">
             <div class="product-image-container">
                 <img src="{{ static_url('images/' + product.image) if product.image else '' }}" alt="{{ product.name }}" id="main-image" class="main-image">

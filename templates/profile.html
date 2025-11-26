@@ -1,45 +1,243 @@
-<!-- /fix in friend_profile.html -->
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>{{ friend.room_number if friend.room_number else friend.username }}的主页</title>
-    <link rel="stylesheet" href="{{ static_url('css/home.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ friend.room_number if friend.room_number else friend.username }}的店铺</title>
+    <link rel="stylesheet" href="{{ static_url('css/main.css') }}">
+    <style>
+        .profile-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .profile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .seller-info h1 {
+            margin: 0;
+            font-size: clamp(20px, 5vw, 28px);
+        }
+        .seller-info p {
+            margin: 5px 0 0;
+            opacity: 0.9;
+            font-size: clamp(12px, 3vw, 14px);
+        }
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .nav-links a, .nav-links button {
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+            font-size: 14px;
+        }
+        .nav-links .back-btn {
+            background: white;
+            color: #667eea;
+        }
+        .nav-links .chat-btn {
+            background: #4CAF50;
+            color: white;
+        }
+        .nav-links .action-btn {
+            background: #ff6b35;
+            color: white;
+        }
+        .section-title {
+            font-size: clamp(18px, 4vw, 22px);
+            margin: 20px 0 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .product-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+        .product-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+        }
+        .product-card .info {
+            padding: 15px;
+        }
+        .product-card .name {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: clamp(14px, 3.5vw, 16px);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .product-card .price {
+            color: #ff6b35;
+            font-weight: bold;
+            font-size: clamp(16px, 4vw, 18px);
+        }
+        .product-card a {
+            text-decoration: none;
+            color: inherit;
+        }
+        .reviews-section {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .review-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+        }
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        .review-rating {
+            color: #ffd700;
+        }
+        .review-content {
+            color: #333;
+            line-height: 1.6;
+        }
+        .review-product {
+            font-size: 12px;
+            color: #888;
+            margin-top: 8px;
+        }
+        .no-items {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+        .actions {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .blocked-message {
+            color: #dc3545;
+            font-weight: 500;
+        }
+        @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            .nav-links {
+                justify-content: center;
+            }
+            .product-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+            .product-card img {
+                height: 140px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>{{ friend.room_number if friend.room_number else friend.username }}的上传物品</h1>
-    <div class="product-list">
-        {% for product in products %}
-        <div class="product-item">
-            <a href="/product/detail/{{ product.id }}">
-                <img src="{{ static_url('images/' + product.image) }}" alt="{{ product.name }}">
-            </a>
-            <div class="product-info">
-                <p class="product-name">{{ product.name }}</p>
-                <p class="product-price">￥{{ product.price }}</p>
-                <p class="product-quantity">数量：{{ product.quantity }}</p>
-                <p class="product-upload-time">上传时间: {{ product.upload_time }}</p>
-                <p class="product-tags">
-                    {% for tag in product.tag %}
-                        <span class="tag">{{ tag }}</span>
+    <div class="profile-container">
+        <div class="profile-header">
+            <div class="seller-info">
+                <h1>{{ friend.room_number if friend.room_number else friend.username }}的店铺</h1>
+                <p>共 {{ len(products) if products else 0 }} 件商品</p>
+            </div>
+            <div class="nav-links">
+                <a href="/main" class="back-btn">返回首页</a>
+                <a href="/chat_room?user_id={{ current_user_id }}&friend_id={{ friend.id }}" class="chat-btn">联系卖家</a>
+                <div class="actions" style="margin: 0;">
+                    {% if i_am_blocked %}
+                        <span class="blocked-message">您已被该用户拉黑</span>
+                    {% elif i_am_blocking %}
+                        <button id="block-friend-btn" class="action-btn" data-friend-id="{{ friend.id }}">取消拉黑</button>
+                    {% elif is_friend %}
+                        <button id="block-friend-btn" class="action-btn" data-friend-id="{{ friend.id }}">拉黑</button>
+                    {% else %}
+                        <button id="add-friend-btn" class="action-btn" data-friend-id="{{ friend.id }}" data-user-id="{{ current_user_id }}">添加好友</button>
                     {% end %}
-                </p>
+                </div>
             </div>
         </div>
-        {% end %}
-    </div>
-    <div class="actions">
-        {% if i_am_blocked %}
-            <p class="blocked-message">您已被该用户拉黑。</p>
-        {% elif i_am_blocking %}
-            <button id="block-friend-btn" data-friend-id="{{ friend.id }}">取消拉黑</button>
-        {% elif is_friend %}
-            <button id="block-friend-btn" data-friend-id="{{ friend.id }}">拉黑</button>
+        
+        <h2 class="section-title">在售商品</h2>
+        {% if products and len(products) > 0 %}
+        <div class="product-grid">
+            {% for product in products %}
+            <div class="product-card">
+                <a href="/product/detail/{{ product.id }}">
+                    <img src="{{ static_url('images/' + product.image) if product.image else '' }}" alt="{{ product.name }}">
+                    <div class="info">
+                        <p class="name">{{ product.name }}</p>
+                        <p class="price">¥{{ product.price }}</p>
+                    </div>
+                </a>
+            </div>
+            {% end %}
+        </div>
         {% else %}
-            <button id="add-friend-btn" data-friend-id="{{ friend.id }}" data-user-id="{{ current_user_id }}">添加好友</button>
+        <div class="no-items">暂无在售商品</div>
         {% end %}
+        
+        <h2 class="section-title">买家评价</h2>
+        <div class="reviews-section">
+            {% if reviews and len(reviews) > 0 %}
+                {% for review in reviews %}
+                <div class="review-item">
+                    <div class="review-header">
+                        <span>{{ review.user_name }}</span>
+                        <span class="review-rating">
+                            {% for i in range(5) %}
+                                {% if i < review.rating %}★{% else %}☆{% end %}
+                            {% end %}
+                            ({{ review.rating }}分)
+                        </span>
+                    </div>
+                    <div class="review-content">{{ review.content }}</div>
+                    <div class="review-product">商品: {{ review.product_name }}</div>
+                </div>
+                {% end %}
+            {% else %}
+            <div class="no-items">暂无买家评价</div>
+            {% end %}
+        </div>
     </div>
-    <a href="/chat_room?user_id={{ current_user_id }}">返回消息列表</a>
+    
     <script src="{{ static_url('js/userInfo.js') }}"></script>
+    {% include "foot.html" %}
 </body>
 </html>

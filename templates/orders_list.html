@@ -188,6 +188,12 @@
                                                 <span class="countdown-text"></span>
                                             </p>
                                         </div>
+                                    {% elif item['order'].status == 'completed' %}
+                                        {% if item['product'] %}
+                                        <a href="/product/detail/{{ item['product'].id }}#comment-section" class="btn btn-success review-btn">
+                                            评价商品
+                                        </a>
+                                        {% end %}
                                     {% end %}
                                 <!-- 卖家操作 -->
                                 {% else %}
