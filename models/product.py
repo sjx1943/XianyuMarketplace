@@ -22,10 +22,11 @@ class Product(Base):
     image = Column(String(255))
     quantity = Column(Integer)
     status = Column(String(64))
-    upload_time = Column(DateTime, server_default=func.now())   #本期新增
+    condition = Column(String(32), default='九成新')  # 商品成色：全新、九成新、八成新等
+    upload_time = Column(DateTime, server_default=func.now())
     images = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan")
 
-    def __init__(self, name, description, price, user_id, tag, image, quantity, status):
+    def __init__(self, name, description, price, user_id, tag, image, quantity, status, condition='九成新'):
         self.name = name
         self.description = description
         self.price = price
@@ -34,6 +35,7 @@ class Product(Base):
         self.image = image
         self.quantity = quantity
         self.status = status
+        self.condition = condition
 
     @classmethod
     def find_seller_by_product_id(cls, product_id: int, session: Session):

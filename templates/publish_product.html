@@ -209,6 +209,15 @@
         <label for="quantity">数量:</label>
         <input type="number" id="quantity" name="quantity" min="1" value="{{ product.quantity if product else '' }}" required>
 
+        <label for="condition">商品成色:</label>
+        <select id="condition" name="condition" required style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; background: white;">
+            {% set conditions = ['全新', '九成新', '八成新', '七成新', '六成新', '五成新', '四成新', '三成新', '二成新', '一成新', '很旧'] %}
+            {% set current_condition = product.condition if product and product.condition else '九成新' %}
+            {% for cond in conditions %}
+            <option value="{{ cond }}" {% if cond == current_condition %}selected{% end %}>{{ cond }}</option>
+            {% end %}
+        </select>
+
         <label>商品标签: <span style="color: #999; font-weight: normal; font-size: 13px;">(至少选择一个)</span></label>
         <div class="tag-selector">
             {% set predefined_tags = ['电子产品', '书籍', '家具', '服装鞋帽', '食品饮料', '母婴用品', '运动户外', '玩具', '美妆个护', '家电', '日用百货', '其他'] %}

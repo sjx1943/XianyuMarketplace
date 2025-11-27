@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from models.comment import Comment
 from models.user import User
 from models.product import Product
+from models.order import Order
 from models.friendship import Friendship
 from base.base import engine
 from sqlalchemy import desc
@@ -67,7 +68,7 @@ class CommentHandler(tornado.web.RequestHandler):
             self.write(json.dumps({'success': False, 'error': str(e)}))
 
     def post(self):
-        """发布评价"""
+        """发布评价 - 只有完成交易的买家才能评价"""
         try:
             user = self.get_current_user()
             if not user:
@@ -80,10 +81,25 @@ class CommentHandler(tornado.web.RequestHandler):
 
             from models.blacklist import Blacklist
 
-# ... (inside CommentHandler.post method)
             product = self.session.query(Product).filter_by(id=product_id).first()
             if not product:
                 self.write(json.dumps({'success': False, 'error': '商品不存在'}))
+                return
+            
+            # 卖家不能评价自己的商品
+            if product.user_id == user.id:
+                self.write(json.dumps({'success': False, 'error': '不能评价自己的商品'}))
+                return
+
+            # 检查用户是否有该商品的已完成订单（只有买家完成交易后才能评价）
+            completed_order = self.session.query(Order).filter(
+                Order.product_id == product_id,
+                Order.user_id == user.id,
+                Order.status == 'completed'
+            ).first()
+            
+            if not completed_order:
+                self.write(json.dumps({'success': False, 'error': '只有完成交易的买家才能评价此商品'}))
                 return
 
             # Check if the product owner has blocked the commenter
@@ -96,10 +112,17 @@ class CommentHandler(tornado.web.RequestHandler):
                 self.write(json.dumps({'success': False, 'error': '您已被卖家拉黑，无法评价'}))
                 return
 
-            # 修复：移除重复评价的检查
-            # existing_comment = ... (整段逻辑已删除)
+            # 检查是否已经评价过该订单的商品
+            existing_comment = self.session.query(Comment).filter(
+                Comment.user_id == user.id,
+                Comment.product_id == product_id
+            ).first()
+            
+            if existing_comment:
+                self.write(json.dumps({'success': False, 'error': '您已经评价过此商品'}))
+                return
 
-            # 修复：使用 text 字段来创建新评价
+            # 创建新评价
             new_comment = Comment(
                 user_id=user.id,
                 product_id=product_id,
@@ -157,6 +180,65 @@ class CommentHandler(tornado.web.RequestHandler):
         except Exception as e:
             self.session.rollback()
             self.write(json.dumps({'success': False, 'error': str(e)}))
+
+    def on_finish(self):
+        self.session.close()
+
+
+class CanReviewHandler(tornado.web.RequestHandler):
+    """检查用户是否可以评价商品"""
+    
+    def initialize(self):
+        self.session = Session()
+
+    def get_current_user(self):
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return self.session.query(User).filter_by(id=int(user_id)).first()
+        return None
+
+    def get(self, product_id):
+        """检查用户是否可以评价指定商品"""
+        try:
+            user = self.get_current_user()
+            if not user:
+                self.write(json.dumps({'can_review': False, 'reason': '未登录'}))
+                return
+
+            product = self.session.query(Product).filter_by(id=product_id).first()
+            if not product:
+                self.write(json.dumps({'can_review': False, 'reason': '商品不存在'}))
+                return
+            
+            # 卖家不能评价自己的商品
+            if product.user_id == user.id:
+                self.write(json.dumps({'can_review': False, 'reason': '不能评价自己的商品'}))
+                return
+
+            # 检查是否已经评价过
+            existing_comment = self.session.query(Comment).filter(
+                Comment.user_id == user.id,
+                Comment.product_id == product_id
+            ).first()
+            
+            if existing_comment:
+                self.write(json.dumps({'can_review': False, 'reason': '您已经评价过此商品', 'already_reviewed': True}))
+                return
+
+            # 检查是否有已完成的订单
+            completed_order = self.session.query(Order).filter(
+                Order.product_id == product_id,
+                Order.user_id == user.id,
+                Order.status == 'completed'
+            ).first()
+            
+            if completed_order:
+                self.write(json.dumps({'can_review': True, 'reason': '可以评价'}))
+            else:
+                self.write(json.dumps({'can_review': False, 'reason': '只有完成交易的买家才能评价此商品'}))
+                
+        except Exception as e:
+            self.write(json.dumps({'can_review': False, 'reason': str(e)}))
 
     def on_finish(self):
         self.session.close()

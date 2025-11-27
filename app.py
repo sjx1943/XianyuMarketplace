@@ -20,7 +20,7 @@ from controllers.admin_controller import AdminLoginHandler, AdminDashboardHandle
 from controllers.chat_controller import ChatWebSocketHandler, ChatHandler, MessageAPIHandler, SendMessageAPIHandler, MarkMessagesReadHandler, DeleteMessagesHandler, UnreadCountHandler
 from controllers.friend_profile_controller import FriendProfileHandler, DeleteFriendHandler, InitiateChatHandler, BlockFriendHandler
 from controllers.search_controller import SearchHandler
-from controllers.comment_controller import CommentHandler, ProductRatingHandler
+from controllers.comment_controller import CommentHandler, ProductRatingHandler, CanReviewHandler
 from controllers.order_controller import OrderHandler, CreateOrderHandler, ConfirmTransactionHandler, UnreadOrdersCountHandler
 from motor import motor_tornado
 import redis
@@ -137,6 +137,7 @@ def make_app():
         (r"/api/comments", CommentHandler),
         (r"/api/comments/([0-9]+)", CommentHandler),
         (r"/api/product/([0-9]+)/rating", ProductRatingHandler),
+        (r"/api/product/([0-9]+)/can_review", CanReviewHandler),
         
         # 订单相关路由
         (r"/orders", OrderHandler),

@@ -9,12 +9,14 @@ Page({
       name: '',
       price: '',
       category: '',
-      condition: '',
+      condition: '九成新',
       description: '',
       tags: []
     },
     categories: ['数码产品', '家用电器', '服装鞋包', '图书音像', '运动户外', '美妆个护', '家居用品', '其他'],
     categoryIndex: -1,
+    conditions: ['全新', '九成新', '八成新', '七成新', '六成新', '五成新', '四成新', '三成新', '二成新', '一成新', '很旧'],
+    conditionIndex: 1,
     availableTags: ['包邮', '可议价', '急转', '自提', '全新未拆', '保修期内', '配件齐全', '支持退换'],
     submitting: false
   },
@@ -99,9 +101,10 @@ Page({
 
   // 成色选择
   onConditionChange(e) {
-    const { condition } = e.currentTarget.dataset
+    const index = e.detail.value
     this.setData({
-      'form.condition': condition
+      conditionIndex: index,
+      'form.condition': this.data.conditions[index]
     })
   },
 
@@ -207,7 +210,8 @@ Page({
           description: form.description,
           price: form.price,
           quantity: '1',  // 默认数量为1
-          tag: form.category
+          tag: form.category,
+          condition: form.condition
         } : {}
 
         try {

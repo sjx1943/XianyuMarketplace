@@ -242,6 +242,7 @@
                 <div class="product-price">¥{{ product.price }}</div>
                 
                 <div class="product-meta">
+                    <div class="meta-item">成色：<span style="color: {% if product.condition == '全新' %}#4CAF50{% elif '九' in (product.condition or '') or '八' in (product.condition or '') %}#2196F3{% else %}#ff9800{% end %}; font-weight: bold;">{{ product.condition if product.condition else '九成新' }}</span></div>
                     <div class="meta-item">库存：{{ product.quantity }}件</div>
                     <div class="meta-item">状态：{{ product.status }}</div>
                     <div class="meta-item">分类：{{ product.tag }}</div>
@@ -294,10 +295,13 @@
         <div class="comments-section" id="comment-section">
             
             {% if user_id and product.user_id != user_id %}
-            <button id="write-review-btn" class="btn btn-secondary" style="margin-bottom: 20px;">发表评价</button>
+            <button id="write-review-btn" class="btn btn-secondary" style="margin-bottom: 20px; display: none;">发表评价</button>
+            <div id="review-permission-msg" style="display: none; padding: 15px; background: #fff3cd; border-radius: 8px; margin-bottom: 20px; color: #856404;">
+                只有完成交易的买家才能评价此商品
+            </div>
             {% end %}
 
-            <!-- 评价表单（仅在用户已购买且未评价时显示） -->
+            <!-- 评价表单（仅在买家完成交易后显示） -->
             {% if user_id and product.user_id != user_id %}
             <div class="comment-form" id="comment-form" style="display: none;">
                 <h4>发表评价</h4>
@@ -349,6 +353,7 @@
             loadProductRating();
             loadComments();
             initRatingInput();
+            checkReviewPermission();
 
             const writeReviewBtn = document.getElementById('write-review-btn');
             if(writeReviewBtn) {
@@ -368,6 +373,36 @@
                 }
             });
         });
+        
+        // 检查用户是否有权限评价
+        function checkReviewPermission() {
+            if (!currentUserId || currentUserId === productOwnerId) return;
+            
+            fetch(`/api/product/${productId}/can_review`)
+                .then(response => response.json())
+                .then(data => {
+                    const writeReviewBtn = document.getElementById('write-review-btn');
+                    const permissionMsg = document.getElementById('review-permission-msg');
+                    
+                    if (data.can_review) {
+                        if (writeReviewBtn) writeReviewBtn.style.display = 'inline-block';
+                        if (permissionMsg) permissionMsg.style.display = 'none';
+                    } else {
+                        if (writeReviewBtn) writeReviewBtn.style.display = 'none';
+                        if (permissionMsg) {
+                            if (data.already_reviewed) {
+                                permissionMsg.innerHTML = '您已经评价过此商品';
+                                permissionMsg.style.background = '#d4edda';
+                                permissionMsg.style.color = '#155724';
+                            } else {
+                                permissionMsg.innerHTML = data.reason || '只有完成交易的买家才能评价此商品';
+                            }
+                            permissionMsg.style.display = 'block';
+                        }
+                    }
+                })
+                .catch(error => console.error('检查评价权限失败:', error));
+        }
         
         // 加载商品评分
         function loadProductRating() {

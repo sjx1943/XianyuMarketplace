@@ -79,6 +79,7 @@ class ProductUploadHandler(tornado.web.RequestHandler):
             price = float(self.get_argument("price"))
             quantity = int(self.get_argument("quantity"))
             tag = self.get_argument("tag")
+            condition = self.get_argument("condition", "九成新")  # 商品成色
             images = self.request.files.get("images", [])
 
             if not images:
@@ -100,7 +101,8 @@ class ProductUploadHandler(tornado.web.RequestHandler):
                 tag=tag,
                 image="",  # 稍后设置
                 quantity=quantity,
-                status="在售"
+                status="在售",
+                condition=condition
             )
             self.session.add(new_product)
             self.session.flush()  # 使用 flush 来获取 new_product.id
@@ -205,6 +207,7 @@ class ProductEditHandler(tornado.web.RequestHandler):
             product.price = float(self.get_argument("price"))
             product.quantity = int(self.get_argument("quantity"))
             product.tag = self.get_argument("tag")
+            product.condition = self.get_argument("condition", "九成新")  # 商品成色
 
             # 2. 处理图片删除
             delete_ids = self.get_arguments("delete_images")

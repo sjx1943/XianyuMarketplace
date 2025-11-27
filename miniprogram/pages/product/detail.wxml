@@ -33,7 +33,7 @@
     </view>
 
     <view class="product-tags">
-      <text class="tag tag-{{product.condition}}">{{product.condition === 'new' ? '全新' : product.condition === 'like_new' ? '几乎全新' : '二手'}}</text>
+      <text class="tag tag-condition">{{product.condition || '九成新'}}</text>
       <text class="tag" wx:for="{{product.tags}}" wx:key="index">{{item}}</text>
     </view>
   </view>

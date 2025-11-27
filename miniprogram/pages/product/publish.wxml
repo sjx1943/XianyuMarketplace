@@ -79,32 +79,14 @@
         <text class="required">*</text>
         <text class="section-title">商品成色</text>
       </view>
-      <view class="condition-options">
-        <view 
-          class="condition-item {{form.condition === 'new' ? 'active' : ''}}"
-          bindtap="onConditionChange"
-          data-condition="new"
-        >
-          <text class="icon">✨</text>
-          <text>全新</text>
+      <picker mode="selector" range="{{conditions}}" value="{{conditionIndex}}" bindchange="onConditionChange">
+        <view class="picker">
+          <text class="{{conditionIndex >= 0 ? '' : 'placeholder'}}">
+            {{conditionIndex >= 0 ? conditions[conditionIndex] : '请选择成色'}}
+          </text>
+          <text class="arrow">></text>
         </view>
-        <view 
-          class="condition-item {{form.condition === 'like_new' ? 'active' : ''}}"
-          bindtap="onConditionChange"
-          data-condition="like_new"
-        >
-          <text class="icon">🌟</text>
-          <text>几乎全新</text>
-        </view>
-        <view 
-          class="condition-item {{form.condition === 'used' ? 'active' : ''}}"
-          bindtap="onConditionChange"
-          data-condition="used"
-        >
-          <text class="icon">📦</text>
-          <text>二手</text>
-        </view>
-      </view>
+      </picker>
     </view>
 
     <!-- 商品描述 -->

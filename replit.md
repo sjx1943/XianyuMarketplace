@@ -60,6 +60,54 @@ The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
 -   **WeChat Open Platform OAuth**: Integrated for WeChat login (web version), requiring `WECHAT_APP_ID`, `WECHAT_APP_SECRET`, `WECHAT_REDIRECT_URI`.
 -   **WeChat Mini Program**: Requires separate registration and AppID/AppSecret from WeChat Mini Program platform (mp.weixin.qq.com). Environment variables: `WX_MINIPROGRAM_APP_ID`, `WX_MINIPROGRAM_APP_SECRET`.
 
+## Recent Changes (Nov 27, 2025 - 商品成色与评价权限)
+
+### 商品成色（Condition）功能
+-   **Product Model更新** ✅
+    -   新增: `condition` 字段 (VARCHAR(32), 默认 '九成新')
+    -   选项: '全新', '九成新', '八成新', '七成新', '六成新', '五成新', '四成新', '三成新', '二成新', '一成新', '很旧'
+    -   代码: `models/product.py` 第28行
+
+-   **发布/编辑商品表单** ✅
+    -   新增: 商品成色下拉选择器
+    -   代码: `templates/publish_product.html` 第215-222行
+
+-   **商品详情页展示** ✅
+    -   新增: 成色信息显示（带颜色标识）
+    -   颜色: 全新=绿色, 九/八成新=蓝色, 其他=橙色
+    -   代码: `templates/product_detail.html` 第248行
+
+-   **控制器更新** ✅
+    -   ProductUploadHandler: 处理condition字段
+    -   ProductEditHandler: 处理condition字段更新
+    -   代码: `controllers/product_controller.py` 第85行, 第213行
+
+### 评价权限限制（只有完成交易的买家才能评价）
+-   **CanReviewHandler** ✅
+    -   新增: `/api/product/{id}/can_review` API端点
+    -   功能: 检查用户是否有权限评价商品
+    -   验证: 用户已登录 + 非卖家 + 有已完成订单 + 未评价过
+    -   代码: `controllers/comment_controller.py` 第191-247行
+
+-   **CommentHandler更新** ✅
+    -   增强: 后端验证买家必须有已完成订单才能评价
+    -   检查: 防止重复评价同一商品
+    -   代码: `controllers/comment_controller.py` 第73-134行
+
+-   **前端权限检查** ✅
+    -   新增: 页面加载时检查评价权限
+    -   显示: 已评价用户显示绿色提示，未购买用户显示黄色提示
+    -   代码: `templates/product_detail.html` 第380-408行
+
+### 微信小程序同步
+-   **发布页面** ✅
+    -   更新: 成色选择器使用中文选项（与Web端一致）
+    -   代码: `miniprogram/pages/product/publish.js`, `publish.wxml`
+
+-   **详情页面** ✅
+    -   更新: 显示中文成色标签
+    -   代码: `miniprogram/pages/product/detail.wxml` 第39行
+
 ## Recent Changes (Nov 26, 2025 - UX改进与登录流程优化)
 
 ### 用户体验改进
