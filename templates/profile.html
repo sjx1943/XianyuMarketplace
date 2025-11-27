@@ -219,16 +219,16 @@
                 {% for review in reviews %}
                 <div class="review-item">
                     <div class="review-header">
-                        <span>{{ review.user_name }}</span>
+                        <span>{{ review['user_name'] }}</span>
                         <span class="review-rating">
                             {% for i in range(5) %}
-                                {% if i < review.rating %}★{% else %}☆{% end %}
+                                {% if i < review['rating'] %}★{% else %}☆{% end %}
                             {% end %}
-                            ({{ review.rating }}分)
+                            ({{ review['rating'] }}分)
                         </span>
                     </div>
-                    <div class="review-content">{{ review.content }}</div>
-                    <div class="review-product">商品: {{ review.product_name }}</div>
+                    <div class="review-content">{{ review['content'] }}</div>
+                    <div class="review-product">商品: {{ review['product_name'] }}</div>
                 </div>
                 {% end %}
             {% else %}
