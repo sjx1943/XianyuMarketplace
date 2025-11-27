@@ -46,10 +46,6 @@ externalPort = 3001
 localPort = 43799
 externalPort = 3003
 
-[[ports]]
-localPort = 43843
-externalPort = 4200
-
 [nix]
 channel = "stable-25_05"
 packages = ["cacert", "cargo", "libiconv", "libxcrypt", "openssl", "pkg-config", "rustc"]
