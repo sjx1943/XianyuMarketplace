@@ -35,8 +35,10 @@
       class="message-item {{item.sender_id === currentUserId ? 'mine' : 'other'}}"
     >
       <image 
-        class="avatar" 
+        class="avatar {{!item.sender_id === currentUserId ? 'friend-avatar' : ''}}" 
         src="{{item.sender_id === currentUserId ? myAvatar : friendAvatar}}"
+        mode="aspectFill"
+        onerror="onAvatarError"
       ></image>
       
       <view class="message-content">
@@ -69,7 +71,7 @@
           </view>
         </view>
         
-        <text class="message-time">{{item.time}}</text>
+        <text class="message-time">{{item.time}}{{item.timestamp ? ' ' + item.timestamp : ''}}</text>
       </view>
     </view>
 

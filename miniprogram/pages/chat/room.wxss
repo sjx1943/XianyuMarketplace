@@ -39,6 +39,8 @@
   height: 80rpx;
   border-radius: 12rpx;
   flex-shrink: 0;
+  background: #f0f0f0;
+  object-fit: cover;
 }
 
 .message-item.mine .avatar {
@@ -142,6 +144,11 @@
   font-size: 22rpx;
   color: #999;
   margin-top: 8rpx;
+  white-space: nowrap;
+}
+
+.message-item.mine .message-time {
+  text-align: right;
 }
 
 /* 空状态 */

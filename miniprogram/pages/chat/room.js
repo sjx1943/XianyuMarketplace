@@ -96,8 +96,15 @@ Page({
       })
 
       if (data && data.messages) {
+        // 处理消息，确保头像URL正确
+        const messages = (data.messages || []).map(msg => ({
+          ...msg,
+          // 如果时间为空，使用当前时间
+          time: msg.time || new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+        }))
+        
         this.setData({
-          messages: data.messages || [],
+          messages: messages,
           friendAvatar: data.friend?.avatar ? getImageUrl(data.friend.avatar) : getDefaultAvatarUrl(),
           loading: false
         })
@@ -178,9 +185,18 @@ Page({
   // 添加消息到列表
   addMessage(message) {
     const messages = this.data.messages
+    // 确保消息有时间戳
+    const now = new Date()
+    message.time = message.time || now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+    message.timestamp = message.timestamp || now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     messages.push(message)
     this.setData({ messages })
     this.scrollToBottom()
+  },
+
+  // 头像加载失败处理
+  onAvatarError(e) {
+    console.warn('头像加载失败:', e)
   },
 
   // 输入变化
