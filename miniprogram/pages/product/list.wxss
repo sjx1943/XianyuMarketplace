@@ -130,18 +130,25 @@
   position: fixed;
   right: 40rpx;
   bottom: 200rpx;
-  width: 100rpx;
-  height: 100rpx;
   background-color: #ff6b35;
-  border-radius: 50%;
+  border-radius: 50rpx;
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
+  padding: 20rpx 30rpx;
   box-shadow: 0 4rpx 20rpx rgba(255, 107, 53, 0.4);
 }
 
-.publish-btn text {
-  font-size: 60rpx;
+.publish-btn .publish-icon {
+  font-size: 40rpx;
+  color: #fff;
+  line-height: 1;
+  margin-right: 8rpx;
+}
+
+.publish-btn .publish-text {
+  font-size: 28rpx;
   color: #fff;
   line-height: 1;
 }
