@@ -1346,6 +1346,8 @@ class MiniprogramBroadcastsHandler(tornado.web.RequestHandler):
     
     def get(self):
         """获取最近10条商品发布广播"""
+        from models.product import Product
+        
         try:
             # 查询最近10条商品，包含用户信息
             products = self.session.query(Product, User).join(
