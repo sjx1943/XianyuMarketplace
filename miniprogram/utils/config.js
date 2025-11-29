@@ -80,6 +80,13 @@ function getImageUrl(filename) {
   if (filename.startsWith('http://') || filename.startsWith('https://')) {
     return filename
   }
+  // 处理旧格式路径 (如 /static/uploads/xxx -> xxx)
+  if (filename.startsWith('/static/uploads/')) {
+    filename = filename.replace('/static/uploads/', '')
+  }
+  if (filename.startsWith('/static/images/')) {
+    filename = filename.replace('/static/images/', '')
+  }
   // 否则拼接完整URL
   const env = isDev ? 'development' : 'production'
   const host = config.api[env].host
