@@ -1,0 +1,86 @@
+<div class="broadcast-messages-center">
+<h3 class="broadcast-title">📢 系统广播</h3>
+
+
+<div class="broadcast-item-center">
+<a href="/product/detail/17">
+<span class="broadcast-user">3-1-804</span>
+于 <span class="broadcast-time" data-time="2025-11-29 09:12:15" title="2025-11-29 09:12:15 (北京时间)">8小时前</span>
+上传了 <span class="broadcast-product">ttx</span>
+</a>
+</div>
+
+<div class="broadcast-item-center">
+<a href="/product/detail/16">
+<span class="broadcast-user">3-1-804</span>
+于 <span class="broadcast-time" data-time="2025-11-29 08:29:54" title="2025-11-29 08:29:54 (北京时间)">8小时前</span>
+上传了 <span class="broadcast-product">楼房</span>
+</a>
+</div>
+
+<div class="broadcast-item-center">
+<a href="/product/detail/15">
+<span class="broadcast-user">3-1-804</span>
+于 <span class="broadcast-time" data-time="2025-11-29 08:29:05" title="2025-11-29 08:29:05 (北京时间)">8小时前</span>
+上传了 <span class="broadcast-product">楼房</span>
+</a>
+</div>
+
+<div class="broadcast-item-center">
+<a href="/product/detail/14">
+<span class="broadcast-user">3-1-804</span>
+于 <span class="broadcast-time" data-time="2025-11-29 08:28:55" title="2025-11-29 08:28:55 (北京时间)">8小时前</span>
+上传了 <span class="broadcast-product">楼房</span>
+</a>
+</div>
+
+<div class="broadcast-item-center">
+<a href="/product/detail/13">
+<span class="broadcast-user">3-1-804</span>
+于 <span class="broadcast-time" data-time="2025-11-29 07:36:00" title="2025-11-29 07:36:00 (北京时间)">9小时前</span>
+上传了 <span class="broadcast-product">fwqf</span>
+</a>
+</div>
+
+<div class="broadcast-item-center">
+<a href="/product/detail/12">
+<span class="broadcast-user">3-1-804</span>
+于 <span class="broadcast-time" data-time="2025-11-29 07:05:20" title="2025-11-29 07:05:20 (北京时间)">10小时前</span>
+上传了 <span class="broadcast-product">楼房</span>
+</a>
+</div>
+
+<div class="broadcast-item-center">
+<a href="/product/detail/11">
+<span class="broadcast-user">3-1-804</span>
+于 <span class="broadcast-time" data-time="2025-11-29 06:58:50" title="2025-11-29 06:58:50 (北京时间)">10小时前</span>
+上传了 <span class="broadcast-product">pen</span>
+</a>
+</div>
+
+<div class="broadcast-item-center">
+<a href="/product/detail/10">
+<span class="broadcast-user">3-1-901</span>
+于 <span class="broadcast-time" data-time="2025-11-27 03:20:12" title="2025-11-27 03:20:12 (北京时间)">2天前</span>
+上传了 <span class="broadcast-product">13r3</span>
+</a>
+</div>
+
+<div class="broadcast-item-center">
+<a href="/product/detail/9">
+<span class="broadcast-user">3-1-801</span>
+于 <span class="broadcast-time" data-time="2025-11-27 02:07:40" title="2025-11-27 02:07:40 (北京时间)">2天前</span>
+上传了 <span class="broadcast-product">小镜子</span>
+</a>
+</div>
+
+<div class="broadcast-item-center">
+<a href="/product/detail/8">
+<span class="broadcast-user">3-1-901</span>
+于 <span class="broadcast-time" data-time="2025-11-27 02:01:12" title="2025-11-27 02:01:12 (北京时间)">2天前</span>
+上传了 <span class="broadcast-product">是南山</span>
+</a>
+</div>
+
+
+</div>
