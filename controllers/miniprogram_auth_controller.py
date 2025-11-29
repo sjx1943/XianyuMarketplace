@@ -696,7 +696,7 @@ class MiniprogramProductDetailHandler(tornado.web.RequestHandler):
                 'tag': product.tag,
                 'image': product.image,
                 'images': [{'filename': img.filename} for img in images],
-                'created_at': product.created_at.strftime('%Y-%m-%d %H:%M') if product.created_at else '',
+                'upload_time': product.upload_time.strftime('%Y-%m-%d %H:%M') if product.upload_time else '',
                 'seller_id': product.user_id,
                 'seller': {
                     'id': seller.id,
@@ -708,7 +708,7 @@ class MiniprogramProductDetailHandler(tornado.web.RequestHandler):
                     'id': c.id,
                     'content': c.content,
                     'rating': c.rating,
-                    'created_at': c.created_at.strftime('%Y-%m-%d %H:%M') if c.created_at else ''
+                    'created_at': c.created_at.strftime('%Y-%m-%d %H:%M') if hasattr(c, 'created_at') and c.created_at else ''
                 } for c in comments]
             }
             
