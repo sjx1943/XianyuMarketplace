@@ -55,10 +55,15 @@ The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
 -   **Navigation**: Fixed profile page navigation to use `wx.switchTab()` for tabBar pages
 -   **Categories**: Synchronized categories across list.js and publish.js (数码产品, 家用电器, 服装鞋包, 图书音像, 运动户外, 美妆个护, 家居用品, 其他)
 -   **Image URLs**: Added `/images/` route for direct image access, frontend now uses `https://okashii.top/images/{filename}`
+-   **System Broadcasts**: Added 📢 系统广播 section to chat/room page showing latest 10 product uploads with room number, time, and product name
+-   **Chat Room Fixes**: Fixed undefined orderId error, added default avatar image, corrected orderId/productId null handling
 
 ### Backend Updates
 -   **New API**: `/api/miniprogram/messages/mark_read` for marking chat messages as read
+-   **Broadcasts API**: `/api/miniprogram/broadcasts` returns latest 10 products with user room number, relative time (x小时前/x天前), and product name
 -   **Image Route**: Added `/images/(.*)` static file route mapping to `mystatics/images/`
+-   **Default Avatar**: Created `mystatics/images/default-avatar.png` for missing user avatars
 
 ### Admin Script
 -   Created `scripts/add_admin_prod.py` for production VPS admin account setup
+-   Fixed import to use `from base.base import Base, engine`

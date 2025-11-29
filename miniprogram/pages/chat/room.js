@@ -40,8 +40,8 @@ Page({
 
     this.setData({
       friendId,
-      productId,
-      orderId,
+      productId: productId || null,
+      orderId: orderId || null,
       currentUserId: userInfo.id,
       myAvatar: userInfo.wechat_avatar || '/images/default-avatar.png'
     })
