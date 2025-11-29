@@ -52,7 +52,7 @@ externalPort = 3003
 
 [nix]
 channel = "stable-25_05"
-packages = ["cacert", "cargo", "libiconv", "libxcrypt", "openssl", "pkg-config", "rustc"]
+packages = ["cacert", "cargo", "freetype", "lcms2", "libiconv", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "openssl", "pkg-config", "rustc", "tcl", "tk", "zlib"]
 
 [deployment]
 deploymentTarget = "autoscale"

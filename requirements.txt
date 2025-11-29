@@ -16,3 +16,4 @@ alibabacloud_dysmsapi20170525
 alibabacloud-tea-openapi
 requests
 pytest
+Pillow
