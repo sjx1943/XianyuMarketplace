@@ -14,7 +14,7 @@
     "pages/login/login"
   ],
   "window": {
-    "navigationBarTitleText": "小区二手交易",
+    "navigationBarTitleText": "翡翠之星闲置物品展示平台",
     "navigationBarBackgroundColor": "#ff6b35",
     "navigationBarTextStyle": "white",
     "backgroundColor": "#f5f5f5",

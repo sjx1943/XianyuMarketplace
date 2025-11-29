@@ -1,8 +1,12 @@
 // app.js - 小程序主应用文件
-const configModule = require('./utils/config.js')
 
 App({
   onLaunch() {
+    // 初始化配置
+    const configModule = require('./utils/config.js')
+    this.globalData.apiBase = configModule.API_BASE
+    this.globalData.wsBase = configModule.WS_BASE
+
     // 初始化日志
     const logs = wx.getStorageSync('logs') || []
     logs.unshift(Date.now())
@@ -28,8 +32,8 @@ App({
 
   globalData: {
     userInfo: null,
-    apiBase: configModule.API_BASE,
-    wsBase: configModule.WS_BASE,
+    apiBase: '',
+    wsBase: '',
     isLogin: false,
     currentUserId: null,
     unreadCount: 0,
@@ -42,12 +46,12 @@ App({
 
   // 获取API基础URL（根据环境配置）
   getApiBase() {
-    return configModule.API_BASE
+    return this.globalData.apiBase
   },
 
   // 获取WebSocket基础URL
   getWsBase() {
-    return configModule.WS_BASE
+    return this.globalData.wsBase
   },
 
   // 初始化配置
