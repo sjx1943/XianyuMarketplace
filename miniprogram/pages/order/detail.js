@@ -1,9 +1,13 @@
 const api = require('../../utils/api.js')
+const app = getApp()
 
 Page({
   data: {
     order: null,
-    loading: true
+    loading: true,
+    isBuyer: false,
+    isSeller: false,
+    currentUserId: null
   },
 
   onLoad(options) {
@@ -15,15 +19,26 @@ Page({
   loadOrderDetail(orderId) {
     this.setData({ loading: true })
     
+    // 获取当前用户信息
+    const userInfo = wx.getStorageSync('userInfo')
+    const currentUserId = userInfo?.id
+    this.setData({ currentUserId })
+    
     api.getOrderDetail(orderId).then(res => {
       const order = res.order || res
       const { getImageUrl } = require('../../utils/config.js')
       const productImage = order.product_image || order.image
       const imageUrl = productImage ? getImageUrl(productImage) : ''
       
+      // 判断当前用户是买家还是卖家
+      const isBuyer = currentUserId === order.user_id || currentUserId === order.buyer_id
+      const isSeller = currentUserId === order.seller_id
+      
       this.setData({
         order: order,
         productImage: imageUrl,
+        isBuyer: isBuyer,
+        isSeller: isSeller,
         loading: false
       })
     }).catch(err => {
@@ -70,6 +85,31 @@ Page({
           api.shipOrder(orderId).then(() => {
             wx.showToast({
               title: '已确认发货',
+              icon: 'success'
+            })
+            this.loadOrderDetail(orderId)
+          }).catch(err => {
+            wx.showToast({
+              title: err.message || '操作失败',
+              icon: 'none'
+            })
+          })
+        }
+      }
+    })
+  },
+
+  // 取消订单（买家）
+  cancelOrder() {
+    const orderId = this.data.order.id
+    wx.showModal({
+      title: '取消订单',
+      content: '确定要取消这个订单吗？',
+      success: (res) => {
+        if (res.confirm) {
+          api.cancelOrder(orderId).then(() => {
+            wx.showToast({
+              title: '订单已取消',
               icon: 'success'
             })
             this.loadOrderDetail(orderId)

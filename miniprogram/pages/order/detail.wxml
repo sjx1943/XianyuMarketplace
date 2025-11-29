@@ -56,23 +56,35 @@
     <view class="action-bar">
       <button class="action-btn secondary" bindtap="contactSeller">联系卖家</button>
       
-      <button 
-        wx:if="{{order.status === 'pending'}}" 
-        class="action-btn primary" 
-        bindtap="shipOrder"
-      >确认发货</button>
+      <!-- 买家操作 -->
+      <block wx:if="{{isBuyer}}">
+        <button 
+          wx:if="{{order.status === 'pending'}}" 
+          class="action-btn danger" 
+          bindtap="cancelOrder"
+        >取消订单</button>
+        
+        <button 
+          wx:if="{{order.status === 'shipped'}}" 
+          class="action-btn primary" 
+          bindtap="confirmOrder"
+        >确认收货</button>
+        
+        <button 
+          wx:if="{{order.status === 'completed'}}" 
+          class="action-btn primary" 
+          bindtap="writeReview"
+        >评价商品</button>
+      </block>
       
-      <button 
-        wx:if="{{order.status === 'shipped'}}" 
-        class="action-btn primary" 
-        bindtap="confirmOrder"
-      >确认收货</button>
-      
-      <button 
-        wx:if="{{order.status === 'completed'}}" 
-        class="action-btn primary" 
-        bindtap="writeReview"
-      >评价商品</button>
+      <!-- 卖家操作 -->
+      <block wx:if="{{isSeller}}">
+        <button 
+          wx:if="{{order.status === 'pending'}}" 
+          class="action-btn primary" 
+          bindtap="shipOrder"
+        >确认发货</button>
+      </block>
     </view>
   </block>
 
