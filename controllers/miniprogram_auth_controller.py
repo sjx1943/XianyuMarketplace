@@ -86,9 +86,16 @@ class MiniprogramLoginHandler(tornado.web.RequestHandler):
             self.set_secure_cookie("user_id", str(user.id))
             self.set_secure_cookie("username", user.username or "")
             
+            # 生成简单token（用户ID加密）用于小程序Authorization验证
+            import hashlib
+            import time
+            token_base = f"{user.id}:{openid}:{int(time.time())}"
+            token = hashlib.sha256(token_base.encode()).hexdigest()[:32] + f"_{user.id}"
+            
             # 返回用户信息
             self.write(json.dumps({
                 'success': True,
+                'token': token,  # 返回token供小程序存储
                 'user': {
                     'id': user.id,
                     'username': user.username,
@@ -199,10 +206,27 @@ class MiniprogramUserInfoHandler(tornado.web.RequestHandler):
     def initialize(self):
         self.session = Session()
     
+    def _get_user_id(self):
+        """从Cookie或Authorization头获取用户ID"""
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    user_id = token.split('_')[-1]
+                    return user_id
+                except:
+                    pass
+        return None
+    
     def get(self):
         """获取当前登录用户信息"""
         try:
-            user_id = self.get_secure_cookie("user_id")
+            user_id = self._get_user_id()
             
             if not user_id:
                 self.write(json.dumps({
@@ -256,11 +280,31 @@ class MiniprogramSetRoomNumberHandler(tornado.web.RequestHandler):
     def initialize(self):
         self.session = Session()
     
+    def _get_user_id(self):
+        """从Cookie或Authorization头获取用户ID"""
+        # 优先从Cookie获取
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        # 从Authorization头获取（格式：Bearer token_userId）
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]  # 去掉 'Bearer ' 前缀
+            # token格式：hash_userId
+            if '_' in token:
+                try:
+                    user_id = token.split('_')[-1]
+                    return user_id
+                except:
+                    pass
+        return None
+    
     def post(self):
         """设置用户房间号"""
         import re
         try:
-            user_id = self.get_secure_cookie("user_id")
+            user_id = self._get_user_id()
             
             if not user_id:
                 self.set_status(401)
@@ -344,10 +388,27 @@ class MiniprogramUpdateProfileHandler(tornado.web.RequestHandler):
     def initialize(self):
         self.session = Session()
     
+    def _get_user_id(self):
+        """从Cookie或Authorization头获取用户ID"""
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    user_id = token.split('_')[-1]
+                    return user_id
+                except:
+                    pass
+        return None
+    
     def post(self):
         """更新用户资料（昵称、头像等）"""
         try:
-            user_id = self.get_secure_cookie("user_id")
+            user_id = self._get_user_id()
             
             if not user_id:
                 self.set_status(401)
