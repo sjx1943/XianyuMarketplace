@@ -254,8 +254,7 @@ App({
       }
 
       var defaultHeader = {
-        'Content-Type': 'application/json',
-        'User-Agent': 'MiniProgram'
+        'Content-Type': 'application/json'
       };
 
       if (token) {

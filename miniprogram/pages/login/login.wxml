@@ -3,7 +3,9 @@
   <view class="login-card">
     <!-- Logo -->
     <view class="logo-section">
-      <image class="logo" src="/images/logo.png" mode="aspectFit"></image>
+      <view class="logo-placeholder">
+        <text class="logo-icon">🏪</text>
+      </view>
       <text class="app-name">小区二手市场</text>
       <text class="app-desc">邻里闲置交易平台</text>
     </view>
@@ -24,9 +26,9 @@
       </view>
     </view>
 
-    <!-- 登录按钮 -->
-    <button class="login-btn" open-type="getUserInfo" bindgetuserinfo="onGetUserInfo" wx:if="{{!isLogin}}">
-      <text class="wechat-icon">🔐</text>
+    <!-- 微信快捷登录按钮 -->
+    <button class="login-btn wechat-btn" bindtap="onWechatLogin" wx:if="{{!isLogin && !needSetRoom}}" loading="{{loading}}">
+      <text class="wechat-icon">💚</text>
       微信快捷登录
     </button>
 
@@ -44,15 +46,21 @@
         value="{{roomNumber}}"
         bindinput="onRoomInput"
       />
-      <button class="confirm-btn" bindtap="onConfirmRoom">确认</button>
+      <button class="confirm-btn" bindtap="onConfirmRoom" loading="{{loading}}">确认</button>
+    </view>
+
+    <!-- 登录成功提示 -->
+    <view class="success-section" wx:if="{{isLogin && !needSetRoom}}">
+      <text class="success-icon">✅</text>
+      <text class="success-text">登录成功</text>
     </view>
 
     <!-- 隐私政策 -->
     <view class="privacy-text">
       <text>登录即表示同意</text>
-      <text class="link">《用户协议》</text>
+      <text class="link" bindtap="onUserAgreement">《用户协议》</text>
       <text>和</text>
-      <text class="link">《隐私政策》</text>
+      <text class="link" bindtap="onPrivacyPolicy">《隐私政策》</text>
     </view>
   </view>
 </view>

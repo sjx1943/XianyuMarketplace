@@ -28,6 +28,42 @@
   margin-bottom: 20rpx;
 }
 
+.logo-placeholder {
+  width: 160rpx;
+  height: 160rpx;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20rpx;
+}
+
+.logo-icon {
+  font-size: 80rpx;
+}
+
+.wechat-btn {
+  background: linear-gradient(135deg, #07c160, #06ad56) !important;
+}
+
+.success-section {
+  text-align: center;
+  padding: 40rpx;
+}
+
+.success-icon {
+  font-size: 80rpx;
+  display: block;
+  margin-bottom: 20rpx;
+}
+
+.success-text {
+  font-size: 32rpx;
+  color: #333;
+  font-weight: bold;
+}
+
 .app-name {
   display: block;
   font-size: 48rpx;

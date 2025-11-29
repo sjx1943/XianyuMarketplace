@@ -21,13 +21,21 @@ Page({
     banners: [
       {
         id: 1,
-        image: '/images/banner1.jpg',
+        icon: '🔥',
+        color: 'linear-gradient(135deg, #ff6b35, #f7931e)',
         title: '热门商品推荐'
       },
       {
         id: 2,
-        image: '/images/banner2.jpg',
+        icon: '🆕',
+        color: 'linear-gradient(135deg, #667eea, #764ba2)',
         title: '新品上架'
+      },
+      {
+        id: 3,
+        icon: '💰',
+        color: 'linear-gradient(135deg, #11998e, #38ef7d)',
+        title: '超值好物'
       }
     ],
     hotProducts: [],
