@@ -6,15 +6,15 @@
       <view class="logo-placeholder">
         <text class="logo-icon">🏪</text>
       </view>
-      <text class="app-name">小区二手市场</text>
-      <text class="app-desc">邻里闲置交易平台</text>
+      <text class="app-name">翡翠之星平台</text>
+      <text class="app-desc">邻里闲置展示平台</text>
     </view>
 
     <!-- 功能介绍 -->
     <view class="features">
       <view class="feature-item">
         <text class="feature-icon">🏠</text>
-        <text class="feature-text">同小区交易</text>
+        <text class="feature-text">同小区物品橱窗</text>
       </view>
       <view class="feature-item">
         <text class="feature-icon">💬</text>
@@ -38,7 +38,7 @@
         <text>🏠 请设置您的房间号</text>
       </view>
       <view class="room-hint">
-        格式：楼号-单元号-房间号（如：3-1-801）
+        格式：楼号-单元号-房间号（如：3-1-901）
       </view>
       <input 
         class="room-input" 

@@ -46,7 +46,7 @@ Page({
 
         // 发送code到服务器进行登录
         wx.request({
-          url: app.globalData.apiBase + '/miniprogram/login',
+          url: app.globalData.apiBase + '/api/miniprogram/login',
           method: 'POST',
           data: {
             code: loginRes.code
@@ -149,7 +149,7 @@ Page({
       return;
     }
 
-    // 验证房间号格式（如：3-1-801）
+    // 验证房间号格式（如：3-1-901）
     var roomRegex = /^\d+-\d+-\d+$/;
     if (!roomRegex.test(roomNumber)) {
       wx.showToast({
@@ -213,7 +213,7 @@ Page({
   onUserAgreement: function() {
     wx.showModal({
       title: '用户协议',
-      content: '欢迎使用小区二手市场！本平台仅供小区居民进行闲置物品交易。请遵守平台规则，诚信交易。',
+      content: '欢迎使用翡翠雅集！本平台仅供小区居民进行闲置物品交易。请遵守平台规则，诚信交易。',
       showCancel: false,
       confirmText: '我知道了'
     });
