@@ -241,3 +241,40 @@
 .buy-btn::after {
   border: none;
 }
+
+/* 删除按钮样式 */
+.delete-btn {
+  color: #ff4444;
+}
+
+/* 所有者标签 */
+.owner-tag {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8f5e9;
+  color: #4caf50;
+  border-radius: 50rpx;
+  height: 80rpx;
+  font-size: 28rpx;
+  font-weight: bold;
+}
+
+/* 无图片占位 */
+.no-image {
+  width: 100%;
+  height: 400rpx;
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 28rpx;
+}
+
+/* 成色标签 */
+.tag-condition {
+  background: #fff3e0;
+  color: #ff9800;
+}

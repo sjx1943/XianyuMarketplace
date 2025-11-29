@@ -1,0 +1,75 @@
+<!--我的商品页-->
+<view class="page">
+  <!-- 顶部Tab栏 -->
+  <view class="tabs">
+    <view 
+      wx:for="{{tabs}}" 
+      wx:key="key" 
+      class="tab-item {{currentTab === item.key ? 'active' : ''}}"
+      bindtap="switchTab"
+      data-tab="{{item.key}}"
+    >
+      <text>{{item.name}}</text>
+      <text class="tab-count" wx:if="{{item.key === 'all'}}">({{stats.all}})</text>
+      <text class="tab-count" wx:elif="{{item.key === '在售'}}">({{stats.selling}})</text>
+      <text class="tab-count" wx:elif="{{item.key === '已售完'}}">({{stats.sold}})</text>
+    </view>
+  </view>
+
+  <!-- 商品列表 -->
+  <view class="product-list" wx:if="{{!loading && products.length > 0}}">
+    <view 
+      class="product-item"
+      wx:for="{{products}}"
+      wx:key="id"
+    >
+      <image 
+        class="product-image" 
+        src="{{item.imageUrl}}" 
+        mode="aspectFill"
+        bindtap="viewDetail"
+        data-id="{{item.id}}"
+      ></image>
+      
+      <view class="product-info" bindtap="viewDetail" data-id="{{item.id}}">
+        <text class="product-name">{{item.name}}</text>
+        <view class="product-meta">
+          <text class="product-price">{{item.priceText}}</text>
+          <text class="product-status status-{{item.status === '在售' ? 'selling' : 'sold'}}">
+            {{item.status}}
+          </text>
+        </view>
+        <view class="product-stats">
+          <text class="stat-item">库存: {{item.quantity}}</text>
+          <text class="stat-item">{{item.upload_time}}</text>
+        </view>
+      </view>
+      
+      <view class="product-actions">
+        <button class="action-btn edit-btn" bindtap="editProduct" data-id="{{item.id}}">
+          ✏️ 编辑
+        </button>
+        <button class="action-btn delete-btn" bindtap="deleteProduct" data-id="{{item.id}}" data-name="{{item.name}}">
+          🗑️ 删除
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{!loading && products.length === 0}}">
+    <text class="empty-icon">📦</text>
+    <text class="empty-text">暂无商品</text>
+    <button class="publish-btn" bindtap="goPublish">发布商品</button>
+  </view>
+
+  <!-- 加载中 -->
+  <view class="loading-state" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 底部发布按钮 -->
+  <view class="bottom-bar" wx:if="{{!loading && products.length > 0}}">
+    <button class="publish-btn" bindtap="goPublish">+ 发布新商品</button>
+  </view>
+</view>

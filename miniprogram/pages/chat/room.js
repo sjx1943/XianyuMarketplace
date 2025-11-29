@@ -113,24 +113,26 @@ Page({
   connectWebSocket() {
     const config = require('../../utils/config.js')
     
-    // 后端WebSocket路由是 /ws/chat_room，使用cookie进行身份验证
-    // WS_BASE 已经包含了 /ws，所以直接加 /chat_room
-    const socketUrl = `${config.WS_BASE}/chat_room`
+    // 后端WebSocket路由是 /ws/chat_room，需要传递user_id参数
+    const userId = this.data.currentUserId
+    if (!userId) {
+      console.error('WebSocket连接失败: 用户ID不存在')
+      return
+    }
+    
+    // 构建WebSocket URL，包含user_id参数
+    const socketUrl = `${config.WS_BASE}/chat_room?user_id=${userId}`
+    console.log('WebSocket连接地址:', socketUrl)
     
     wx.connectSocket({
       url: socketUrl,
-      header: {
-        'Cookie': wx.getStorageSync('cookie') || ''
-      },
       success: () => {
         console.log('WebSocket连接中...')
       },
       fail: (err) => {
         console.error('WebSocket连接失败:', err)
-        wx.showToast({
-          title: '连接失败，请重试',
-          icon: 'none'
-        })
+        // 不显示Toast，因为可能是平台限制（如微信开发者工具）
+        console.log('WebSocket连接可能受平台限制，聊天功能将使用HTTP轮询')
       }
     })
 

@@ -3,6 +3,7 @@
     "pages/product/list",
     "pages/product/detail",
     "pages/product/publish",
+    "pages/product/my-list",
     "pages/chat/list",
     "pages/chat/room",
     "pages/order/list",

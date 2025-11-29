@@ -5,11 +5,19 @@ const app = getApp()
 Page({
   data: {
     product: {},
-    loading: true
+    loading: true,
+    isOwner: false,
+    currentUserId: null
   },
 
   onLoad(options) {
     const { id } = options
+    
+    const userInfo = wx.getStorageSync('userInfo')
+    if (userInfo && userInfo.id) {
+      this.setData({ currentUserId: userInfo.id })
+    }
+    
     if (id) {
       this.loadProductDetail(id)
     } else {
@@ -52,9 +60,12 @@ Page({
           seller_id: product.seller?.id || product.seller_id
         }
         
+        const isOwner = this.data.currentUserId && productData.seller_id === this.data.currentUserId
+        
         this.setData({
           product: productData,
-          loading: false
+          loading: false,
+          isOwner: isOwner
         })
       } else {
         wx.showToast({
@@ -174,5 +185,42 @@ Page({
       query: `id=${product.id}`,
       imageUrl: product.images && product.images[0]
     }
+  },
+
+  // 编辑商品（自己的商品）
+  onEdit() {
+    const { product } = this.data
+    wx.navigateTo({
+      url: `/pages/product/edit?id=${product.id}`
+    })
+  },
+
+  // 删除商品（自己的商品）
+  onDelete() {
+    const { product } = this.data
+    
+    wx.showModal({
+      title: '确认删除',
+      content: '确定要删除这个商品吗？删除后无法恢复。',
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            await api.deleteProduct(product.id)
+            wx.showToast({
+              title: '删除成功',
+              icon: 'success'
+            })
+            setTimeout(() => {
+              wx.navigateBack()
+            }, 1500)
+          } catch (error) {
+            wx.showToast({
+              title: '删除失败',
+              icon: 'none'
+            })
+          }
+        }
+      }
+    })
   }
 })

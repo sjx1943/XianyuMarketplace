@@ -101,10 +101,10 @@ Page({
     }
   },
 
-  // 跳转到我的商品页面（物品页是tabBar页面，需要用switchTab）
+  // 跳转到我的商品管理页面
   goToMyProducts() {
-    wx.switchTab({
-      url: '/pages/product/list'
+    wx.navigateTo({
+      url: '/pages/product/my-list'
     })
   },
 
@@ -139,7 +139,7 @@ Page({
   onShareAppMessage() {
     return {
       title: '小区二手市场 - 邻里闲置交易平台',
-      path: '/pages/index/index',
+      path: '/pages/product/list',
       imageUrl: getImageUrl('share-banner.jpg')
     }
   },

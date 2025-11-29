@@ -63,14 +63,31 @@
       <text class="btn-icon">📤</text>
       <text class="btn-text">分享</text>
     </button>
-    <button class="action-btn" bindtap="onFavorite">
-      <text class="btn-icon">{{product.is_favorited ? '❤️' : '🤍'}}</text>
-      <text class="btn-text">收藏</text>
-    </button>
-    <button class="chat-btn" bindtap="onChat">
-      <text class="btn-icon">💬</text>
-      <text>联系卖家</text>
-    </button>
-    <button class="buy-btn" bindtap="onBuy">立即购买</button>
+    
+    <!-- 他人商品：显示收藏、联系卖家、购买按钮 -->
+    <block wx:if="{{!isOwner}}">
+      <button class="action-btn" bindtap="onFavorite">
+        <text class="btn-icon">{{product.is_favorited ? '❤️' : '🤍'}}</text>
+        <text class="btn-text">收藏</text>
+      </button>
+      <button class="chat-btn" bindtap="onChat">
+        <text class="btn-icon">💬</text>
+        <text>联系卖家</text>
+      </button>
+      <button class="buy-btn" bindtap="onBuy">立即购买</button>
+    </block>
+    
+    <!-- 自己的商品：显示编辑、删除按钮 -->
+    <block wx:else>
+      <button class="action-btn" bindtap="onEdit">
+        <text class="btn-icon">✏️</text>
+        <text class="btn-text">编辑</text>
+      </button>
+      <button class="action-btn delete-btn" bindtap="onDelete">
+        <text class="btn-icon">🗑️</text>
+        <text class="btn-text">删除</text>
+      </button>
+      <view class="owner-tag">我的商品</view>
+    </block>
   </view>
 </view>
