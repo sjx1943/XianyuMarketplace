@@ -121,20 +121,29 @@ class API {
     })
   }
 
-  // 设置房间号
+  // 设置房间号（小程序专用API）
   setRoomNumber(roomNumber) {
     return this.request({
-      url: '/set_room_number',
+      url: '/api/miniprogram/set_room_number',
       method: 'POST',
       data: { room_number: roomNumber }
     })
   }
 
-  // 获取用户信息
+  // 获取用户信息（小程序专用API）
   getUserInfo() {
     return this.request({
-      url: '/api/user/info',
+      url: '/api/miniprogram/user/info',
       method: 'GET'
+    })
+  }
+
+  // 更新用户资料（小程序专用API）
+  updateProfile(data) {
+    return this.request({
+      url: '/api/miniprogram/update_profile',
+      method: 'POST',
+      data: data
     })
   }
 

@@ -238,15 +238,11 @@ Page({
   async updateUserProfile(userInfo) {
     try {
       await app.request({
-        url: '/update_profile',
+        url: '/api/miniprogram/update_profile',
         method: 'POST',
         data: {
           avatar: userInfo.avatarUrl,
-          nickname: userInfo.nickName,
-          gender: userInfo.gender,
-          city: userInfo.city,
-          province: userInfo.province,
-          country: userInfo.country
+          nickname: userInfo.nickName
         }
       })
     } catch (error) {

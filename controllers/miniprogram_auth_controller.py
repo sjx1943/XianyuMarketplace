@@ -244,3 +244,156 @@ class MiniprogramUserInfoHandler(tornado.web.RequestHandler):
     
     def on_finish(self):
         self.session.close()
+
+
+class MiniprogramSetRoomNumberHandler(tornado.web.RequestHandler):
+    """小程序设置房间号接口"""
+    
+    def check_xsrf_cookie(self):
+        """禁用XSRF检查（小程序无法携带XSRF token）"""
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def post(self):
+        """设置用户房间号"""
+        import re
+        try:
+            user_id = self.get_secure_cookie("user_id")
+            
+            if not user_id:
+                self.set_status(401)
+                self.write(json.dumps({
+                    'success': False,
+                    'error': '未登录'
+                }))
+                return
+            
+            data = json.loads(self.request.body)
+            room_number = data.get('room_number', '').strip()
+            
+            if not room_number:
+                self.write(json.dumps({
+                    'success': False,
+                    'error': '房间号不能为空'
+                }))
+                return
+            
+            # 验证房间号格式：楼号-单元号-房间号（如'3-1-801'）
+            pattern = r'^\d{1,3}-\d{1,2}-\d{1,4}$'
+            if not re.match(pattern, room_number):
+                self.write(json.dumps({
+                    'success': False,
+                    'error': '房间号格式不正确，请按照"楼号-单元号-房间号"格式输入，例如：3-1-801'
+                }))
+                return
+            
+            # 检查房间号是否已被使用
+            existing_room = self.session.query(User).filter_by(room_number=room_number).first()
+            if existing_room and existing_room.id != int(user_id):
+                self.write(json.dumps({
+                    'success': False,
+                    'error': '该房间号已被占用，如有疑问请联系管理员'
+                }))
+                return
+            
+            # 更新用户房间号
+            user = self.session.query(User).filter_by(id=int(user_id)).first()
+            if user:
+                user.room_number = room_number
+                self.session.commit()
+                
+                # 更新cookie
+                self.set_secure_cookie("username", room_number, expires_days=7)
+                
+                self.write(json.dumps({
+                    'success': True,
+                    'message': '房间号设置成功',
+                    'user': {
+                        'id': user.id,
+                        'username': user.username,
+                        'room_number': user.room_number
+                    }
+                }))
+            else:
+                self.write(json.dumps({
+                    'success': False,
+                    'error': '用户不存在'
+                }))
+                
+        except Exception as e:
+            self.session.rollback()
+            logging.error(f"设置房间号异常: {e}")
+            self.write(json.dumps({
+                'success': False,
+                'error': str(e)
+            }))
+    
+    def on_finish(self):
+        self.session.close()
+
+
+class MiniprogramUpdateProfileHandler(tornado.web.RequestHandler):
+    """小程序更新用户资料接口"""
+    
+    def check_xsrf_cookie(self):
+        """禁用XSRF检查（小程序无法携带XSRF token）"""
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def post(self):
+        """更新用户资料（昵称、头像等）"""
+        try:
+            user_id = self.get_secure_cookie("user_id")
+            
+            if not user_id:
+                self.set_status(401)
+                self.write(json.dumps({
+                    'success': False,
+                    'error': '未登录'
+                }))
+                return
+            
+            data = json.loads(self.request.body)
+            nickname = data.get('nickname', '')
+            avatar = data.get('avatar', '')
+            
+            user = self.session.query(User).filter_by(id=int(user_id)).first()
+            if user:
+                if nickname:
+                    user.wechat_nickname = nickname
+                if avatar:
+                    user.wechat_avatar = avatar
+                
+                self.session.commit()
+                
+                self.write(json.dumps({
+                    'success': True,
+                    'message': '资料更新成功',
+                    'user': {
+                        'id': user.id,
+                        'username': user.username,
+                        'room_number': user.room_number,
+                        'wechat_nickname': user.wechat_nickname,
+                        'wechat_avatar': user.wechat_avatar
+                    }
+                }))
+            else:
+                self.write(json.dumps({
+                    'success': False,
+                    'error': '用户不存在'
+                }))
+                
+        except Exception as e:
+            self.session.rollback()
+            logging.error(f"更新用户资料异常: {e}")
+            self.write(json.dumps({
+                'success': False,
+                'error': str(e)
+            }))
+    
+    def on_finish(self):
+        self.session.close()

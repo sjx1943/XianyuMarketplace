@@ -162,19 +162,18 @@ Page({
     self.setData({ loading: true });
 
     wx.request({
-      url: app.globalData.apiBase + '/set_room_number',
+      url: app.globalData.apiBase + '/api/miniprogram/set_room_number',
       method: 'POST',
-      data: {
+      data: JSON.stringify({
         room_number: roomNumber
-      },
+      }),
       header: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + wx.getStorageSync('token')
+        'Content-Type': 'application/json'
       },
       success: function(res) {
         self.setData({ loading: false });
         
-        if (res.statusCode === 200 && (res.data.success || res.data.message === 'ok')) {
+        if (res.statusCode === 200 && res.data.success) {
           // 更新本地用户信息
           var userInfo = app.globalData.userInfo || {};
           userInfo.room_number = roomNumber;
