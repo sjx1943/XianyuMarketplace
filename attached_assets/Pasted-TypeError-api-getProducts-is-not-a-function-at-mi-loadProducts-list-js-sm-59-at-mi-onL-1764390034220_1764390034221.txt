@@ -1,0 +1,61 @@
+TypeError: api.getProducts is not a function
+    at mi.loadProducts (list.js? [sm]:59)
+    at mi.onLoad (list.js? [sm]:20)
+    at mi.<anonymous> (VM56 WASubContext.js:1)
+    at mi.l.__callPageLifeTime__ (VM56 WASubContext.js:1)
+    at VM56 WASubContext.js:1
+    at VM56 WASubContext.js:1
+    at VM56 WASubContext.js:1
+    at VM56 WASubContext.js:1
+    at VM56 WASubContext.js:1
+    at VM56 WASubContext.js:1(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+Refused to set unsafe header "User-Agent"(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+(anonymous) @ app.js:269
+request @ app.js:252
+_callee4$ @ index.js? [sm]:138
+s @ VM105:1
+(anonymous) @ VM105:1
+(anonymous) @ VM105:1
+asyncGeneratorStep @ VM107:1
+c @ VM107:1
+(anonymous) @ VM107:1
+(anonymous) @ VM107:1
+loadMoreProducts @ index.js? [sm]:155
+onReachBottom @ index.js? [sm]:66
+Refused to set unsafe header "User-Agent"(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+(anonymous) @ app.js:269
+request @ app.js:252
+_callee5$ @ index.js? [sm]:232
+s @ VM105:1
+(anonymous) @ VM105:1
+(anonymous) @ VM105:1
+asyncGeneratorStep @ VM107:1
+c @ VM107:1
+(anonymous) @ VM107:1
+(anonymous) @ VM107:1
+updateUserProfile @ index.js? [sm]:245
+success @ index.js? [sm]:222
+app.js:269 POST https://okashii.top/update_profile 403(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+(anonymous) @ app.js:269
+request @ app.js:252
+_callee5$ @ index.js? [sm]:232
+s @ VM105:1
+(anonymous) @ VM105:1
+(anonymous) @ VM105:1
+asyncGeneratorStep @ VM107:1
+c @ VM107:1
+(anonymous) @ VM107:1
+(anonymous) @ VM107:1
+updateUserProfile @ index.js? [sm]:245
+success @ index.js? [sm]:222
+index.js? [sm]:245 更新用户资料失败: Error: 登录已过期
+    at success (app.js:282)
+    at Object.success (VM56 WASubContext.js:1)
+    at Object.success (VM56 WASubContext.js:1)
+    at Function.I.forEach.v.<computed> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1
+    at u (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at Function.<anonymous> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1(env: macOS,mp,1.06.2504060; lib: 3.12.0)

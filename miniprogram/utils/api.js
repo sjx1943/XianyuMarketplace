@@ -149,6 +149,11 @@ class API {
     })
   }
 
+  // 获取商品列表（别名）
+  getProducts(params = {}) {
+    return this.getProductList(params)
+  }
+
   // 获取商品详情
   getProductDetail(id) {
     return this.request({
