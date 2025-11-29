@@ -1029,6 +1029,99 @@ class MiniprogramMessagesHandler(tornado.web.RequestHandler):
         self.session.close()
 
 
+class MiniprogramProductsListHandler(tornado.web.RequestHandler):
+    """小程序商品列表接口"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def get(self):
+        """获取商品列表（支持分页、标签过滤、关键词搜索）"""
+        from models.product import Product
+        
+        try:
+            # 获取分页参数
+            page = int(self.get_argument('page', 1))
+            page_size = int(self.get_argument('page_size', 20))
+            
+            # 获取过滤参数
+            tag = self.get_argument('tag', '')
+            keyword = self.get_argument('keyword', '')
+            user_id = self.get_argument('user_id', '')
+            
+            # 构建查询
+            query = self.session.query(Product).filter(
+                Product.status == '在售',
+                Product.quantity > 0
+            )
+            
+            # 按标签过滤
+            if tag and tag != '全部':
+                query = query.filter(Product.tag == tag)
+            
+            # 按卖家ID过滤
+            if user_id:
+                query = query.filter(Product.user_id == int(user_id))
+            
+            # 按关键词搜索（商品名称或描述）
+            if keyword:
+                query = query.filter(
+                    (Product.name.ilike(f'%{keyword}%')) |
+                    (Product.description.ilike(f'%{keyword}%'))
+                )
+            
+            # 获取总数
+            total = query.count()
+            
+            # 分页
+            offset = (page - 1) * page_size
+            products = query.order_by(Product.upload_time.desc()).offset(offset).limit(page_size).all()
+            
+            # 构建返回数据
+            products_list = []
+            for product in products:
+                seller = self.session.query(User).filter_by(id=product.user_id).first()
+                products_list.append({
+                    'id': product.id,
+                    'name': product.name,
+                    'description': product.description,
+                    'price': float(product.price),
+                    'quantity': product.quantity,
+                    'tag': product.tag,
+                    'condition': product.condition or '九成新',
+                    'image': product.image,
+                    'status': product.status,
+                    'upload_time': product.upload_time.strftime('%Y-%m-%d %H:%M') if product.upload_time else '',
+                    'seller_id': product.user_id,
+                    'seller_name': seller.username if seller else '未知',
+                    'seller_room': seller.room_number if seller else '未设置'
+                })
+            
+            self.write(json.dumps({
+                'success': True,
+                'products': products_list,
+                'total': total,
+                'page': page,
+                'page_size': page_size,
+                'has_more': offset + page_size < total
+            }))
+            
+        except Exception as e:
+            logging.error(f"获取商品列表异常: {e}")
+            self.set_status(500)
+            self.write(json.dumps({
+                'success': False,
+                'error': str(e),
+                'products': []
+            }))
+    
+    def on_finish(self):
+        self.session.close()
+
+
 class MiniprogramChatListHandler(tornado.web.RequestHandler):
     """小程序聊天列表接口"""
     
