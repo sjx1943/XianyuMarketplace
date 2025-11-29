@@ -30,10 +30,30 @@ Page({
       
       const data = await api.getProductDetail(id)
       
-      // 后端直接返回商品对象，没有包装在success字段中
-      if (data && data.id) {
+      // 后端返回 {success: true, product: {...}} 格式
+      const product = data.product || data
+      if (product && product.id) {
+        // 处理图片数据：将图片对象数组转换为可用的URL数组
+        const images = (product.images || []).map(img => {
+          if (typeof img === 'string') {
+            return `/images/${img}`
+          }
+          return `/images/${img.filename}`
+        })
+        
+        // 处理卖家信息字段映射
+        const productData = {
+          ...product,
+          images: images,
+          seller_avatar: product.seller?.avatar || '',
+          seller_name: product.seller?.username || product.seller_name || '未知卖家',
+          seller_room: product.seller?.room_number || product.seller_room || '未设置',
+          created_at: product.upload_time || product.created_at || '',
+          seller_id: product.seller?.id || product.seller_id
+        }
+        
         this.setData({
-          product: data,
+          product: productData,
           loading: false
         })
       } else {

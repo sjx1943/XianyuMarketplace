@@ -1,11 +1,14 @@
 <!--商品详情页-->
 <view class="page">
   <!-- 图片轮播 -->
-  <swiper class="product-swiper" indicator-dots="{{true}}" autoplay="{{false}}" circular="{{true}}">
+  <swiper class="product-swiper" indicator-dots="{{true}}" autoplay="{{false}}" circular="{{true}}" wx:if="{{product.images && product.images.length > 0}}">
     <swiper-item wx:for="{{product.images}}" wx:key="index">
-      <image src="{{item}}" mode="aspectFill" class="swiper-image" bindtap="previewImage" data-url="{{item}}"></image>
+      <image src="{{item}}" mode="aspectFill" class="swiper-image" bindtap="previewImage" data-url="{{item}}" onerror=""></image>
     </swiper-item>
   </swiper>
+  <view class="no-image" wx:else>
+    <text>暂无商品图片</text>
+  </view>
 
   <!-- 商品信息 -->
   <view class="product-info">

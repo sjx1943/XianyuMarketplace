@@ -26,7 +26,7 @@
       bindtap="goToDetail"
       data-id="{{item.id}}"
     >
-      <image class="product-image" src="{{item.image}}" mode="aspectFill" lazy-load="true" />
+      <image class="product-image" src="/images/{{item.image}}" mode="aspectFill" lazy-load="true" />
       <view class="product-info">
         <text class="product-name">{{item.name}}</text>
         <view class="product-meta">
