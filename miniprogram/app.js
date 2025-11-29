@@ -133,7 +133,7 @@ App({
     if (!self.globalData.isLogin) return;
 
     wx.request({
-      url: self.globalData.apiBase + '/miniprogram/user/info',
+      url: self.globalData.apiBase + '/api/miniprogram/user/info',
       method: 'GET',
       header: {
         'Authorization': 'Bearer ' + wx.getStorageSync('token'),
@@ -198,7 +198,7 @@ App({
     if (!self.globalData.isLogin) return;
     
     wx.request({
-      url: self.globalData.apiBase + '/unread_count',
+      url: self.globalData.apiBase + '/api/miniprogram/unread_count',
       method: 'GET',
       header: {
         'Authorization': 'Bearer ' + wx.getStorageSync('token'),
@@ -212,7 +212,7 @@ App({
         }
       },
       fail: function(err) {
-        console.error('获取未读消息失败:', err);
+        console.error('获取未读消息数量失败:', err);
       }
     });
   },
