@@ -49,7 +49,8 @@ The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
 
 ### Mini Program Fixes
 -   **WebSocket Path**: Fixed duplication issue (`/ws/ws/` -> `/ws/`)
--   **TabBar**: Reduced to 4 tabs (removed "首页"), now: 物品, 消息, 订单, 我的
+-   **TabBar Display**: Fixed - removed `pages/index/index` from pages array, set `pages/product/list` as entry point (first tabBar page)
+-   **TabBar**: 4 tabs: 物品 (list.js), 消息 (chat list), 订单 (order list), 我的 (profile)
 -   **Publish Button**: Added "发布商品" text alongside "+" icon with improved styling
 -   **Navigation**: Fixed profile page navigation to use `wx.switchTab()` for tabBar pages
 -   **Categories**: Synchronized categories across list.js and publish.js (数码产品, 家用电器, 服装鞋包, 图书音像, 运动户外, 美妆个护, 家居用品, 其他)
