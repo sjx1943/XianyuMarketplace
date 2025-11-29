@@ -1284,3 +1284,74 @@ class MiniprogramChatListHandler(tornado.web.RequestHandler):
     
     def on_finish(self):
         self.session.close()
+
+
+class MiniprogramBroadcastsHandler(tornado.web.RequestHandler):
+    """获取系统广播（最近10条商品发布）"""
+    
+    def check_xsrf_cookie(self):
+        """禁用XSRF检查"""
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def get(self):
+        """获取最近10条商品发布广播"""
+        try:
+            # 查询最近10条商品，包含用户信息
+            products = self.session.query(Product, User).join(
+                User, Product.user_id == User.id
+            ).filter(
+                Product.status == '在售'
+            ).order_by(
+                Product.upload_time.desc()
+            ).limit(10).all()
+            
+            broadcasts = []
+            for product, user in products:
+                # 相对时间计算
+                import datetime
+                from pytz import timezone
+                
+                # 获取北京时间
+                beijing_tz = timezone('Asia/Shanghai')
+                now = datetime.datetime.now(beijing_tz)
+                upload_time = product.upload_time
+                
+                # 将upload_time转换为北京时区
+                if upload_time.tzinfo is None:
+                    upload_time = beijing_tz.localize(upload_time)
+                else:
+                    upload_time = upload_time.astimezone(beijing_tz)
+                
+                delta = now - upload_time
+                if delta.days > 0:
+                    time_str = f'{delta.days}天前'
+                elif delta.seconds > 3600:
+                    hours = delta.seconds // 3600
+                    time_str = f'{hours}小时前'
+                elif delta.seconds > 60:
+                    minutes = delta.seconds // 60
+                    time_str = f'{minutes}分钟前'
+                else:
+                    time_str = '刚刚'
+                
+                broadcasts.append({
+                    'room_number': user.room_number,
+                    'product_id': product.id,
+                    'product_name': product.name,
+                    'time': time_str,
+                    'upload_time': product.upload_time.strftime('%Y-%m-%d %H:%M:%S') if product.upload_time else ''
+                })
+            
+            self.write(json.dumps({
+                'success': True,
+                'broadcasts': broadcasts
+            }))
+        except Exception as e:
+            logging.error(f"获取广播失败: {e}")
+            self.write(json.dumps({
+                'success': False,
+                'error': '获取广播失败'
+            }))

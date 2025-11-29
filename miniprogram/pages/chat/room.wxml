@@ -7,6 +7,27 @@
     scroll-into-view="{{scrollToView}}"
     scroll-with-animation="{{true}}"
   >
+    <!-- 系统广播区块 -->
+    <view class="broadcast-section" wx:if="{{broadcasts.length > 0}}">
+      <view class="broadcast-title">📢 系统广播</view>
+      <view 
+        wx:for="{{broadcasts}}" 
+        wx:key="product_id"
+        class="broadcast-item"
+        bindtap="onBroadcastTap"
+        data-product-id="{{item.product_id}}"
+      >
+        <view class="broadcast-text">
+          <text class="broadcast-user">{{item.room_number}}</text>
+          <text class="broadcast-time-text">于 </text>
+          <text class="broadcast-time">{{item.time}}</text>
+          <text class="broadcast-time-text"> 上传了 </text>
+          <text class="broadcast-product">{{item.product_name}}</text>
+        </view>
+      </view>
+      <view class="broadcast-divider"></view>
+    </view>
+
     <view 
       wx:for="{{messages}}" 
       wx:key="id"

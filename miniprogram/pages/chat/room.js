@@ -8,6 +8,7 @@ Page({
     productId: null,
     orderId: null,
     messages: [],
+    broadcasts: [],
     inputText: '',
     scrollToView: '',
     currentUserId: null,
@@ -45,6 +46,7 @@ Page({
       myAvatar: userInfo.wechat_avatar || '/images/default-avatar.png'
     })
 
+    this.loadBroadcasts()
     this.loadChatHistory()
     this.connectWebSocket()
     
@@ -54,6 +56,24 @@ Page({
 
   onUnload() {
     this.closeWebSocket()
+  },
+
+  // 加载系统广播
+  async loadBroadcasts() {
+    try {
+      const data = await api.request({
+        url: '/api/miniprogram/broadcasts',
+        method: 'GET'
+      })
+
+      if (data && data.broadcasts) {
+        this.setData({
+          broadcasts: data.broadcasts || []
+        })
+      }
+    } catch (error) {
+      console.error('加载广播失败:', error)
+    }
   },
 
   // 加载聊天记录
