@@ -1,0 +1,125 @@
+<!--编辑商品页-->
+<view class="page" wx:if="{{!loading}}">
+  <form bindsubmit="onSubmit">
+    <!-- 商品图片 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="required">*</text>
+        <text class="section-title">商品图片</text>
+        <text class="section-hint">(最多9张)</text>
+      </view>
+      <view class="image-upload">
+        <!-- 已有图片 -->
+        <view class="image-item" wx:for="{{images}}" wx:key="index">
+          <image src="{{item}}" mode="aspectFill" class="uploaded-image"></image>
+          <view class="image-delete" bindtap="deleteOldImage" data-index="{{index}}">
+            <text>✕</text>
+          </view>
+        </view>
+        <!-- 新上传图片 -->
+        <view class="image-item" wx:for="{{newImages}}" wx:key="index">
+          <image src="{{item}}" mode="aspectFill" class="uploaded-image"></image>
+          <view class="image-delete" bindtap="deleteNewImage" data-index="{{index}}">
+            <text>✕</text>
+          </view>
+        </view>
+        <!-- 添加按钮 -->
+        <view class="image-add" wx:if="{{images.length + newImages.length < 9}}" bindtap="chooseImage">
+          <text class="add-icon">+</text>
+          <text class="add-text">添加图片</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 商品名称 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="required">*</text>
+        <text class="section-title">商品名称</text>
+      </view>
+      <input 
+        class="input" 
+        placeholder="请输入商品名称" 
+        value="{{form.name}}"
+        bindinput="onInputChange"
+        data-field="name"
+        maxlength="50"
+      />
+    </view>
+
+    <!-- 商品价格 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="required">*</text>
+        <text class="section-title">商品价格</text>
+      </view>
+      <view class="price-input">
+        <text class="currency">¥</text>
+        <input 
+          class="input" 
+          type="digit"
+          placeholder="请输入价格" 
+          value="{{form.price}}"
+          bindinput="onInputChange"
+          data-field="price"
+        />
+      </view>
+    </view>
+
+    <!-- 商品分类 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="required">*</text>
+        <text class="section-title">商品分类</text>
+      </view>
+      <picker mode="selector" range="{{categories}}" value="{{categoryIndex}}" bindchange="onCategoryChange">
+        <view class="picker">
+          <text class="{{categoryIndex >= 0 ? '' : 'placeholder'}}">
+            {{categoryIndex >= 0 ? categories[categoryIndex] : '请选择分类'}}
+          </text>
+          <text class="arrow">></text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 商品状态 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">商品状态</text>
+      </view>
+      <picker mode="selector" range="{{conditions}}" value="{{conditionIndex}}" bindchange="onConditionChange">
+        <view class="picker">
+          <text>{{conditions[conditionIndex]}}</text>
+          <text class="arrow">></text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 商品描述 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">商品描述</text>
+      </view>
+      <textarea 
+        class="textarea" 
+        placeholder="请输入商品描述（选填）" 
+        value="{{form.description}}"
+        bindinput="onInputChange"
+        data-field="description"
+        maxlength="500"
+      />
+    </view>
+
+    <!-- 提交按钮 -->
+    <view class="button-group">
+      <button class="submit-btn" formType="submit" disabled="{{submitting}}">
+        {{submitting ? '保存中...' : '保存修改'}}
+      </button>
+    </view>
+  </form>
+</view>
+
+<!-- 加载状态 -->
+<view class="loading" wx:if="{{loading}}">
+  <text>加载中...</text>
+</view>
