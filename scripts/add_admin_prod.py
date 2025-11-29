@@ -8,7 +8,7 @@
 """
 import os
 import sys
-import hashlib
+import bcrypt
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -16,6 +16,13 @@ from base.base import Base, engine
 from models.user import User
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+
+def hash_password(password):
+    """使用bcrypt加密密码（与auth_controller.py保持一致）"""
+    password_bytes = password.encode('utf-8')
+    salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(password_bytes, salt)
+    return hashed_password.decode('utf-8')
 
 def create_admin_user():
     """创建管理员账号"""
@@ -33,13 +40,18 @@ def create_admin_user():
         if existing_admin:
             if existing_admin.is_admin:
                 print(f"✅ 管理员账号已存在: {admin_username}")
+                print(f"   用户名: {admin_username}")
+                print(f"   邮箱: {existing_admin.email}")
+                print(f"   房间号: {existing_admin.room_number}")
+                print("   ℹ️  密码保持不变（防止意外覆盖）")
             else:
                 existing_admin.is_admin = True
                 session.commit()
                 print(f"✅ 已将用户 {admin_username} 提升为管理员")
             return
         
-        password_hash = hashlib.sha256(admin_password.encode()).hexdigest()
+        # 使用与系统一致的bcrypt加密（不是SHA256）
+        password_hash = hash_password(admin_password)
         
         admin_user = User(
             username=admin_username,
