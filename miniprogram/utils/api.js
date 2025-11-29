@@ -159,7 +159,7 @@ class API {
   // 获取商品列表
   getProductList(params = {}) {
     return this.request({
-      url: '/product_list',
+      url: '/api/miniprogram/products',
       method: 'GET',
       data: params
     })
