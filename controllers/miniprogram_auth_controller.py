@@ -1029,6 +1029,73 @@ class MiniprogramMessagesHandler(tornado.web.RequestHandler):
         self.session.close()
 
 
+class MiniprogramMarkMessagesReadHandler(tornado.web.RequestHandler):
+    """小程序标记消息已读接口"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self, mongo):
+        self.mongo = mongo
+        self.session = Session()
+    
+    def _get_user_id(self):
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    @tornado.gen.coroutine
+    def post(self):
+        """标记与指定好友的消息为已读"""
+        user_id_str = self._get_user_id()
+        if not user_id_str:
+            self.set_status(401)
+            self.write(json.dumps({'success': False, 'error': '请先登录'}))
+            return
+        
+        user_id = int(user_id_str)
+        
+        try:
+            data = json.loads(self.request.body)
+            friend_id = data.get('friend_id')
+            
+            if not friend_id:
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '缺少friend_id参数'}))
+                return
+            
+            friend_id = int(friend_id)
+            
+            result = yield self.mongo.chat_messages.update_many(
+                {"from_user_id": friend_id, "to_user_id": user_id, "status": "unread"},
+                {"$set": {"status": "read"}}
+            )
+            
+            self.write(json.dumps({
+                'success': True,
+                'message': '标记成功',
+                'modified_count': result.modified_count
+            }))
+            
+        except Exception as e:
+            logging.error(f"标记已读异常: {e}")
+            self.set_status(500)
+            self.write(json.dumps({'success': False, 'error': str(e)}))
+    
+    def on_finish(self):
+        self.session.close()
+
+
 class MiniprogramProductsListHandler(tornado.web.RequestHandler):
     """小程序商品列表接口"""
     

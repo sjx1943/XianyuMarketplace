@@ -285,10 +285,10 @@ class API {
     })
   }
 
-  // 标记消息已读
+  // 标记消息已读（使用小程序专用API）
   markMessagesRead(friendId) {
     return this.request({
-      url: '/api/mark_messages_read',
+      url: '/api/miniprogram/messages/mark_read',
       method: 'POST',
       data: { friend_id: friendId }
     })

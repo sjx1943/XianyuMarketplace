@@ -1,0 +1,139 @@
+142行后已经添加MiniprogramProductsListHandler，但miniprogram小程序端登录测试发现遗留问题：
+1）消息页发起websocket连接实效 WebSocket connection to 'wss://okashii.top/ws/ws/chat_room' failed: (env: macOS,mp,1.06.2504060; lib: 3.12.0)
+connectWebSocket @ room.js? [sm]:98
+onLoad @ room.js? [sm]:49
+
+2）取消app.json中底部的“首页”tabBar并同步调整相关路径和跳转逻辑，如上传商品后默认跳转至“物品”页即可。
+3）修改物品页pages/product/list上的“+”号，添加“商品发布”四个字。便于用户知晓商品发布入口
+4）个人中心页中，bindtap="goToMyProducts"、"goToMyOrders"和"goToMyMessages"功能异常，无法实现正常的页面跳转。
+5）商品列表页中，"category-list"未加载实际的商品分类标签，导致商品分类筛选
+功能异常。例如页面展示的商品标签含“电子数码”，但实际商品上传时的预设标签为“数码产品”。调试器输出  Setting data field "form.category" to undefined is invalid.
+6）点击查看商品详情信息失败，调试器输出：[渲染层网络层错误] Failed to load local image resource /images/10_0_SGG_0295.JPG 
+ the server responded with a status of 500 (HTTP/1.1 500 Internal Server Error) 
+(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+18[渲染层网络层错误] Failed to load local image resource /images/6_0_084497D3-D22E-4FC4-8575-643B165521E5.jpeg 
+ the server responded with a status of 500 (HTTP/1.1 500 Internal Server Error) 
+(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+18[渲染层网络层错误] Failed to load local image resource /images/8_0_92ea59f35bdced8e2ba84ee699421545.jpeg 
+ the server responded with a status of 500 (HTTP/1.1 500 Internal Server Error) 
+(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+18[渲染层网络层错误] Failed to load local image resource /images/5_0_SGG_0298.JPG 
+ the server responded with a status of 500 (HTTP/1.1 500 Internal Server Error) 
+(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+18[渲染层网络层错误] Failed to load local image resource /images/3_0_image.jpg 
+ the server responded with a status of 500 (HTTP/1.1 500 Internal Server Error) 
+(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+18[渲染层网络层错误] Failed to load local image resource /images/9_0_image.jpg 
+ the server responded with a status of 500 (HTTP/1.1 500 Internal Server Error) 
+(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+18[渲染层网络层错误] Failed to load local image resource /images/12_0_5heFfhqK8N2b6da9e99cda70ee75ffb2771cd4588f67.JPG 
+ the server responded with a status of 500 (HTTP/1.1 500 Internal Server Error) 
+(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+20[渲染层网络层错误] Failed to load local image resource /images/11_0_sHnu6d8O35uN455aafa0360b9374baea0971fc20ca22.JPG 
+ the server responded with a status of 500 (HTTP/1.1 500 Internal Server Error) 
+(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+18[渲染层网络层错误] Failed to load local image resource /images/1_0_FullSizeRender%206.jpg 
+ the server responded with a status of 500 (HTTP/1.1 500 Internal Server Error) 
+(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+18[渲染层网络层错误] Failed to load local image resource /images/7_0_IMG_8287.png 
+ the server responded with a status of 500 (HTTP/1.1 500 Internal Server Error) 
+(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+Setting data field "form.category" to undefined is invalid.
+onCategoryChange @ publish.js? [sm]:95
+16[渲染层网络层错误] Failed to load local image resource /images/13_0_3XXCTComk7Cg353f620fde72164e101a01f482a8a653.JPG 
+ the server responded with a status of 500 (HTTP/1.1 500 Internal Server Error) 
+(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+
+7）无法查看商品图片轮播，功能异常。
+8）尝试联系买家时页面自动跳转至“登录成功”页，无法建立正确、稳定的websocket连接，调试台输出：WebSocket连接中...
+api.js:23 POST https://okashii.top/api/mark_messages_read 403(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+(anonymous) @ api.js:23
+request @ api.js:17
+markMessagesRead @ api.js:290
+_callee4$ @ room.js? [sm]:311
+s @ VM1848:1
+(anonymous) @ VM1848:1
+(anonymous) @ VM1848:1
+asyncGeneratorStep @ VM1850:1
+c @ VM1850:1
+(anonymous) @ VM1850:1
+(anonymous) @ VM1850:1
+markAsRead @ room.js? [sm]:319
+onLoad @ room.js? [sm]:52
+room.js? [sm]:319 标记已读失败: Error: 未登录
+    at success (api.js:50)
+    at Object.success (VM1808 WASubContext.js:1)
+    at Object.success (VM1808 WASubContext.js:1)
+    at Function.I.forEach.v.<computed> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1
+    at u (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at Function.<anonymous> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+_callee4$ @ room.js? [sm]:319
+
+markAsRead @ room.js? [sm]:319
+onLoad @ room.js? [sm]:52
+请注意 showLoading 与 hideLoading 必须配对使用
+success @ api.js:33
+WebSocket connection to 'wss://okashii.top/ws/ws/chat_room' failed: (env: macOS,mp,1.06.2504060; lib: 3.12.0)
+connectWebSocket @ room.js? [sm]:98
+onLoad @ room.js? [sm]:49
+room.js? [sm]:135 WebSocket错误: {errMsg: "未完成的操作"}(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+(anonymous) @ room.js? [sm]:135
+error (async)
+connectWebSocket @ room.js? [sm]:98
+onLoad @ room.js? [sm]:49
+room.js? [sm]:140 WebSocket已关闭
+
+9）发布商品时上传多张图片则报错，无法成功提交。图片上传失败: Error: 上传失败
+    at Object.success (publish.js? [sm]:216)
+    at Function.I.forEach.v.<computed> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1
+    at u (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at Function.<anonymous> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+_loop$ @ publish.js? [sm]:230
+s @ VM1848:1
+
+(anonymous) @ VM1850:1
+(anonymous) @ VM1850:1
+onSubmit @ publish.js? [sm]:253
+publish.js? [sm]:247 发布失败: Error: 上传失败
+    at Object.success (publish.js? [sm]:216)
+    at Function.I.forEach.v.<computed> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1
+    at u (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at Function.<anonymous> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+
+10）在商品详情页无法创建订单，页面提示“商品不存在”
+
+api.js:23 GET https://okashii.top/api/miniprogram/product/undefined 404(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+(anonymous) @ api.js:23
+request @ api.js:17
+getProductDetail @ api.js:175
+loadProduct @ create.js? [sm]:22
+onLoad @ create.js? [sm]:15
+create.js? [sm]:30 加载商品失败: Error: 请求失败
+    at success (api.js:56)
+    at Object.success (VM1808 WASubContext.js:1)
+    at Object.success (VM1808 WASubContext.js:1)
+    at Function.I.forEach.v.<computed> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1
+    at u (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at Function.<anonymous> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+
+以上为小程序端页面实测发现的问题，除了优化问题，请在生产环境数据库Production Database中添加管理员账号admin 密码：Zpepc001@, 当前只有开发环境(Development Database)才可登录。

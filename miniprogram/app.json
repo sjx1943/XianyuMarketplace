@@ -31,14 +31,8 @@
     "position": "bottom",
     "list": [
       {
-        "pagePath": "pages/index/index",
-        "text": "首页",
-        "iconPath": "images/tab-home.png",
-        "selectedIconPath": "images/tab-home-active.png"
-      },
-      {
         "pagePath": "pages/product/list",
-        "text": "商品",
+        "text": "物品",
         "iconPath": "images/tab-product.png",
         "selectedIconPath": "images/tab-product-active.png"
       },

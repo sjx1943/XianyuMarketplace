@@ -93,7 +93,8 @@ Page({
     const config = require('../../utils/config.js')
     
     // 后端WebSocket路由是 /ws/chat_room，使用cookie进行身份验证
-    const socketUrl = `${config.WS_BASE}/ws/chat_room`
+    // WS_BASE 已经包含了 /ws，所以直接加 /chat_room
+    const socketUrl = `${config.WS_BASE}/chat_room`
     
     wx.connectSocket({
       url: socketUrl,

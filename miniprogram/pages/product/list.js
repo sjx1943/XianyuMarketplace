@@ -8,7 +8,7 @@ Page({
     page: 1,
     pageSize: 20,
     hasMore: true,
-    categories: ['全部', '电子数码', '生活用品', '服装鞋帽', '图书文具', '运动健身', '母婴用品', '其他'],
+    categories: ['全部', '数码产品', '家用电器', '服装鞋包', '图书音像', '运动户外', '美妆个护', '家居用品', '其他'],
     currentCategory: '全部',
     searchKeyword: ''
   },

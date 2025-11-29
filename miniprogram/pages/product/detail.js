@@ -33,12 +33,12 @@ Page({
       // 后端返回 {success: true, product: {...}} 格式
       const product = data.product || data
       if (product && product.id) {
-        // 处理图片数据：将图片对象数组转换为可用的URL数组
+        // 处理图片数据：将图片对象数组转换为完整的服务器URL
+        const config = require('../../utils/config.js')
+        const baseUrl = config.API_BASE
         const images = (product.images || []).map(img => {
-          if (typeof img === 'string') {
-            return `/images/${img}`
-          }
-          return `/images/${img.filename}`
+          const filename = typeof img === 'string' ? img : img.filename
+          return `${baseUrl}/images/${filename}`
         })
         
         // 处理卖家信息字段映射

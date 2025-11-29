@@ -240,7 +240,10 @@ Page({
       })
 
       setTimeout(() => {
-        wx.navigateBack()
+        // 发布成功后跳转到物品列表页
+        wx.switchTab({
+          url: '/pages/product/list'
+        })
       }, 1500)
     } catch (error) {
       wx.hideLoading()

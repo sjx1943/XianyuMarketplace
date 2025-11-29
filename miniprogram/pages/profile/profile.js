@@ -20,8 +20,9 @@ Page({
   onShow() {
     this.loadUserData()
     
+    // 更新为第4个tabBar（0:物品, 1:消息, 2:订单, 3:我的）
     if (this.getTabBar()) {
-      this.getTabBar().setData({ selected: 4 })
+      this.getTabBar().setData({ selected: 3 })
     }
 
     // 获取未读消息数
@@ -94,31 +95,23 @@ Page({
     }
   },
 
-  // 跳转到我的商品页面
+  // 跳转到我的商品页面（物品页是tabBar页面，需要用switchTab）
   goToMyProducts() {
-    const userInfo = wx.getStorageSync('userInfo')
-    if (userInfo && userInfo.id) {
-      wx.navigateTo({
-        url: '/pages/product/list?user_id=' + userInfo.id
-      })
-    } else {
-      wx.showToast({
-        title: '请先登录',
-        icon: 'none'
-      })
-    }
+    wx.switchTab({
+      url: '/pages/product/list'
+    })
   },
 
-  // 跳转到我的订单页面
+  // 跳转到我的订单页面（订单是tabBar页面）
   goToMyOrders() {
-    wx.navigateTo({
+    wx.switchTab({
       url: '/pages/order/list'
     })
   },
 
-  // 跳转到我的消息页面
+  // 跳转到我的消息页面（消息是tabBar页面）
   goToMyMessages() {
-    wx.navigateTo({
+    wx.switchTab({
       url: '/pages/chat/list'
     })
   },
