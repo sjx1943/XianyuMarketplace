@@ -542,7 +542,12 @@ class MiniprogramProductUploadHandler(tornado.web.RequestHandler):
         return None
     
     def post(self):
-        """发布商品（支持图片上传）"""
+        """发布商品（支持图片上传）
+        
+        支持两种模式：
+        1. 首次上传：包含商品信息和图片，创建新商品
+        2. 追加上传：只包含product_id和图片，追加图片到已有商品
+        """
         import os
         from models.product import Product, ProductImage
         
@@ -556,11 +561,49 @@ class MiniprogramProductUploadHandler(tornado.web.RequestHandler):
         try:
             name = self.get_argument("name", "")
             description = self.get_argument("description", "")
-            price = float(self.get_argument("price", 0))
-            quantity = int(self.get_argument("quantity", 1))
+            price_str = self.get_argument("price", "0")
+            quantity_str = self.get_argument("quantity", "1")
             tag = self.get_argument("tag", "其他")
             condition = self.get_argument("condition", "九成新")
+            product_id = self.get_argument("product_id", "")
             images = self.request.files.get("images", [])
+            
+            upload_path = self.app_settings.get("upload_path", "static/images")
+            os.makedirs(upload_path, exist_ok=True)
+            
+            if product_id:
+                product = self.session.query(Product).filter_by(id=int(product_id)).first()
+                if not product:
+                    self.set_status(404)
+                    self.write(json.dumps({'success': False, 'error': '商品不存在'}))
+                    return
+                
+                if product.user_id != int(user_id):
+                    self.set_status(403)
+                    self.write(json.dumps({'success': False, 'error': '无权操作该商品'}))
+                    return
+                
+                if images:
+                    existing_images = self.session.query(ProductImage).filter_by(product_id=product.id).count()
+                    for i, image in enumerate(images):
+                        idx = existing_images + i
+                        filename = f"{product.id}_{idx}_{image['filename']}"
+                        filepath = os.path.join(upload_path, filename)
+                        
+                        with open(filepath, "wb") as f:
+                            f.write(image["body"])
+                        
+                        product_image = ProductImage(filename=filename, product_id=product.id)
+                        self.session.add(product_image)
+                    
+                    self.session.commit()
+                
+                self.write(json.dumps({
+                    'success': True,
+                    'message': '图片上传成功',
+                    'product_id': product.id
+                }))
+                return
             
             if not name:
                 self.set_status(400)
@@ -572,10 +615,8 @@ class MiniprogramProductUploadHandler(tornado.web.RequestHandler):
                 self.write(json.dumps({'success': False, 'error': '请至少上传一张图片'}))
                 return
             
-            if len(images) > 9:
-                self.set_status(400)
-                self.write(json.dumps({'success': False, 'error': '最多只能上传9张图片'}))
-                return
+            price = float(price_str)
+            quantity = int(quantity_str)
             
             if len(description) > 5000:
                 self.set_status(400)
@@ -597,13 +638,10 @@ class MiniprogramProductUploadHandler(tornado.web.RequestHandler):
             self.session.flush()
             
             image_filenames = []
-            upload_path = self.app_settings.get("upload_path", "static/images")
             
             for i, image in enumerate(images):
                 filename = f"{new_product.id}_{i}_{image['filename']}"
                 filepath = os.path.join(upload_path, filename)
-                
-                os.makedirs(os.path.dirname(filepath) if os.path.dirname(filepath) else upload_path, exist_ok=True)
                 
                 with open(filepath, "wb") as f:
                     f.write(image["body"])
