@@ -94,33 +94,33 @@ Page({
     }
   },
 
-  // 订阅消息
-  async onSubscribe() {
-    try {
-      const result = await wx.requestSubscribeMessage({
-        tmplIds: [
-          // 这里需要替换为您的模板ID
-          'xxxxxxxxxxxxxxx'  // 订单状态变更通知
-        ]
+  // 跳转到我的商品页面
+  goToMyProducts() {
+    const userInfo = wx.getStorageSync('userInfo')
+    if (userInfo && userInfo.id) {
+      wx.navigateTo({
+        url: '/pages/product/list?user_id=' + userInfo.id
       })
-
-      console.log('订阅结果:', result)
-
-      if (result.errMsg === 'requestSubscribeMessage:ok') {
-        wx.showToast({
-          title: '订阅成功',
-          icon: 'success'
-        })
-      }
-    } catch (error) {
-      console.error('订阅失败:', error)
-      if (error.errMsg !== 'requestSubscribeMessage:fail user reject') {
-        wx.showToast({
-          title: '订阅失败',
-          icon: 'none'
-        })
-      }
+    } else {
+      wx.showToast({
+        title: '请先登录',
+        icon: 'none'
+      })
     }
+  },
+
+  // 跳转到我的订单页面
+  goToMyOrders() {
+    wx.navigateTo({
+      url: '/pages/order/list'
+    })
+  },
+
+  // 跳转到我的消息页面
+  goToMyMessages() {
+    wx.navigateTo({
+      url: '/pages/chat/list'
+    })
   },
 
   // 退出登录

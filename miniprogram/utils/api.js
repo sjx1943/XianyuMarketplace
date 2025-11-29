@@ -271,7 +271,7 @@ class API {
   // 获取聊天列表
   getChatList() {
     return this.request({
-      url: '/api/messages',
+      url: '/api/miniprogram/chat/list',
       method: 'GET'
     })
   }

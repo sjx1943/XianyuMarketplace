@@ -1,0 +1,239 @@
+app.js:200 GET https://okashii.top/unread_count 404(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+getUnreadCount @ app.js:200
+onShow @ app.js:45
+app.js:135 GET https://okashii.top/miniprogram/user/info 404(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+validateToken @ app.js:135
+checkLoginStatus @ app.js:121
+onShow @ app.js:42
+[worker] reportRealtimeAction:fail not support
+U @ WAWorker.js:1
+invoke @ WAWorker.js:1
+invoke @ WAWorker.js:1
+V @ WAWorker.js:1
+(anonymous) @ WAWorker.js:1
+He @ WAWorker.js:1
+Z @ WAWorker.js:1
+d @ WAWorker.js:1
+(anonymous) @ WAWorker.js:1
+(anonymous) @ WAWorker.js:1
+setTimeout (async)
+globalThis.setTimeout @ WAWorker.js:1
+Y @ WAWorker.js:1
+Re @ WAWorker.js:1
+(anonymous) @ WAWorker.js:1
+r @ WAWorker.js:1
+s @ WAWorker.js:1
+callAndRemove @ WAWorker.js:1
+invokeCallbackHandler @ WAWorker.js:1
+eval @ VM11:1
+publish.js? [sm]:247 图片上传失败: Error: 上传失败
+    at Object.success (publish.js? [sm]:233)
+    at Function.I.forEach.v.<computed> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1
+    at u (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at Function.<anonymous> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+_loop$ @ publish.js? [sm]:247
+s @ VM103:1
+(anonymous) @ VM103:1
+(anonymous) @ VM103:1
+s @ VM103:1
+_ @ VM103:1
+(anonymous) @ VM103:1
+(anonymous) @ VM103:1
+asyncGeneratorStep @ VM105:1
+i @ VM105:1
+Promise.then (async)
+asyncGeneratorStep @ VM105:1
+c @ VM105:1
+(anonymous) @ VM105:1
+(anonymous) @ VM105:1
+onSubmit @ publish.js? [sm]:270
+publish.js? [sm]:264 发布失败: Error: 上传失败
+    at Object.success (publish.js? [sm]:233)
+    at Function.I.forEach.v.<computed> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1
+    at u (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at Function.<anonymous> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+_callee$ @ publish.js? [sm]:264
+s @ VM103:1
+(anonymous) @ VM103:1
+(anonymous) @ VM103:1
+asyncGeneratorStep @ VM105:1
+i @ VM105:1
+Promise.then (async)
+asyncGeneratorStep @ VM105:1
+c @ VM105:1
+(anonymous) @ VM105:1
+(anonymous) @ VM105:1
+onSubmit @ publish.js? [sm]:270
+api.js:23 GET https://okashii.top/api/messages 500(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+(anonymous) @ api.js:23
+request @ api.js:17
+getChatList @ api.js:273
+_callee$ @ list.js? [sm]:53
+s @ VM103:1
+(anonymous) @ VM103:1
+(anonymous) @ VM103:1
+asyncGeneratorStep @ VM105:1
+c @ VM105:1
+(anonymous) @ VM105:1
+(anonymous) @ VM105:1
+loadChatList @ list.js? [sm]:72
+checkLoginAndLoad @ list.js? [sm]:46
+onLoad @ list.js? [sm]:12
+list.js? [sm]:71 加载聊天列表失败: Error: 请求失败
+    at success (api.js:56)
+    at Object.success (VM56 WASubContext.js:1)
+    at Object.success (VM56 WASubContext.js:1)
+    at Function.I.forEach.v.<computed> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1
+    at u (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at Function.<anonymous> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+_callee$ @ list.js? [sm]:71
+s @ VM103:1
+(anonymous) @ VM103:1
+(anonymous) @ VM103:1
+asyncGeneratorStep @ VM105:1
+i @ VM105:1
+Promise.then (async)
+asyncGeneratorStep @ VM105:1
+c @ VM105:1
+(anonymous) @ VM105:1
+(anonymous) @ VM105:1
+loadChatList @ list.js? [sm]:72
+checkLoginAndLoad @ list.js? [sm]:46
+onLoad @ list.js? [sm]:12
+api.js:23 GET https://okashii.top/api/messages 500(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+(anonymous) @ api.js:23
+request @ api.js:17
+getChatList @ api.js:273
+_callee$ @ list.js? [sm]:53
+s @ VM103:1
+(anonymous) @ VM103:1
+(anonymous) @ VM103:1
+asyncGeneratorStep @ VM105:1
+c @ VM105:1
+(anonymous) @ VM105:1
+(anonymous) @ VM105:1
+loadChatList @ list.js? [sm]:72
+checkLoginAndLoad @ list.js? [sm]:46
+onShow @ list.js? [sm]:16
+请注意 showLoading 与 hideLoading 必须配对使用
+success @ api.js:33
+list.js? [sm]:71 加载聊天列表失败: Error: 请求失败
+    at success (api.js:56)
+    at Object.success (VM56 WASubContext.js:1)
+    at Object.success (VM56 WASubContext.js:1)
+    at Function.I.forEach.v.<computed> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1
+    at u (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at Function.<anonymous> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+_callee$ @ list.js? [sm]:71
+s @ VM103:1
+(anonymous) @ VM103:1
+(anonymous) @ VM103:1
+asyncGeneratorStep @ VM105:1
+i @ VM105:1
+Promise.then (async)
+asyncGeneratorStep @ VM105:1
+c @ VM105:1
+(anonymous) @ VM105:1
+(anonymous) @ VM105:1
+loadChatList @ list.js? [sm]:72
+checkLoginAndLoad @ list.js? [sm]:46
+onShow @ list.js? [sm]:16
+profile.js? [sm]:116 订阅失败: {errMsg: "requestSubscribeMessage:fail No template data return, verify the template id exist", errCode: 20001}(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+_callee3$ @ profile.js? [sm]:116
+s @ VM103:1
+(anonymous) @ VM103:1
+(anonymous) @ VM103:1
+asyncGeneratorStep @ VM105:1
+i @ VM105:1
+Promise.then (async)
+asyncGeneratorStep @ VM105:1
+c @ VM105:1
+(anonymous) @ VM105:1
+(anonymous) @ VM105:1
+onSubscribe @ profile.js? [sm]:122
+api.js:23 GET https://okashii.top/api/messages 500(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+(anonymous) @ api.js:23
+request @ api.js:17
+getChatList @ api.js:273
+_callee$ @ list.js? [sm]:53
+s @ VM103:1
+(anonymous) @ VM103:1
+(anonymous) @ VM103:1
+asyncGeneratorStep @ VM105:1
+c @ VM105:1
+(anonymous) @ VM105:1
+(anonymous) @ VM105:1
+loadChatList @ list.js? [sm]:72
+checkLoginAndLoad @ list.js? [sm]:46
+onShow @ list.js? [sm]:16
+list.js? [sm]:71 加载聊天列表失败: Error: 请求失败
+    at success (api.js:56)
+    at Object.success (VM56 WASubContext.js:1)
+    at Object.success (VM56 WASubContext.js:1)
+    at Function.I.forEach.v.<computed> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1
+    at u (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at Function.<anonymous> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+_callee$ @ list.js? [sm]:71
+s @ VM103:1
+(anonymous) @ VM103:1
+(anonymous) @ VM103:1
+asyncGeneratorStep @ VM105:1
+i @ VM105:1
+Promise.then (async)
+asyncGeneratorStep @ VM105:1
+c @ VM105:1
+(anonymous) @ VM105:1
+(anonymous) @ VM105:1
+loadChatList @ list.js? [sm]:72
+checkLoginAndLoad @ list.js? [sm]:46
+onShow @ list.js? [sm]:16
+api.js:23 GET https://okashii.top/api/messages 500(env: macOS,mp,1.06.2504060; lib: 3.12.0)
+(anonymous) @ api.js:23
+request @ api.js:17
+getChatList @ api.js:273
+_callee$ @ list.js? [sm]:53
+s @ VM103:1
+(anonymous) @ VM103:1
+(anonymous) @ VM103:1
+asyncGeneratorStep @ VM105:1
+c @ VM105:1
+(anonymous) @ VM105:1
+(anonymous) @ VM105:1
+loadChatList @ list.js? [sm]:72
+checkLoginAndLoad @ list.js? [sm]:46
+onShow @ list.js? [sm]:16
+list.js? [sm]:71 加载聊天列表失败: Error: 请求失败
+    at success (api.js:56)
+    at Object.success (VM56 WASubContext.js:1)
+    at Object.success (VM56 WASubContext.js:1)
+    at Function.I.forEach.v.<computed> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1
+    at u (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at Function.<anonymous> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1(env: macOS,mp,1.06.2504060; lib: 3.12.0)

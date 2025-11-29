@@ -17,7 +17,6 @@ Page({
     categoryIndex: -1,
     conditions: ['全新', '九成新', '八成新', '七成新', '六成新', '五成新', '四成新', '三成新', '二成新', '一成新', '很旧'],
     conditionIndex: 1,
-    availableTags: ['包邮', '可议价', '急转', '自提', '全新未拆', '保修期内', '配件齐全', '支持退换'],
     submitting: false
   },
 
@@ -108,29 +107,9 @@ Page({
     })
   },
 
-  // 标签切换
+  // 标签切换（功能已移除）
   onTagToggle(e) {
-    const { tag } = e.currentTarget.dataset
-    const tags = this.data.form.tags
-    const index = tags.indexOf(tag)
-    
-    if (index > -1) {
-      tags.splice(index, 1)
-    } else {
-      if (tags.length < 5) {
-        tags.push(tag)
-      } else {
-        wx.showToast({
-          title: '最多选择5个标签',
-          icon: 'none'
-        })
-        return
-      }
-    }
-    
-    this.setData({
-      'form.tags': tags
-    })
+    // 标签功能已移除
   },
 
   // 表单验证

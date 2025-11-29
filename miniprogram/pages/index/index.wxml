@@ -34,29 +34,6 @@
     </scroll-view>
   </view>
 
-  <!-- 轮播图 (使用纯色背景代替图片) -->
-  <view class="banner-section">
-    <swiper
-      class="banner-swiper"
-      indicator-dots="{{true}}"
-      autoplay="{{true}}"
-      interval="3000"
-      duration="500"
-    >
-      <swiper-item
-        wx:for="{{banners}}"
-        wx:key="id"
-        data-banner="{{item}}"
-        bindtap="onBannerTap"
-      >
-        <view class="banner-placeholder" style="background: {{item.color}};">
-          <text class="banner-emoji">{{item.icon}}</text>
-          <text class="banner-title">{{item.title}}</text>
-        </view>
-      </swiper-item>
-    </swiper>
-  </view>
-
   <!-- 热门商品 -->
   <view class="section" wx:if="{{hotProducts.length > 0}}">
     <view class="section-header">

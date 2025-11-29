@@ -31,23 +31,23 @@
 
   <!-- 功能菜单 -->
   <view class="menu-section">
-    <navigator class="menu-item" url="/pages/product/my-list">
+    <view class="menu-item" bindtap="goToMyProducts">
       <view class="menu-left">
         <text class="menu-icon">📦</text>
         <text class="menu-title">我的商品</text>
       </view>
       <text class="arrow">></text>
-    </navigator>
+    </view>
 
-    <navigator class="menu-item" url="/pages/order/list?tab=0">
+    <view class="menu-item" bindtap="goToMyOrders">
       <view class="menu-left">
         <text class="menu-icon">🛒</text>
         <text class="menu-title">我的订单</text>
       </view>
       <text class="arrow">></text>
-    </navigator>
+    </view>
 
-    <navigator class="menu-item" url="/pages/chat/list">
+    <view class="menu-item" bindtap="goToMyMessages">
       <view class="menu-left">
         <text class="menu-icon">💬</text>
         <text class="menu-title">我的消息</text>
@@ -56,7 +56,7 @@
         <text class="badge" wx:if="{{unreadCount > 0}}">{{unreadCount}}</text>
         <text class="arrow">></text>
       </view>
-    </navigator>
+    </view>
   </view>
 
   <!-- 设置菜单 -->
@@ -73,14 +73,6 @@
       <view class="menu-left">
         <text class="menu-icon">📧</text>
         <text class="menu-title">意见反馈</text>
-      </view>
-      <text class="arrow">></text>
-    </button>
-
-    <button class="menu-item" bindtap="onSubscribe">
-      <view class="menu-left">
-        <text class="menu-icon">🔔</text>
-        <text class="menu-title">订阅消息</text>
       </view>
       <text class="arrow">></text>
     </button>

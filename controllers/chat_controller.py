@@ -338,10 +338,37 @@ class MessageAPIHandler(tornado.web.RequestHandler):
     def initialize(self, mongo):
         self.mongo = mongo
 
+    def check_xsrf_cookie(self):
+        pass
+
+    def _get_user_id(self):
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+
     @tornado.gen.coroutine
     def get(self):
-        user_id = int(self.get_secure_cookie("user_id").decode("utf-8"))
-        friend_id = int(self.get_argument("friend_id"))
+        user_id_str = self._get_user_id()
+        if not user_id_str:
+            self.set_status(401)
+            self.write(json.dumps({'success': False, 'error': '请先登录'}))
+            return
+        user_id = int(user_id_str)
+        friend_id = self.get_argument("friend_id", None)
+        if not friend_id:
+            self.write(json.dumps([]))
+            return
+        friend_id = int(friend_id)
 
         messages = yield self.mongo.chat_messages.find({
             "$or": [

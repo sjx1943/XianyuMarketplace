@@ -106,24 +106,6 @@
       <text class="char-count">{{form.description.length}}/500</text>
     </view>
 
-    <!-- 标签选择 -->
-    <view class="section">
-      <view class="section-header">
-        <text class="section-title">商品标签</text>
-      </view>
-      <view class="tags">
-        <view 
-          wx:for="{{availableTags}}" 
-          wx:key="index"
-          class="tag-item {{form.tags.indexOf(item) > -1 ? 'active' : ''}}"
-          bindtap="onTagToggle"
-          data-tag="{{item}}"
-        >
-          {{item}}
-        </view>
-      </view>
-    </view>
-
     <!-- 提交按钮 -->
     <view class="submit-section">
       <button class="submit-btn" formType="submit" loading="{{submitting}}">

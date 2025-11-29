@@ -639,3 +639,100 @@ class MiniprogramProductUploadHandler(tornado.web.RequestHandler):
     
     def on_finish(self):
         self.session.close()
+
+
+class MiniprogramChatListHandler(tornado.web.RequestHandler):
+    """小程序聊天列表接口"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self, mongo):
+        self.mongo = mongo
+        self.session = Session()
+    
+    def _get_user_id(self):
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    @tornado.gen.coroutine
+    def get(self):
+        """获取聊天会话列表"""
+        from models.friendship import Friendship
+        
+        user_id_str = self._get_user_id()
+        if not user_id_str:
+            self.set_status(401)
+            self.write(json.dumps({'success': False, 'error': '请先登录'}))
+            return
+        
+        user_id = int(user_id_str)
+        
+        try:
+            friendships = self.session.query(Friendship).filter_by(user_id=user_id).all()
+            
+            conversations = []
+            for friendship in friendships:
+                friend = self.session.query(User).filter_by(id=friendship.friend_id).first()
+                if not friend:
+                    continue
+                
+                last_message = yield self.mongo.chat_messages.find_one(
+                    {
+                        "$or": [
+                            {"from_user_id": user_id, "to_user_id": friendship.friend_id},
+                            {"from_user_id": friendship.friend_id, "to_user_id": user_id}
+                        ]
+                    },
+                    sort=[("timestamp", -1)]
+                )
+                
+                unread_count = yield self.mongo.chat_messages.count_documents({
+                    "from_user_id": friendship.friend_id,
+                    "to_user_id": user_id,
+                    "status": "unread"
+                })
+                
+                last_message_content = ""
+                last_message_time = ""
+                if last_message:
+                    last_message_content = last_message.get("message", "")
+                    if "timestamp" in last_message:
+                        ts = last_message["timestamp"]
+                        if isinstance(ts, datetime.datetime):
+                            last_message_time = ts.strftime("%Y-%m-%d %H:%M")
+                        else:
+                            last_message_time = str(ts)
+                
+                conversations.append({
+                    "id": friendship.friend_id,
+                    "friend_id": friendship.friend_id,
+                    "username": friend.username,
+                    "room_number": friend.room_number or "未设置",
+                    "avatar": friend.wechat_avatar or "/images/default-avatar.png",
+                    "last_message": last_message_content[:50] if last_message_content else "暂无消息",
+                    "last_time": last_message_time,
+                    "unread_count": unread_count
+                })
+            
+            conversations.sort(key=lambda x: x.get("last_time", ""), reverse=True)
+            
+            self.write(json.dumps(conversations))
+            
+        except Exception as e:
+            logging.error(f"获取聊天列表异常: {e}")
+            self.write(json.dumps([]))
+    
+    def on_finish(self):
+        self.session.close()
