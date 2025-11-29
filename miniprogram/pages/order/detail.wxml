@@ -1,0 +1,82 @@
+<view class="container">
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <block wx:if="{{!loading && order}}">
+    <view class="order-status">
+      <text class="status-text {{order.status}}">
+        {{order.status === 'pending' ? '待发货' : order.status === 'shipped' ? '已发货' : order.status === 'completed' ? '已完成' : order.status}}
+      </text>
+    </view>
+
+    <view class="product-card" bindtap="goToProduct">
+      <image class="product-image" src="{{order.product_image || order.image}}" mode="aspectFill" />
+      <view class="product-info">
+        <text class="product-name">{{order.product_name}}</text>
+        <text class="product-quantity">x{{order.quantity}}</text>
+      </view>
+    </view>
+
+    <view class="order-info">
+      <view class="info-row">
+        <text class="label">订单编号</text>
+        <text class="value">{{order.id}}</text>
+      </view>
+      <view class="info-row">
+        <text class="label">下单时间</text>
+        <text class="value">{{order.created_at}}</text>
+      </view>
+      <view class="info-row" wx:if="{{order.shipped_at}}">
+        <text class="label">发货时间</text>
+        <text class="value">{{order.shipped_at}}</text>
+      </view>
+      <view class="info-row" wx:if="{{order.completed_at}}">
+        <text class="label">完成时间</text>
+        <text class="value">{{order.completed_at}}</text>
+      </view>
+      <view class="info-row" wx:if="{{order.order_note}}">
+        <text class="label">订单备注</text>
+        <text class="value">{{order.order_note}}</text>
+      </view>
+    </view>
+
+    <view class="seller-info">
+      <text class="section-title">卖家信息</text>
+      <view class="info-row">
+        <text class="label">卖家</text>
+        <text class="value">{{order.seller_name || '未知'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="label">房间号</text>
+        <text class="value">{{order.seller_room || '未设置'}}</text>
+      </view>
+    </view>
+
+    <view class="action-bar">
+      <button class="action-btn secondary" bindtap="contactSeller">联系卖家</button>
+      
+      <button 
+        wx:if="{{order.status === 'pending'}}" 
+        class="action-btn primary" 
+        bindtap="shipOrder"
+      >确认发货</button>
+      
+      <button 
+        wx:if="{{order.status === 'shipped'}}" 
+        class="action-btn primary" 
+        bindtap="confirmOrder"
+      >确认收货</button>
+      
+      <button 
+        wx:if="{{order.status === 'completed'}}" 
+        class="action-btn primary" 
+        bindtap="writeReview"
+      >评价商品</button>
+    </view>
+  </block>
+
+  <view class="empty" wx:if="{{!loading && !order}}">
+    <text>订单不存在</text>
+  </view>
+</view>

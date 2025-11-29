@@ -1,0 +1,54 @@
+<view class="container">
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <block wx:if="{{!loading && product}}">
+    <view class="product-card">
+      <image class="product-image" src="{{product.image}}" mode="aspectFill" />
+      <view class="product-info">
+        <text class="product-name">{{product.name}}</text>
+        <text class="product-price">¥{{product.price}}</text>
+        <text class="product-stock">库存: {{product.quantity}}</text>
+      </view>
+    </view>
+
+    <view class="order-form">
+      <view class="form-item">
+        <text class="label">购买数量</text>
+        <view class="quantity-control">
+          <button class="qty-btn" bindtap="decreaseQuantity" disabled="{{quantity <= 1}}">-</button>
+          <input class="qty-input" type="number" value="{{quantity}}" bindinput="onQuantityChange" />
+          <button class="qty-btn" bindtap="increaseQuantity" disabled="{{quantity >= product.quantity}}">+</button>
+        </view>
+      </view>
+
+      <view class="form-item">
+        <text class="label">订单备注</text>
+        <textarea 
+          class="note-input" 
+          placeholder="请输入备注信息（选填）" 
+          value="{{note}}"
+          bindinput="onNoteInput"
+          maxlength="200"
+        />
+      </view>
+
+      <view class="total-section">
+        <text class="total-label">合计：</text>
+        <text class="total-price">¥{{(product.price * quantity).toFixed(2)}}</text>
+      </view>
+    </view>
+
+    <view class="action-bar">
+      <button class="action-btn secondary" bindtap="contactSeller">联系卖家</button>
+      <button class="action-btn primary" bindtap="submitOrder" disabled="{{submitting}}">
+        {{submitting ? '提交中...' : '确认下单'}}
+      </button>
+    </view>
+  </block>
+
+  <view class="empty" wx:if="{{!loading && !product}}">
+    <text>商品不存在</text>
+  </view>
+</view>

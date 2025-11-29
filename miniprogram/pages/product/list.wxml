@@ -1,0 +1,56 @@
+<view class="container">
+  <view class="search-bar">
+    <input class="search-input" placeholder="搜索商品" value="{{searchKeyword}}" bindinput="onSearchInput" bindconfirm="onSearch" />
+    <button class="search-btn" bindtap="onSearch">搜索</button>
+  </view>
+
+  <scroll-view class="category-scroll" scroll-x="true">
+    <view class="category-list">
+      <view 
+        wx:for="{{categories}}" 
+        wx:key="*this" 
+        class="category-item {{currentCategory === item ? 'active' : ''}}"
+        bindtap="onCategoryChange"
+        data-category="{{item}}"
+      >
+        {{item}}
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="product-grid">
+    <view 
+      wx:for="{{products}}" 
+      wx:key="id" 
+      class="product-card"
+      bindtap="goToDetail"
+      data-id="{{item.id}}"
+    >
+      <image class="product-image" src="{{item.image}}" mode="aspectFill" lazy-load="true" />
+      <view class="product-info">
+        <text class="product-name">{{item.name}}</text>
+        <view class="product-meta">
+          <text class="product-price">¥{{item.price}}</text>
+          <text class="product-condition" wx:if="{{item.condition}}">{{item.condition}}</text>
+        </view>
+        <text class="product-tag">{{item.tag}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <view class="no-more" wx:if="{{!hasMore && products.length > 0}}">
+    <text>没有更多了</text>
+  </view>
+
+  <view class="empty" wx:if="{{!loading && products.length === 0}}">
+    <text>暂无商品</text>
+  </view>
+
+  <view class="publish-btn" bindtap="goToPublish">
+    <text>+</text>
+  </view>
+</view>

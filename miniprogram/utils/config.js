@@ -24,7 +24,7 @@ const config = {
 
   // 应用配置
   app: {
-    name: '小区二手交易',
+    name: '翠友雅集S',
     version: '1.1.0',
     platform: 'WeChat MiniProgram'
   },
