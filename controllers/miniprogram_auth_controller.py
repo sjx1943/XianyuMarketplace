@@ -542,8 +542,7 @@ class MiniprogramProductUploadHandler(tornado.web.RequestHandler):
     def post(self):
         """发布商品（支持图片上传）"""
         import os
-        from models.product import Product
-        from models.product_image import ProductImage
+        from models.product import Product, ProductImage
         
         user_id = self._get_user_id()
         

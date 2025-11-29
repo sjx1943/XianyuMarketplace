@@ -181,7 +181,7 @@ class API {
   // 发布商品
   publishProduct(data) {
     return this.request({
-      url: '/product/upload',
+      url: '/api/miniprogram/product/upload',
       method: 'POST',
       data: data,
       loadingText: '发布中...'
@@ -191,7 +191,7 @@ class API {
   // 上传商品图片
   uploadProductImage(filePath) {
     return this.uploadFile({
-      url: '/product/upload',
+      url: '/api/miniprogram/product/upload',
       filePath: filePath,
       name: 'images'
     })
@@ -263,7 +263,7 @@ class API {
   // 获取未读消息数量
   getUnreadCount() {
     return this.request({
-      url: '/api/unread_count',
+      url: '/api/miniprogram/unread_count',
       method: 'GET'
     })
   }
