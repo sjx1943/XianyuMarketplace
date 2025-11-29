@@ -71,31 +71,8 @@
   "permission": {
     "scope.userLocation": {
       "desc": "您的位置信息将用于为您推荐附近的商品"
-    },
-    "scope.userInfo": {
-      "desc": "我们需要您的头像、昵称等信息来完善您的账户"
-    },
-    "scope.userWeixin": {
-      "desc": "我们需要微信运动步数来完善您的个人信息"
-    }
-  },
-  "requiredBackgroundModes": [
-    "audio"
-  ],
-  "plugins": {},
-  "preloadRule": {
-    "pages/index/index": {
-      "network": "all",
-      "packages": [
-        "pages/product",
-        "pages/order"
-      ]
     }
   },
   "lazyCodeLoading": "requiredComponents",
-  "optimization": {
-    "enabled": true
-  },
-  "cloud": false,
   "sitemapLocation": "sitemap.json"
 }

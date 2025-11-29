@@ -1,4 +1,6 @@
 // app.js - 小程序主应用文件
+const configModule = require('./utils/config.js')
+
 App({
   onLaunch() {
     // 初始化日志
@@ -26,8 +28,8 @@ App({
 
   globalData: {
     userInfo: null,
-    apiBase: this.getApiBase(),
-    wsBase: this.getWsBase(),
+    apiBase: configModule.API_BASE,
+    wsBase: configModule.WS_BASE,
     isLogin: false,
     currentUserId: null,
     unreadCount: 0,
@@ -40,15 +42,11 @@ App({
 
   // 获取API基础URL（根据环境配置）
   getApiBase() {
-    // 使用 config.js 中的配置
-    const configModule = require('./utils/config.js')
     return configModule.API_BASE
   },
 
   // 获取WebSocket基础URL
   getWsBase() {
-    // 使用 config.js 中的配置
-    const configModule = require('./utils/config.js')
     return configModule.WS_BASE
   },
 

@@ -6,7 +6,8 @@ Page({
     quantity: 1,
     note: '',
     loading: true,
-    submitting: false
+    submitting: false,
+    totalPrice: '0.00'
   },
 
   onLoad(options) {
@@ -19,9 +20,11 @@ Page({
     this.setData({ loading: true })
     
     api.getProductDetail(productId).then(res => {
+      const product = res.product || res
       this.setData({
-        product: res.product || res,
-        loading: false
+        product: product,
+        loading: false,
+        totalPrice: this.calculateTotal(product.price, 1)
       })
     }).catch(err => {
       console.error('加载商品失败:', err)
@@ -33,23 +36,39 @@ Page({
     })
   },
 
+  calculateTotal(price, quantity) {
+    const total = (parseFloat(price) || 0) * quantity
+    return total.toFixed(2)
+  },
+
   onQuantityChange(e) {
     let quantity = parseInt(e.detail.value) || 1
     const max = this.data.product.quantity || 1
     quantity = Math.max(1, Math.min(quantity, max))
-    this.setData({ quantity })
+    this.setData({ 
+      quantity,
+      totalPrice: this.calculateTotal(this.data.product.price, quantity)
+    })
   },
 
   decreaseQuantity() {
     if (this.data.quantity > 1) {
-      this.setData({ quantity: this.data.quantity - 1 })
+      const newQuantity = this.data.quantity - 1
+      this.setData({ 
+        quantity: newQuantity,
+        totalPrice: this.calculateTotal(this.data.product.price, newQuantity)
+      })
     }
   },
 
   increaseQuantity() {
     const max = this.data.product.quantity || 1
     if (this.data.quantity < max) {
-      this.setData({ quantity: this.data.quantity + 1 })
+      const newQuantity = this.data.quantity + 1
+      this.setData({ 
+        quantity: newQuantity,
+        totalPrice: this.calculateTotal(this.data.product.price, newQuantity)
+      })
     }
   },
 
