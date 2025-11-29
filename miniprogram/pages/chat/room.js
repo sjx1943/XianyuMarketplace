@@ -59,7 +59,8 @@ Page({
   },
 
   onUnload() {
-    this.closeWebSocket()
+    // 不关闭WebSocket - 保持连接持久化，支持实时消息接收
+    // 只在app.onHide时关闭，确保应用级别的连接管理
   },
 
   // 加载系统广播

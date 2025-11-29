@@ -12,7 +12,10 @@
       
       <view class="chat-content">
         <view class="chat-header">
-          <text class="friend-name">{{item.name}}</text>
+          <view class="friend-name-section">
+            <text class="friend-name">{{item.name}}</text>
+            <text class="room-number">{{item.room_number || '未设置'}}</text>
+          </view>
           <text class="chat-time">{{item.last_message_time}}</text>
         </view>
         <view class="chat-preview">
