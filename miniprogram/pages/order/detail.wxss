@@ -133,3 +133,8 @@
   background-color: #f5f5f5;
   color: #666;
 }
+
+.action-btn.danger {
+  background-color: #ff4444;
+  color: #fff;
+}
