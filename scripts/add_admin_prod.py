@@ -1,27 +1,27 @@
 #!/usr/bin/env python
 """
-生产环境管理员账号创建脚本
+在Replit或VPS上创建管理员账号的脚本
 
-使用方法（在生产服务器上执行）:
-1. 进入Docker容器: docker exec -it <container_name> bash
-2. 执行: python scripts/add_admin_prod.py
-
-或者直接通过Docker执行:
-docker exec -it <container_name> python scripts/add_admin_prod.py
+使用方法：
+1. Replit开发环境：python scripts/add_admin_prod.py
+2. VPS生产环境：docker exec -it <container_name> python scripts/add_admin_prod.py
 """
 import os
 import sys
 import hashlib
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models.database import Session, engine
+from base.base import Base, engine
 from models.user import User
+from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 def create_admin_user():
     """创建管理员账号"""
-    session = Session()
+    from sqlalchemy.orm import sessionmaker
+    SessionLocal = sessionmaker(bind=engine)
+    session = SessionLocal()
     
     try:
         admin_username = "admin"
