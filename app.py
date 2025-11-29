@@ -191,7 +191,7 @@ def make_app():
         (r"/api/mark_messages_read", MarkMessagesReadHandler, dict(mongo=mongo)),
         (r"/api/unread_count", UnreadCountHandler, dict(mongo=mongo)),
         (r"/static/(.*)", MyStaticFileHandler, {"path": settings['static_path']}),
-        (r"/images/(.*)", StaticFileHandler, {"path": settings['upload_path']}),
+        (r"/images/(.*)", MyStaticFileHandler, {"path": settings['upload_path']}),
     ],
         ui_modules={'loginmodule': Loginmodule,
                     'registmodule': Registmodule,

@@ -47,6 +47,12 @@ The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
 
 ## Recent Changes (November 29, 2025)
 
+### Critical Bug Fixes - Image Loading (Production)
+-   **Image Handler Issue**: Fixed 500 errors in production mini program image loading
+-   **Root Cause**: `/images/` route was using standard `StaticFileHandler` which couldn't handle URL-encoded filenames (especially Chinese characters)
+-   **Solution**: Changed `/images/` route to use `MyStaticFileHandler` (URL decoder) like `/static/` route
+-   **Result**: All product and avatar images now load correctly in production mini program environment
+
 ### Mini Program Fixes
 -   **WebSocket Path**: Fixed duplication issue (`/ws/ws/` -> `/ws/`)
 -   **TabBar Display**: Fixed - removed `pages/index/index` from pages array, set `pages/product/list` as entry point (first tabBar page)
