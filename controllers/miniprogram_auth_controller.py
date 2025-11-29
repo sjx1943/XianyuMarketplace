@@ -964,12 +964,22 @@ class MiniprogramMessagesHandler(tornado.web.RequestHandler):
             
             result = []
             for msg in messages:
+                ts = msg.get('timestamp')
+                if isinstance(ts, datetime.datetime):
+                    time_str = ts.strftime('%H:%M')
+                else:
+                    time_str = ''
+                
                 result.append({
                     'id': str(msg.get('_id', '')),
                     'from_user_id': msg.get('from_user_id'),
                     'to_user_id': msg.get('to_user_id'),
+                    'sender_id': msg.get('from_user_id'),
+                    'content': msg.get('message', ''),
                     'message': msg.get('message', ''),
+                    'type': 'text',
                     'timestamp': msg.get('timestamp').strftime('%Y-%m-%d %H:%M:%S') if isinstance(msg.get('timestamp'), datetime.datetime) else str(msg.get('timestamp', '')),
+                    'time': time_str,
                     'status': msg.get('status', 'read')
                 })
             
