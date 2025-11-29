@@ -13,7 +13,7 @@ import os
 
 class MyStaticFileHandler(tornado.web.StaticFileHandler):
     def validate_absolute_path(self, root, absolute_path):
-        # URL 解码处理，支持多层编码
+        # URL 解码处理，支持多层编码和中文字符
         decoded_path = urllib.parse.unquote(absolute_path)
         
         # 处理可能的双重编码或其他编码问题
@@ -29,16 +29,20 @@ class MyStaticFileHandler(tornado.web.StaticFileHandler):
             
             # 检查文件是否存在
             if not os.path.exists(abs_path):
-                # 尝试查找相似的文件（处理编码问题）
+                # 尝试查找相似的文件（处理编码问题、中文字符、空格等）
                 if os.path.isdir(root):
+                    basename = os.path.basename(decoded_path)
                     for filename in os.listdir(root):
-                        if filename.lower() == os.path.basename(decoded_path).lower():
+                        # 多种匹配方式
+                        if (filename.lower() == basename.lower() or 
+                            filename == basename or
+                            filename.replace(' ', '%20') == urllib.parse.quote(basename.encode('utf-8'))):
                             abs_path = os.path.join(root, filename)
                             logging.info(f"找到匹配文件: {abs_path}")
                             break
             
             if not os.path.exists(abs_path):
-                logging.warning(f"文件不存在: {abs_path} (原始路径: {absolute_path})")
+                logging.warning(f"文件不存在: {abs_path} (原始路径: {absolute_path}, 解码路径: {decoded_path})")
                 raise tornado.web.HTTPError(404)
             
             if not os.path.isfile(abs_path):
@@ -50,7 +54,7 @@ class MyStaticFileHandler(tornado.web.StaticFileHandler):
         except tornado.web.HTTPError:
             raise
         except Exception as e:
-            logging.error(f"路径验证异常: {e}, 路径: {absolute_path}")
+            logging.error(f"路径验证异常: {e}, 路径: {absolute_path}, 解码: {decoded_path}")
             raise tornado.web.HTTPError(404)
 
 
