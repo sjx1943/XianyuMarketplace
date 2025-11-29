@@ -9,7 +9,7 @@ function shareProduct(product) {
   return {
     title: `【闲置】${product.name} - 仅售¥${product.price}`,
     path: `/pages/product/detail?id=${product.id}`,
-    imageUrl: product.images && product.images[0] ? product.images[0] : '/images/default-product.png'
+    imageUrl: product.images && product.images[0] ? product.images[0] : '/static/images/default-product.png'
   }
 }
 
@@ -22,7 +22,7 @@ function shareProductToTimeline(product) {
   return {
     title: `【闲置】${product.name} - 仅售¥${product.price}，快来看看！`,
     query: `id=${product.id}`,
-    imageUrl: product.images && product.images[0] ? product.images[0] : '/images/default-product.png'
+    imageUrl: product.images && product.images[0] ? product.images[0] : '/static/images/default-product.png'
   }
 }
 
@@ -34,7 +34,7 @@ function shareApp() {
   return {
     title: '小区二手市场 - 邻里闲置交易平台',
     path: '/pages/index/index',
-    imageUrl: '/images/share-banner.jpg'
+    imageUrl: '/static/images/share-banner.jpg'
   }
 }
 
@@ -46,7 +46,7 @@ function shareAppToTimeline() {
   return {
     title: '小区二手市场 - 发现你身边的闲置好物',
     query: '',
-    imageUrl: '/images/share-banner.jpg'
+    imageUrl: '/static/images/share-banner.jpg'
   }
 }
 
@@ -59,7 +59,7 @@ function shareInvite(userId) {
   return {
     title: '快来加入我们的小区二手市场，闲置物品轻松转让！',
     path: `/pages/index/index?inviter=${userId}`,
-    imageUrl: '/images/invite-banner.jpg'
+    imageUrl: '/static/images/invite-banner.jpg'
   }
 }
 
@@ -80,7 +80,7 @@ function generateProductPoster(product) {
     ctx.fillRect(0, 0, 750, 1200)
     
     // 绘制商品图片
-    const imageUrl = product.images && product.images[0] ? product.images[0] : '/images/default-product.png'
+    const imageUrl = product.images && product.images[0] ? product.images[0] : '/static/images/default-product.png'
     ctx.drawImage(imageUrl, 50, 50, 650, 650)
     
     // 绘制商品名称
@@ -95,7 +95,7 @@ function generateProductPoster(product) {
     
     // 绘制小程序码
     // 注意：实际项目中需要从后端获取小程序码
-    ctx.drawImage('/images/qrcode.jpg', 525, 950, 175, 175)
+    ctx.drawImage('/static/images/qrcode.jpg', 525, 950, 175, 175)
     
     // 绘制提示文字
     ctx.setFillStyle('#999999')

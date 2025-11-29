@@ -49,9 +49,10 @@ The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
 
 ### Critical Bug Fixes - Image Loading (Production)
 -   **Image Handler Issue**: Fixed 500 errors in production mini program image loading
--   **Root Cause**: `/images/` route was using standard `StaticFileHandler` which couldn't handle URL-encoded filenames (especially Chinese characters)
--   **Solution**: Changed `/images/` route to use `MyStaticFileHandler` (URL decoder) like `/static/` route
--   **Result**: All product and avatar images now load correctly in production mini program environment
+-   **Root Cause**: `/images/` route had handler compatibility issues with WeChat mini program
+-   **Solution**: Migrated all image requests from `/images/{filename}` to `/static/images/{filename}` to use the proven working `/static/` route with `MyStaticFileHandler` (URL decoder)
+-   **Changes**: Updated all WXML, JS, and utility files across miniprogram/ directory to call `/static/images/` instead of `/images/`
+-   **Result**: All product and avatar images now load correctly via the `/static/` route which properly handles URL-encoded filenames (including Chinese characters)
 
 ### Mini Program Fixes
 -   **WebSocket Path**: Fixed duplication issue (`/ws/ws/` -> `/ws/`)

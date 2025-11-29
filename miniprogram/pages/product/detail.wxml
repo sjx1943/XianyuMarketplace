@@ -49,7 +49,7 @@
 
   <!-- 卖家信息 -->
   <view class="seller-info" bindtap="viewSellerProfile">
-    <image class="seller-avatar" src="{{product.seller_avatar || '/images/default-avatar.png'}}"></image>
+    <image class="seller-avatar" src="{{product.seller_avatar || '/static/images/default-avatar.png'}}"></image>
     <view class="seller-details">
       <text class="seller-name">{{product.seller_name || '匿名用户'}}</text>
       <text class="seller-room">房间号：{{product.seller_room}}</text>

@@ -43,7 +43,7 @@ Page({
       productId: productId || null,
       orderId: orderId || null,
       currentUserId: userInfo.id,
-      myAvatar: userInfo.wechat_avatar || '/images/default-avatar.png'
+      myAvatar: userInfo.wechat_avatar || '/static/images/default-avatar.png'
     })
 
     this.loadBroadcasts()
@@ -93,7 +93,7 @@ Page({
       if (data && data.messages) {
         this.setData({
           messages: data.messages || [],
-          friendAvatar: data.friend?.avatar || '/images/default-avatar.png',
+          friendAvatar: data.friend?.avatar || '/static/images/default-avatar.png',
           loading: false
         })
 

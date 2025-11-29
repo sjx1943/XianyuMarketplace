@@ -134,7 +134,7 @@ Page({
     return {
       title: '小区二手市场 - 邻里闲置交易平台',
       path: '/pages/index/index',
-      imageUrl: '/images/share-banner.jpg'
+      imageUrl: '/static/images/share-banner.jpg'
     }
   },
 
@@ -142,7 +142,7 @@ Page({
     return {
       title: '小区二手市场 - 发现你身边的闲置好物',
       query: '',
-      imageUrl: '/images/share-banner.jpg'
+      imageUrl: '/static/images/share-banner.jpg'
     }
   }
 })
