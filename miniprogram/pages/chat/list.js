@@ -1,5 +1,6 @@
 // pages/chat/list.js
 const api = require('../../utils/api.js')
+const { getImageUrl, getDefaultAvatarUrl } = require('../../utils/config.js')
 const app = getApp()
 
 Page({
@@ -53,7 +54,12 @@ Page({
       const data = await api.getChatList()
 
       // 后端返回的数据格式可能是数组或对象
-      const chatList = Array.isArray(data) ? data : (data.conversations || data.chats || [])
+      const rawChatList = Array.isArray(data) ? data : (data.conversations || data.chats || [])
+      // 处理每个聊天的头像URL
+      const chatList = rawChatList.map(chat => ({
+        ...chat,
+        avatar: chat.avatar ? getImageUrl(chat.avatar) : getDefaultAvatarUrl()
+      }))
 
       this.setData({
         chatList: chatList,

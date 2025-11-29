@@ -2,7 +2,7 @@
 <view class="page">
   <!-- 用户信息卡片 -->
   <view class="user-card">
-    <image class="avatar" src="{{userInfo.wechat_avatar || '/static/images/default-avatar.png'}}"></image>
+    <image class="avatar" src="{{userInfo.wechat_avatar}}"></image>
     <view class="user-info">
       <text class="username">{{userInfo.wechat_nickname || userInfo.username || '未设置'}}</text>
       <text class="room-number">🏠 {{userInfo.room_number || '未设置房间号'}}</text>

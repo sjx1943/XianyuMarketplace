@@ -1,5 +1,6 @@
 // pages/chat/room.js
 const api = require('../../utils/api.js')
+const { getImageUrl, getDefaultAvatarUrl } = require('../../utils/config.js')
 const app = getApp()
 
 Page({
@@ -43,7 +44,7 @@ Page({
       productId: productId || null,
       orderId: orderId || null,
       currentUserId: userInfo.id,
-      myAvatar: userInfo.wechat_avatar || '/static/images/default-avatar.png'
+      myAvatar: userInfo.wechat_avatar ? getImageUrl(userInfo.wechat_avatar) : getDefaultAvatarUrl()
     })
 
     this.loadBroadcasts()
@@ -93,7 +94,7 @@ Page({
       if (data && data.messages) {
         this.setData({
           messages: data.messages || [],
-          friendAvatar: data.friend?.avatar || '/static/images/default-avatar.png',
+          friendAvatar: data.friend?.avatar ? getImageUrl(data.friend.avatar) : getDefaultAvatarUrl(),
           loading: false
         })
 

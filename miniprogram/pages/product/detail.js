@@ -34,18 +34,18 @@ Page({
       const product = data.product || data
       if (product && product.id) {
         // 处理图片数据：将图片对象数组转换为完整的服务器URL
-        const config = require('../../utils/config.js')
-        const baseUrl = config.API_BASE
+        const { getImageUrl, getDefaultAvatarUrl } = require('../../utils/config.js')
         const images = (product.images || []).map(img => {
           const filename = typeof img === 'string' ? img : img.filename
-          return `${baseUrl}/images/${filename}`
+          return getImageUrl(filename)
         })
         
         // 处理卖家信息字段映射
+        const sellerAvatar = product.seller?.avatar ? getImageUrl(product.seller.avatar) : getDefaultAvatarUrl()
         const productData = {
           ...product,
           images: images,
-          seller_avatar: product.seller?.avatar || '',
+          seller_avatar: sellerAvatar,
           seller_name: product.seller?.username || product.seller_name || '未知卖家',
           seller_room: product.seller?.room_number || product.seller_room || '未设置',
           created_at: product.upload_time || product.created_at || '',

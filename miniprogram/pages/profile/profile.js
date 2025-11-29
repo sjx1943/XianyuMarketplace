@@ -1,5 +1,6 @@
 // pages/profile/profile.js
 const api = require('../../utils/api.js')
+const { getImageUrl, getDefaultAvatarUrl } = require('../../utils/config.js')
 const app = getApp()
 
 Page({
@@ -52,7 +53,12 @@ Page({
     try {
       const userInfo = wx.getStorageSync('userInfo')
       if (userInfo) {
-        this.setData({ userInfo })
+        // 处理头像URL
+        const processedUserInfo = {
+          ...userInfo,
+          wechat_avatar: userInfo.wechat_avatar ? getImageUrl(userInfo.wechat_avatar) : getDefaultAvatarUrl()
+        }
+        this.setData({ userInfo: processedUserInfo })
       }
 
       // 加载统计数据（从商品列表计算）
@@ -134,7 +140,7 @@ Page({
     return {
       title: '小区二手市场 - 邻里闲置交易平台',
       path: '/pages/index/index',
-      imageUrl: '/static/images/share-banner.jpg'
+      imageUrl: getImageUrl('share-banner.jpg')
     }
   },
 
@@ -142,7 +148,7 @@ Page({
     return {
       title: '小区二手市场 - 发现你身边的闲置好物',
       query: '',
-      imageUrl: '/static/images/share-banner.jpg'
+      imageUrl: getImageUrl('share-banner.jpg')
     }
   }
 })

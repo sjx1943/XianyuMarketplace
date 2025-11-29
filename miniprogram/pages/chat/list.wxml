@@ -8,7 +8,7 @@
       bindtap="openChat"
       data-friend="{{item}}"
     >
-      <image class="avatar" src="{{item.avatar || '/static/images/default-avatar.png'}}"></image>
+      <image class="avatar" src="{{item.avatar}}"></image>
       
       <view class="chat-content">
         <view class="chat-header">
