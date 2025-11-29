@@ -1,5 +1,6 @@
 // 配置文件
-const isDev = false // 是否为开发环境
+// ⚠️ 部署前必须修改 production.host 为您的实际后端域名
+const isDev = false // 生产环境设为 false，开发调试设为 true
 
 // API配置
 const config = {
@@ -7,16 +8,16 @@ const config = {
   
   // API域名配置
   api: {
-    // 生产环境
+    // 生产环境 - ⚠️ 必须修改为您的实际域名
     production: {
-      host: 'https://your-production-domain.com',
-      apiBase: '/api',
+      host: 'https://your-app.replit.app',  // ← 修改为您的 Replit 域名
+      apiBase: '',  // 后端路由不需要 /api 前缀
       wsBase: '/ws'
     },
-    // 开发环境
+    // 开发环境（本地调试用）
     development: {
       host: 'http://localhost:5000',
-      apiBase: '/api',
+      apiBase: '',  // 后端路由不需要 /api 前缀
       wsBase: '/ws'
     }
   },
@@ -24,7 +25,7 @@ const config = {
   // 应用配置
   app: {
     name: '小区二手交易',
-    version: '1.0.0',
+    version: '1.1.0',
     platform: 'WeChat MiniProgram'
   },
 
@@ -68,9 +69,15 @@ function getWsBase() {
   return apiConfig.host.replace(/^http/, 'ws') + apiConfig.wsBase
 }
 
+// 导出 API_BASE 供 api.js 使用
+const API_BASE = getApiBase()
+const WS_BASE = getWsBase()
+
 module.exports = {
   config,
   getApiBase,
   getWsBase,
-  isDev
+  isDev,
+  API_BASE,
+  WS_BASE
 }

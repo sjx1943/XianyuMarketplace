@@ -40,15 +40,16 @@ App({
 
   // 获取API基础URL（根据环境配置）
   getApiBase() {
-    // 在实际部署时，需要替换为真实的API地址
-    const apiHost = wx.getExtConfigSync()?.apiHost || 'https://your-domain.com'
-    return apiHost + '/api'
+    // 使用 config.js 中的配置
+    const configModule = require('./utils/config.js')
+    return configModule.API_BASE
   },
 
   // 获取WebSocket基础URL
   getWsBase() {
-    const wsHost = wx.getExtConfigSync()?.wsHost || 'wss://your-domain.com'
-    return wsHost + '/ws'
+    // 使用 config.js 中的配置
+    const configModule = require('./utils/config.js')
+    return configModule.WS_BASE
   },
 
   // 初始化配置
