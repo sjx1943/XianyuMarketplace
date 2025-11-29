@@ -20,7 +20,10 @@ Page({
   },
 
   onLoad(options) {
-    const { friendId, productId, orderId } = options
+    // 处理参数：驼峰或蛇形都支持
+    const friendId = options.friendId || options.friend_id
+    const productId = options.productId || options.product_id
+    const orderId = options.orderId || options.order_id
     
     if (!friendId) {
       wx.showToast({
@@ -40,9 +43,9 @@ Page({
     }
 
     this.setData({
-      friendId,
-      productId: productId || null,
-      orderId: orderId || null,
+      friendId: parseInt(friendId),
+      productId: productId ? parseInt(productId) : null,
+      orderId: orderId ? parseInt(orderId) : null,
       currentUserId: userInfo.id,
       myAvatar: userInfo.wechat_avatar ? getImageUrl(userInfo.wechat_avatar) : getDefaultAvatarUrl()
     })
