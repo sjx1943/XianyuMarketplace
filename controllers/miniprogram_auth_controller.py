@@ -1355,3 +1355,512 @@ class MiniprogramBroadcastsHandler(tornado.web.RequestHandler):
                 'success': False,
                 'error': '获取广播失败'
             }))
+    
+    def on_finish(self):
+        self.session.close()
+
+
+class MiniprogramOrdersHandler(tornado.web.RequestHandler):
+    """小程序订单API - 创建和获取订单列表"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def _get_user_id(self):
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    def get(self):
+        """获取订单列表"""
+        from models.order import Order
+        from models.product import Product
+        
+        user_id_str = self._get_user_id()
+        if not user_id_str:
+            self.set_status(401)
+            self.write(json.dumps({'success': False, 'error': '请先登录'}))
+            return
+        
+        user_id = int(user_id_str)
+        order_type = self.get_argument('type', 'all')  # all, buying, selling
+        
+        try:
+            from sqlalchemy import or_, and_, desc
+            
+            query = self.session.query(Order, Product, User).outerjoin(
+                Product, Order.product_id == Product.id
+            ).join(User, Order.user_id == User.id)
+            
+            if order_type == 'buying':
+                query = query.filter(Order.user_id == user_id, Order.status != 'cancelled')
+            elif order_type == 'selling':
+                query = query.filter(
+                    or_(
+                        Order.seller_id == user_id,
+                        and_(Order.seller_id == None, Product.user_id == user_id)
+                    ),
+                    Order.status != 'cancelled'
+                )
+            else:
+                query = query.filter(
+                    or_(
+                        Order.user_id == user_id,
+                        Order.seller_id == user_id,
+                        and_(Order.seller_id == None, Product.user_id == user_id)
+                    ),
+                    Order.status != 'cancelled'
+                )
+            
+            orders_result = query.order_by(desc(Order.created_at)).all()
+            
+            orders_data = []
+            for order, product, buyer in orders_result:
+                seller = None
+                if order.seller_id:
+                    seller = self.session.query(User).filter_by(id=order.seller_id).first()
+                elif product:
+                    seller = self.session.query(User).filter_by(id=product.user_id).first()
+                
+                orders_data.append({
+                    'id': order.id,
+                    'product_id': order.product_id,
+                    'product_name': order.product_name or (product.name if product else '商品已删除'),
+                    'product_image': product.image if product else '',
+                    'price': float(product.price) if product else 0,
+                    'quantity': order.quantity,
+                    'status': order.status,
+                    'buyer_id': buyer.id,
+                    'buyer_name': buyer.username,
+                    'buyer_room': buyer.room_number or '',
+                    'seller_id': seller.id if seller else None,
+                    'seller_name': seller.username if seller else '未知',
+                    'seller_room': seller.room_number if seller else '',
+                    'created_at': order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '',
+                    'is_buyer': order.user_id == user_id
+                })
+            
+            self.write(json.dumps({'success': True, 'orders': orders_data}))
+            
+        except Exception as e:
+            logging.error(f"获取订单列表异常: {e}")
+            self.set_status(500)
+            self.write(json.dumps({'success': False, 'error': str(e)}))
+    
+    def post(self):
+        """创建订单"""
+        from models.order import Order
+        from models.product import Product
+        
+        user_id_str = self._get_user_id()
+        if not user_id_str:
+            self.set_status(401)
+            self.write(json.dumps({'success': False, 'error': '请先登录'}))
+            return
+        
+        user_id = int(user_id_str)
+        
+        try:
+            data = json.loads(self.request.body)
+            product_id = int(data.get('product_id'))
+            quantity = int(data.get('quantity', 1))
+            order_note = data.get('order_note', '')
+            
+            if quantity <= 0:
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '购买数量必须大于0'}))
+                return
+            
+            product = self.session.query(Product).filter_by(id=product_id).first()
+            if not product:
+                self.set_status(404)
+                self.write(json.dumps({'success': False, 'error': '商品不存在'}))
+                return
+            
+            if product.quantity < quantity:
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '库存不足'}))
+                return
+            
+            if product.user_id == user_id:
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '不能购买自己的商品'}))
+                return
+            
+            new_order = Order(
+                product_id=product_id,
+                user_id=user_id,
+                quantity=quantity,
+                product_name=product.name,
+                seller_id=product.user_id,
+                order_note=order_note
+            )
+            
+            self.session.add(new_order)
+            
+            product.quantity -= quantity
+            if product.quantity <= 0:
+                product.status = "已售完"
+            
+            self.session.commit()
+            
+            self.write(json.dumps({
+                'success': True,
+                'message': '订单创建成功',
+                'order_id': new_order.id
+            }))
+            
+        except ValueError as e:
+            self.session.rollback()
+            self.set_status(400)
+            self.write(json.dumps({'success': False, 'error': '参数格式不正确'}))
+        except Exception as e:
+            self.session.rollback()
+            logging.error(f"创建订单异常: {e}")
+            self.set_status(500)
+            self.write(json.dumps({'success': False, 'error': str(e)}))
+    
+    def on_finish(self):
+        self.session.close()
+
+
+class MiniprogramOrderDetailHandler(tornado.web.RequestHandler):
+    """小程序订单详情"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def _get_user_id(self):
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    def get(self, order_id):
+        """获取订单详情"""
+        from models.order import Order
+        from models.product import Product
+        
+        user_id_str = self._get_user_id()
+        if not user_id_str:
+            self.set_status(401)
+            self.write(json.dumps({'success': False, 'error': '请先登录'}))
+            return
+        
+        user_id = int(user_id_str)
+        
+        try:
+            order = self.session.query(Order).filter_by(id=order_id).first()
+            
+            if not order:
+                self.set_status(404)
+                self.write(json.dumps({'success': False, 'error': '订单不存在'}))
+                return
+            
+            can_view = order.user_id == user_id or order.seller_id == user_id
+            if not can_view:
+                product = self.session.query(Product).filter_by(id=order.product_id).first()
+                if product and product.user_id == user_id:
+                    can_view = True
+            
+            if not can_view:
+                self.set_status(403)
+                self.write(json.dumps({'success': False, 'error': '无权查看此订单'}))
+                return
+            
+            product = self.session.query(Product).filter_by(id=order.product_id).first()
+            buyer = self.session.query(User).filter_by(id=order.user_id).first()
+            seller = None
+            if order.seller_id:
+                seller = self.session.query(User).filter_by(id=order.seller_id).first()
+            elif product:
+                seller = self.session.query(User).filter_by(id=product.user_id).first()
+            
+            self.write(json.dumps({
+                'success': True,
+                'order': {
+                    'id': order.id,
+                    'product_id': order.product_id,
+                    'product_name': order.product_name or (product.name if product else '商品已删除'),
+                    'product_image': product.image if product else '',
+                    'price': float(product.price) if product else 0,
+                    'quantity': order.quantity,
+                    'status': order.status,
+                    'order_note': order.order_note or '',
+                    'buyer_id': buyer.id if buyer else None,
+                    'buyer_name': buyer.username if buyer else '',
+                    'buyer_room': buyer.room_number if buyer else '',
+                    'seller_id': seller.id if seller else None,
+                    'seller_name': seller.username if seller else '',
+                    'seller_room': seller.room_number if seller else '',
+                    'created_at': order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '',
+                    'shipped_at': order.shipped_at.strftime('%Y-%m-%d %H:%M') if order.shipped_at else '',
+                    'completed_at': order.completed_at.strftime('%Y-%m-%d %H:%M') if order.completed_at else '',
+                    'is_buyer': order.user_id == user_id,
+                    'is_seller': (order.seller_id == user_id) or (product and product.user_id == user_id)
+                }
+            }))
+            
+        except Exception as e:
+            logging.error(f"获取订单详情异常: {e}")
+            self.set_status(500)
+            self.write(json.dumps({'success': False, 'error': str(e)}))
+    
+    def on_finish(self):
+        self.session.close()
+
+
+class MiniprogramOrderCancelHandler(tornado.web.RequestHandler):
+    """小程序取消订单"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def _get_user_id(self):
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    def post(self, order_id):
+        """取消订单"""
+        from models.order import Order
+        from models.product import Product
+        
+        user_id_str = self._get_user_id()
+        if not user_id_str:
+            self.set_status(401)
+            self.write(json.dumps({'success': False, 'error': '请先登录'}))
+            return
+        
+        user_id = int(user_id_str)
+        
+        try:
+            order = self.session.query(Order).filter_by(id=order_id).first()
+            
+            if not order:
+                self.set_status(404)
+                self.write(json.dumps({'success': False, 'error': '订单不存在'}))
+                return
+            
+            if order.user_id != user_id:
+                self.set_status(403)
+                self.write(json.dumps({'success': False, 'error': '只有买家可以取消订单'}))
+                return
+            
+            if order.status != 'pending':
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '只能取消待确认的订单'}))
+                return
+            
+            product = self.session.query(Product).filter_by(id=order.product_id).first()
+            if product:
+                product.quantity += order.quantity
+                product.status = "在售"
+            
+            order.status = 'cancelled'
+            self.session.commit()
+            
+            self.write(json.dumps({'success': True, 'message': '订单取消成功'}))
+            
+        except Exception as e:
+            self.session.rollback()
+            logging.error(f"取消订单异常: {e}")
+            self.set_status(500)
+            self.write(json.dumps({'success': False, 'error': str(e)}))
+    
+    def on_finish(self):
+        self.session.close()
+
+
+class MiniprogramOrderShipHandler(tornado.web.RequestHandler):
+    """小程序卖家发货"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def _get_user_id(self):
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    def post(self, order_id):
+        """卖家发货"""
+        from models.order import Order
+        from models.product import Product
+        
+        user_id_str = self._get_user_id()
+        if not user_id_str:
+            self.set_status(401)
+            self.write(json.dumps({'success': False, 'error': '请先登录'}))
+            return
+        
+        user_id = int(user_id_str)
+        
+        try:
+            order = self.session.query(Order).filter_by(id=order_id).first()
+            
+            if not order:
+                self.set_status(404)
+                self.write(json.dumps({'success': False, 'error': '订单不存在'}))
+                return
+            
+            is_seller = False
+            if order.seller_id and order.seller_id == user_id:
+                is_seller = True
+            elif not order.seller_id:
+                product = self.session.query(Product).filter_by(id=order.product_id).first()
+                if product and product.user_id == user_id:
+                    is_seller = True
+            
+            if not is_seller:
+                self.set_status(403)
+                self.write(json.dumps({'success': False, 'error': '只有卖家可以发货'}))
+                return
+            
+            if order.status != 'pending':
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '只有待确认的订单才能发货'}))
+                return
+            
+            order.status = 'shipped'
+            order.shipped_at = datetime.datetime.now()
+            self.session.commit()
+            
+            self.write(json.dumps({'success': True, 'message': '发货成功'}))
+            
+        except Exception as e:
+            self.session.rollback()
+            logging.error(f"发货异常: {e}")
+            self.set_status(500)
+            self.write(json.dumps({'success': False, 'error': str(e)}))
+    
+    def on_finish(self):
+        self.session.close()
+
+
+class MiniprogramMyProductsHandler(tornado.web.RequestHandler):
+    """小程序获取我的商品列表"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def _get_user_id(self):
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    def get(self):
+        """获取我的商品列表"""
+        from models.product import Product, ProductImage
+        
+        user_id_str = self._get_user_id()
+        if not user_id_str:
+            self.set_status(401)
+            self.write(json.dumps({'success': False, 'error': '请先登录'}))
+            return
+        
+        user_id = int(user_id_str)
+        status_filter = self.get_argument('status', 'all')  # all, 在售, 已售完, 已删除
+        
+        try:
+            from sqlalchemy import desc
+            
+            query = self.session.query(Product).filter(Product.user_id == user_id)
+            
+            if status_filter != 'all':
+                query = query.filter(Product.status == status_filter)
+            else:
+                query = query.filter(Product.status != '已删除')
+            
+            products = query.order_by(desc(Product.upload_time)).all()
+            
+            products_data = []
+            for product in products:
+                images = self.session.query(ProductImage).filter_by(product_id=product.id).all()
+                products_data.append({
+                    'id': product.id,
+                    'name': product.name,
+                    'description': product.description[:100] if product.description else '',
+                    'price': float(product.price),
+                    'quantity': product.quantity,
+                    'status': product.status,
+                    'condition': product.condition or '九成新',
+                    'tag': product.tag,
+                    'image': product.image,
+                    'images': [img.filename for img in images],
+                    'upload_time': product.upload_time.strftime('%Y-%m-%d %H:%M') if product.upload_time else ''
+                })
+            
+            self.write(json.dumps({'success': True, 'products': products_data}))
+            
+        except Exception as e:
+            logging.error(f"获取我的商品列表异常: {e}")
+            self.set_status(500)
+            self.write(json.dumps({'success': False, 'error': str(e)}))
+    
+    def on_finish(self):
+        self.session.close()

@@ -217,9 +217,18 @@ class API {
   // ========== 订单相关API ==========
   
   // 获取订单列表
-  getOrderList() {
+  getOrderList(type = 'all') {
     return this.request({
-      url: '/orders',
+      url: '/api/miniprogram/orders',
+      method: 'GET',
+      data: { type }
+    })
+  }
+
+  // 获取订单详情
+  getOrderDetail(orderId) {
+    return this.request({
+      url: `/api/miniprogram/order/${orderId}`,
       method: 'GET'
     })
   }
@@ -227,14 +236,14 @@ class API {
   // 创建订单
   createOrder(data) {
     return this.request({
-      url: '/orders',
+      url: '/api/miniprogram/orders',
       method: 'POST',
       data: data,
       loadingText: '创建订单中...'
     })
   }
 
-  // 确认订单（发货/收货）
+  // 确认收货（买家）
   confirmOrder(orderId) {
     return this.request({
       url: `/api/miniprogram/order/${orderId}/confirm`,
@@ -242,19 +251,36 @@ class API {
     })
   }
 
+  // 发货（卖家）
+  shipOrder(orderId) {
+    return this.request({
+      url: `/api/miniprogram/order/${orderId}/ship`,
+      method: 'POST'
+    })
+  }
+
   // 取消订单
   cancelOrder(orderId) {
     return this.request({
-      url: `/orders/${orderId}`,
-      method: 'DELETE'
+      url: `/api/miniprogram/order/${orderId}/cancel`,
+      method: 'POST'
     })
   }
 
   // 获取未读订单数量（卖家）
   getUnreadOrdersCount() {
     return this.request({
-      url: '/api/unread_orders_count',
+      url: '/api/miniprogram/unread_count',
       method: 'GET'
+    })
+  }
+
+  // 获取我的商品列表
+  getMyProducts(status = 'all') {
+    return this.request({
+      url: '/api/miniprogram/my_products',
+      method: 'GET',
+      data: { status }
     })
   }
 

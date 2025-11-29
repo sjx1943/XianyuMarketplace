@@ -28,7 +28,12 @@ from controllers.miniprogram_auth_controller import (
     MiniprogramMessagesHandler,
     MiniprogramProductsListHandler,
     MiniprogramMarkMessagesReadHandler,
-    MiniprogramBroadcastsHandler
+    MiniprogramBroadcastsHandler,
+    MiniprogramOrdersHandler,
+    MiniprogramOrderDetailHandler,
+    MiniprogramOrderCancelHandler,
+    MiniprogramOrderShipHandler,
+    MiniprogramMyProductsHandler
 )
 from controllers.product_controller import ProductUploadHandler, HomePageHandler, ProductDetailHandler, ProductListHandler, ElseHomePageHandler, UpdateProductStatusHandler, DeleteProductHandler, PhysicalDeleteProductHandler, AdminDashboardHandler, ProductEditHandler
 from controllers.admin_controller import AdminLoginHandler, AdminDashboardHandler as NewAdminDashboardHandler, AdminUserManagementHandler, AdminProductManagementHandler, AdminOrderManagementHandler, AdminOrderDetailHandler
@@ -146,6 +151,11 @@ def make_app():
         (r"/api/miniprogram/chat/list", MiniprogramChatListHandler, dict(mongo=mongo)),
         (r"/api/miniprogram/products", MiniprogramProductsListHandler),
         (r"/api/miniprogram/broadcasts", MiniprogramBroadcastsHandler),
+        (r"/api/miniprogram/orders", MiniprogramOrdersHandler),
+        (r"/api/miniprogram/order/(\d+)", MiniprogramOrderDetailHandler),
+        (r"/api/miniprogram/order/(\d+)/cancel", MiniprogramOrderCancelHandler),
+        (r"/api/miniprogram/order/(\d+)/ship", MiniprogramOrderShipHandler),
+        (r"/api/miniprogram/my_products", MiniprogramMyProductsHandler),
         # 管理员路由
         (r"/admin/login", AdminLoginHandler),
         (r"/admin/dashboard", NewAdminDashboardHandler),

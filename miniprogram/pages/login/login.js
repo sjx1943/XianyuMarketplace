@@ -83,7 +83,7 @@ Page({
                   
                   setTimeout(function() {
                     wx.switchTab({
-                      url: '/pages/index/index'
+                      url: '/pages/product/list'
                     });
                   }, 1500);
                 }
@@ -190,7 +190,7 @@ Page({
           
           setTimeout(function() {
             wx.switchTab({
-              url: '/pages/index/index'
+              url: '/pages/product/list'
             });
           }, 1500);
         } else {
