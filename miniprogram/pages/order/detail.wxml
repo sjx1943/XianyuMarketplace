@@ -11,7 +11,7 @@
     </view>
 
     <view class="product-card" bindtap="goToProduct">
-      <image class="product-image" src="{{order.product_image || order.image}}" mode="aspectFill" />
+      <image class="product-image" src="{{productImage}}" mode="aspectFill" />
       <view class="product-info">
         <text class="product-name">{{order.product_name}}</text>
         <text class="product-quantity">x{{order.quantity}}</text>

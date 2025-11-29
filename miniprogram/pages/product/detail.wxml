@@ -70,7 +70,7 @@
         <text class="btn-icon">{{product.is_favorited ? '❤️' : '🤍'}}</text>
         <text class="btn-text">收藏</text>
       </button>
-      <button class="chat-btn" bindtap="onChat">
+      <button class="chat-btn" bindtap="onChat" style="flex: 1; margin-right: 20rpx">
         <text class="btn-icon">💬</text>
         <text>联系卖家</text>
       </button>

@@ -16,8 +16,14 @@ Page({
     this.setData({ loading: true })
     
     api.getOrderDetail(orderId).then(res => {
+      const order = res.order || res
+      const { getImageUrl } = require('../../utils/config.js')
+      const productImage = order.product_image || order.image
+      const imageUrl = productImage ? getImageUrl(productImage) : ''
+      
       this.setData({
-        order: res.order || res,
+        order: order,
+        productImage: imageUrl,
         loading: false
       })
     }).catch(err => {
