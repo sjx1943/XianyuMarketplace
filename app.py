@@ -18,7 +18,9 @@ from controllers.miniprogram_auth_controller import (
     MiniprogramLoginHandler, 
     MiniprogramUserInfoHandler,
     MiniprogramSetRoomNumberHandler,
-    MiniprogramUpdateProfileHandler
+    MiniprogramUpdateProfileHandler,
+    MiniprogramUnreadCountHandler,
+    MiniprogramProductUploadHandler
 )
 from controllers.product_controller import ProductUploadHandler, HomePageHandler, ProductDetailHandler, ProductListHandler, ElseHomePageHandler, UpdateProductStatusHandler, DeleteProductHandler, PhysicalDeleteProductHandler, AdminDashboardHandler, ProductEditHandler
 from controllers.admin_controller import AdminLoginHandler, AdminDashboardHandler as NewAdminDashboardHandler, AdminUserManagementHandler, AdminProductManagementHandler, AdminOrderManagementHandler, AdminOrderDetailHandler
@@ -126,6 +128,8 @@ def make_app():
         (r"/api/miniprogram/user/info", MiniprogramUserInfoHandler),
         (r"/api/miniprogram/set_room_number", MiniprogramSetRoomNumberHandler),
         (r"/api/miniprogram/update_profile", MiniprogramUpdateProfileHandler),
+        (r"/api/miniprogram/unread_count", MiniprogramUnreadCountHandler),
+        (r"/api/miniprogram/product/upload", MiniprogramProductUploadHandler, dict(app_settings=settings)),
         
         # 管理员路由
         (r"/admin/login", AdminLoginHandler),

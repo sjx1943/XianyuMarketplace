@@ -215,12 +215,16 @@ Page({
         } : {}
 
         try {
+          const token = wx.getStorageSync('token') || ''
           const result = await new Promise((resolve, reject) => {
             wx.uploadFile({
-              url: api.baseURL + '/product/upload',
+              url: api.baseURL + '/api/miniprogram/product/upload',
               filePath: images[i],
               name: 'images',
               formData: formData,
+              header: {
+                'Authorization': 'Bearer ' + token
+              },
               success: (res) => {
                 if (res.statusCode === 200) {
                   try {

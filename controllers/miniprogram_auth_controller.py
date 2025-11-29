@@ -458,3 +458,185 @@ class MiniprogramUpdateProfileHandler(tornado.web.RequestHandler):
     
     def on_finish(self):
         self.session.close()
+
+
+class MiniprogramUnreadCountHandler(tornado.web.RequestHandler):
+    """小程序获取未读消息数量接口"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def _get_user_id(self):
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    def get(self):
+        """获取未读消息和订单数量"""
+        try:
+            user_id = self._get_user_id()
+            
+            if not user_id:
+                self.write(json.dumps({'count': 0, 'unread_count': 0}))
+                return
+            
+            from models.order import Order
+            
+            pending_orders = self.session.query(Order).filter_by(
+                seller_id=int(user_id),
+                status='pending'
+            ).count()
+            
+            self.write(json.dumps({
+                'success': True,
+                'count': pending_orders,
+                'unread_count': pending_orders
+            }))
+            
+        except Exception as e:
+            logging.error(f"获取未读数量异常: {e}")
+            self.write(json.dumps({'count': 0, 'unread_count': 0}))
+    
+    def on_finish(self):
+        self.session.close()
+
+
+class MiniprogramProductUploadHandler(tornado.web.RequestHandler):
+    """小程序商品发布接口"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self, app_settings=None):
+        self.app_settings = app_settings or {}
+        self.session = Session()
+    
+    def _get_user_id(self):
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    def post(self):
+        """发布商品（支持图片上传）"""
+        import os
+        from models.product import Product
+        from models.product_image import ProductImage
+        
+        user_id = self._get_user_id()
+        
+        if not user_id:
+            self.set_status(401)
+            self.write(json.dumps({'success': False, 'error': '请先登录'}))
+            return
+        
+        try:
+            name = self.get_argument("name", "")
+            description = self.get_argument("description", "")
+            price = float(self.get_argument("price", 0))
+            quantity = int(self.get_argument("quantity", 1))
+            tag = self.get_argument("tag", "其他")
+            condition = self.get_argument("condition", "九成新")
+            images = self.request.files.get("images", [])
+            
+            if not name:
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '商品名称不能为空'}))
+                return
+            
+            if not images:
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '请至少上传一张图片'}))
+                return
+            
+            if len(images) > 9:
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '最多只能上传9张图片'}))
+                return
+            
+            if len(description) > 5000:
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '商品描述过长，最多5000字符'}))
+                return
+            
+            new_product = Product(
+                name=name,
+                description=description,
+                price=price,
+                user_id=int(user_id),
+                tag=tag,
+                image="",
+                quantity=quantity,
+                status="在售",
+                condition=condition
+            )
+            self.session.add(new_product)
+            self.session.flush()
+            
+            image_filenames = []
+            upload_path = self.app_settings.get("upload_path", "static/images")
+            
+            for i, image in enumerate(images):
+                filename = f"{new_product.id}_{i}_{image['filename']}"
+                filepath = os.path.join(upload_path, filename)
+                
+                os.makedirs(os.path.dirname(filepath) if os.path.dirname(filepath) else upload_path, exist_ok=True)
+                
+                with open(filepath, "wb") as f:
+                    f.write(image["body"])
+                
+                product_image = ProductImage(filename=filename, product_id=new_product.id)
+                self.session.add(product_image)
+                image_filenames.append(filename)
+            
+            if image_filenames:
+                new_product.image = image_filenames[0]
+            
+            self.session.commit()
+            
+            self.write(json.dumps({
+                'success': True,
+                'message': '商品发布成功',
+                'product_id': new_product.id,
+                'product': {
+                    'id': new_product.id,
+                    'name': new_product.name,
+                    'price': float(new_product.price),
+                    'image': new_product.image
+                }
+            }))
+            
+        except ValueError as e:
+            self.session.rollback()
+            self.set_status(400)
+            self.write(json.dumps({'success': False, 'error': '价格或数量格式不正确'}))
+        except Exception as e:
+            self.session.rollback()
+            logging.error(f"商品发布异常: {e}")
+            self.set_status(500)
+            self.write(json.dumps({'success': False, 'error': f'发布失败: {str(e)}'}))
+    
+    def on_finish(self):
+        self.session.close()
