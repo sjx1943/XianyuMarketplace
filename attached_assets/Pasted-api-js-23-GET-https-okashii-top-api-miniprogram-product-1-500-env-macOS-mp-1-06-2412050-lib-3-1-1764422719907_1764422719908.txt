@@ -1,0 +1,168 @@
+api.js:23 GET https://okashii.top/api/miniprogram/product/1 500(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+(anonymous) @ api.js:23
+request @ api.js:17
+getProductDetail @ api.js:175
+_callee$ @ detail.js? [sm]:39
+s @ VM870:1
+(anonymous) @ VM870:1
+(anonymous) @ VM870:1
+asyncGeneratorStep @ VM872:1
+c @ VM872:1
+(anonymous) @ VM872:1
+(anonymous) @ VM872:1
+loadProductDetail @ detail.js? [sm]:84
+onLoad @ detail.js? [sm]:22
+detail.js? [sm]:78 加载商品详情失败: Error: 'Comment' object has no attribute 'content'
+    at success (api.js:56)
+    at Object.success (WASubContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at Object.success (WASubContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at Function.I.forEach.v.<computed> (WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at p (WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1
+    at u (WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at Function.<anonymous> (WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at p (WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+_callee$ @ detail.js? [sm]:78
+s @ VM870:1
+(anonymous) @ VM870:1
+(anonymous) @ VM870:1
+asyncGeneratorStep @ VM872:1
+i @ VM872:1
+Promise.then (async)
+asyncGeneratorStep @ VM872:1
+c @ VM872:1
+(anonymous) @ VM872:1
+(anonymous) @ VM872:1
+loadProductDetail @ detail.js? [sm]:84
+onLoad @ detail.js? [sm]:22
+请注意 showLoading 与 hideLoading 必须配对使用
+_callee$ @ detail.js? [sm]:84
+s @ VM870:1
+(anonymous) @ VM870:1
+(anonymous) @ VM870:1
+asyncGeneratorStep @ VM872:1
+i @ VM872:1
+Promise.then (async)
+asyncGeneratorStep @ VM872:1
+c @ VM872:1
+(anonymous) @ VM872:1
+(anonymous) @ VM872:1
+loadProductDetail @ detail.js? [sm]:84
+onLoad @ detail.js? [sm]:22
+room.js? [sm]:125 WebSocket连接地址: wss://okashii.top/ws/chat_room?user_id=6
+room.js? [sm]:130 WebSocket连接中...
+api.js:23 GET https://okashii.top/api/miniprogram/messages?friend_id=undefined&limit=50 500(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+(anonymous) @ api.js:23
+request @ api.js:17
+_callee2$ @ room.js? [sm]:85
+s @ VM870:1
+(anonymous) @ VM870:1
+(anonymous) @ VM870:1
+asyncGeneratorStep @ VM872:1
+c @ VM872:1
+(anonymous) @ VM872:1
+(anonymous) @ VM872:1
+loadChatHistory @ room.js? [sm]:108
+onLoad @ room.js? [sm]:51
+room.js? [sm]:107 加载聊天记录失败: Error: 请求失败
+    at success (api.js:56)
+    at Object.success (WASubContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at Object.success (WASubContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at Function.I.forEach.v.<computed> (WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at p (WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1
+    at u (WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at Function.<anonymous> (WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at p (WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+_callee2$ @ room.js? [sm]:107
+s @ VM870:1
+(anonymous) @ VM870:1
+(anonymous) @ VM870:1
+asyncGeneratorStep @ VM872:1
+i @ VM872:1
+Promise.then (async)
+asyncGeneratorStep @ VM872:1
+c @ VM872:1
+(anonymous) @ VM872:1
+(anonymous) @ VM872:1
+loadChatHistory @ room.js? [sm]:108
+onLoad @ room.js? [sm]:51
+api.js:23 POST https://okashii.top/api/miniprogram/messages/mark_read 500(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+(anonymous) @ api.js:23
+request @ api.js:17
+markMessagesRead @ api.js:316
+_callee5$ @ room.js? [sm]:335
+s @ VM870:1
+(anonymous) @ VM870:1
+(anonymous) @ VM870:1
+asyncGeneratorStep @ VM872:1
+c @ VM872:1
+(anonymous) @ VM872:1
+(anonymous) @ VM872:1
+markAsRead @ room.js? [sm]:343
+onLoad @ room.js? [sm]:55
+请注意 showLoading 与 hideLoading 必须配对使用
+success @ api.js:33
+room.js? [sm]:343 标记已读失败: Error: invalid literal for int() with base 10: 'undefined'
+    at success (api.js:56)
+    at Object.success (WASubContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at Object.success (WASubContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at Function.I.forEach.v.<computed> (WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at p (WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1
+    at u (WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at Function.<anonymous> (WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at p (WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+_callee5$ @ room.js? [sm]:343
+s @ VM870:1
+(anonymous) @ VM870:1
+(anonymous) @ VM870:1
+asyncGeneratorStep @ VM872:1
+i @ VM872:1
+Promise.then (async)
+asyncGeneratorStep @ VM872:1
+c @ VM872:1
+(anonymous) @ VM872:1
+(anonymous) @ VM872:1
+markAsRead @ room.js? [sm]:343
+onLoad @ room.js? [sm]:55
+room.js? [sm]:140 WebSocket已连接
+api.js:23 POST https://okashii.top/api/miniprogram/messages 500(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+(anonymous) @ api.js:23
+request @ api.js:17
+sendMessage @ api.js:307
+_callee3$ @ room.js? [sm]:198
+s @ VM870:1
+(anonymous) @ VM870:1
+(anonymous) @ VM870:1
+asyncGeneratorStep @ VM872:1
+c @ VM872:1
+(anonymous) @ VM872:1
+(anonymous) @ VM872:1
+sendMessage @ room.js? [sm]:240
+room.js? [sm]:236 发送消息失败: Error: invalid literal for int() with base 10: 'undefined'
+    at success (api.js:56)
+    at Object.<anonymous> (WASubContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at Object.<anonymous> (WASubContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1
+    at Module.Wn (WASubContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at twe (WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at Object.success (WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at Function.I.forEach.v.<computed> (WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at p (WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1)
+    at WAServiceMainContext.js?t=wechat&s=1764422043509&v=3.11.3:1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+_callee3$ @ room.js? [sm]:236
+s @ VM870:1
+(anonymous) @ VM870:1
+(anonymous) @ VM870:1
+asyncGeneratorStep @ VM872:1
+i @ VM872:1
+Promise.then (async)
+asyncGeneratorStep @ VM872:1
+c @ VM872:1
+(anonymous) @ VM872:1
+(anonymous) @ VM872:1
+sendMessage @ room.js? [sm]:240
