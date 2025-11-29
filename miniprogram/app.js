@@ -4,6 +4,7 @@ App({
     userInfo: null,
     apiBase: '',
     wsBase: '',
+    baseUrl: 'https://okashii.top',
     isLogin: false,
     currentUserId: null,
     unreadCount: 0,
