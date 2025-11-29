@@ -339,5 +339,13 @@ Page({
     } catch (error) {
       console.error('标记已读失败:', error)
     }
+  },
+
+  // 点击广播进入商品详情
+  onBroadcastTap(e) {
+    const { productId } = e.currentTarget.dataset
+    wx.navigateTo({
+      url: `/pages/product/detail?id=${productId}`
+    })
   }
 })

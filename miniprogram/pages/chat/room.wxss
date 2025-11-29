@@ -226,3 +226,66 @@
 .send-btn::after {
   border: none;
 }
+
+/* 系统广播区块 */
+.broadcast-section {
+  background: #fff8f3;
+  padding: 20rpx;
+  margin: 20rpx 0;
+  border-radius: 12rpx;
+}
+
+.broadcast-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+  text-align: center;
+}
+
+.broadcast-item {
+  background: white;
+  padding: 16rpx 20rpx;
+  margin-bottom: 12rpx;
+  border-radius: 8rpx;
+  border-left: 4rpx solid #ff6b35;
+  transition: background-color 0.2s;
+}
+
+.broadcast-item:active {
+  background-color: #f8f9fa;
+}
+
+.broadcast-item:last-child {
+  margin-bottom: 0;
+}
+
+.broadcast-text {
+  font-size: 26rpx;
+  color: #333;
+  line-height: 1.6;
+}
+
+.broadcast-user {
+  color: #ff6b35;
+  font-weight: bold;
+}
+
+.broadcast-time-text {
+  color: #999;
+}
+
+.broadcast-time {
+  color: #999;
+}
+
+.broadcast-product {
+  color: #333;
+  font-weight: 500;
+}
+
+.broadcast-divider {
+  height: 1rpx;
+  background: #f0f0f0;
+  margin-top: 16rpx;
+}

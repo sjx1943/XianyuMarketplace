@@ -27,7 +27,8 @@ from controllers.miniprogram_auth_controller import (
     MiniprogramOrderConfirmHandler,
     MiniprogramMessagesHandler,
     MiniprogramProductsListHandler,
-    MiniprogramMarkMessagesReadHandler
+    MiniprogramMarkMessagesReadHandler,
+    MiniprogramBroadcastsHandler,dict(mongo=mongo))
 )
 from controllers.product_controller import ProductUploadHandler, HomePageHandler, ProductDetailHandler, ProductListHandler, ElseHomePageHandler, UpdateProductStatusHandler, DeleteProductHandler, PhysicalDeleteProductHandler, AdminDashboardHandler, ProductEditHandler
 from controllers.admin_controller import AdminLoginHandler, AdminDashboardHandler as NewAdminDashboardHandler, AdminUserManagementHandler, AdminProductManagementHandler, AdminOrderManagementHandler, AdminOrderDetailHandler
