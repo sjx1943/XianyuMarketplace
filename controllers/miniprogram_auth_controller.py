@@ -702,7 +702,7 @@ class MiniprogramProductDetailHandler(tornado.web.RequestHandler):
                     'id': seller.id,
                     'username': seller.username,
                     'room_number': seller.room_number or '未设置',
-                    'avatar': seller.wechat_avatar or '/images/default-avatar.png'
+                    'avatar': seller.wechat_avatar or ''
                 } if seller else None,
                 'comments': [{
                     'id': c.id,
@@ -942,7 +942,7 @@ class MiniprogramMessagesHandler(tornado.web.RequestHandler):
                     'id': friend.id,
                     'username': friend.username,
                     'room_number': friend.room_number or '未设置',
-                    'avatar': friend.wechat_avatar or '/images/default-avatar.png'
+                    'avatar': friend.wechat_avatar or ''
                 }
             }))
             
@@ -1201,7 +1201,7 @@ class MiniprogramChatListHandler(tornado.web.RequestHandler):
                     "friend_id": friendship.friend_id,
                     "username": friend.username,
                     "room_number": friend.room_number or "未设置",
-                    "avatar": friend.wechat_avatar or "/images/default-avatar.png",
+                    "avatar": friend.wechat_avatar or "",
                     "last_message": last_message_content[:50] if last_message_content else "暂无消息",
                     "last_time": last_message_time,
                     "unread_count": unread_count

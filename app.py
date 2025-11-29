@@ -141,6 +141,7 @@ def make_app():
         (r"/api/miniprogram/order/(\d+)/confirm", MiniprogramOrderConfirmHandler),
         (r"/api/miniprogram/messages", MiniprogramMessagesHandler, dict(mongo=mongo)),
         (r"/api/miniprogram/chat/list", MiniprogramChatListHandler, dict(mongo=mongo)),
+        (r"/api/miniprogram/products", MiniprogramProductsListHandler),
         
         # 管理员路由
         (r"/admin/login", AdminLoginHandler),
