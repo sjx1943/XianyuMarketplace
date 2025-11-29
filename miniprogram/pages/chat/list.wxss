@@ -47,11 +47,27 @@
   margin-bottom: 10rpx;
 }
 
+.friend-name-section {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
 .friend-name {
   font-size: 30rpx;
   font-weight: bold;
   color: #333;
-  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room-number {
+  font-size: 22rpx;
+  color: #999;
+  margin-top: 4rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
