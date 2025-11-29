@@ -10,7 +10,7 @@ const config = {
   api: {
     // 生产环境 - ⚠️ 必须修改为您的实际域名
     production: {
-      host: 'https://your-app.replit.app',  // ← 修改为您的 Replit 域名
+      host: 'https://okashii.top',  // ← 修改为您的 Replit 域名
       apiBase: '',  // 后端路由不需要 /api 前缀
       wsBase: '/ws'
     },
