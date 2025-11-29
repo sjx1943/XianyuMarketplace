@@ -146,7 +146,6 @@ def make_app():
         (r"/api/miniprogram/chat/list", MiniprogramChatListHandler, dict(mongo=mongo)),
         (r"/api/miniprogram/products", MiniprogramProductsListHandler),
         (r"/api/miniprogram/broadcasts", MiniprogramBroadcastsHandler),
-        
         # 管理员路由
         (r"/admin/login", AdminLoginHandler),
         (r"/admin/dashboard", NewAdminDashboardHandler),
