@@ -12,6 +12,7 @@ class API {
   // 通用请求方法
   request(options) {
     const app = getApp()
+    const token = wx.getStorageSync('token') || ''
     
     return new Promise((resolve, reject) => {
       wx.showLoading({
@@ -25,6 +26,7 @@ class API {
         data: options.data || {},
         header: {
           ...this.header,
+          'Authorization': token ? 'Bearer ' + token : '',
           ...options.header
         },
         success: (res) => {
@@ -68,6 +70,8 @@ class API {
 
   // 上传文件
   uploadFile(options) {
+    const token = wx.getStorageSync('token') || ''
+    
     return new Promise((resolve, reject) => {
       wx.showLoading({
         title: '上传中...',
@@ -79,6 +83,9 @@ class API {
         filePath: options.filePath,
         name: options.name || 'file',
         formData: options.formData || {},
+        header: {
+          'Authorization': token ? 'Bearer ' + token : ''
+        },
         success: (res) => {
           wx.hideLoading()
           

@@ -161,6 +161,8 @@ Page({
 
     self.setData({ loading: true });
 
+    var token = wx.getStorageSync('token') || '';
+    
     wx.request({
       url: app.globalData.apiBase + '/api/miniprogram/set_room_number',
       method: 'POST',
@@ -168,7 +170,8 @@ Page({
         room_number: roomNumber
       }),
       header: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
       },
       success: function(res) {
         self.setData({ loading: false });
