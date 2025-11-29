@@ -188,7 +188,6 @@ Page({
     // 确保消息有时间戳
     const now = new Date()
     message.time = message.time || now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-    message.timestamp = message.timestamp || now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     messages.push(message)
     this.setData({ messages })
     this.scrollToBottom()

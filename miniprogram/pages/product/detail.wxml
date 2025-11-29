@@ -79,15 +79,14 @@
     
     <!-- 自己的商品：显示编辑、删除按钮 -->
     <block wx:else>
-      <button class="action-btn" bindtap="onEdit">
+      <button class="action-btn" bindtap="onEdit" style="flex: 1; margin-right: 20rpx">
         <text class="btn-icon">✏️</text>
         <text class="btn-text">编辑</text>
       </button>
-      <button class="action-btn delete-btn" bindtap="onDelete">
+      <button class="action-btn delete-btn" bindtap="onDelete" style="flex: 1">
         <text class="btn-icon">🗑️</text>
         <text class="btn-text">删除</text>
       </button>
-      <view class="owner-tag">我的商品</view>
     </block>
   </view>
 </view>

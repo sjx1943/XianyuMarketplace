@@ -71,7 +71,7 @@
           </view>
         </view>
         
-        <text class="message-time">{{item.time}}{{item.timestamp ? ' ' + item.timestamp : ''}}</text>
+        <text class="message-time">{{item.time}}</text>
       </view>
     </view>
 

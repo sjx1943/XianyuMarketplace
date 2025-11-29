@@ -966,7 +966,9 @@ class MiniprogramMessagesHandler(tornado.web.RequestHandler):
             for msg in messages:
                 ts = msg.get('timestamp')
                 if isinstance(ts, datetime.datetime):
-                    time_str = ts.strftime('%H:%M')
+                    # 转换为北京时间（UTC+8）
+                    beijing_time = ts + datetime.timedelta(hours=8)
+                    time_str = beijing_time.strftime('%H:%M')
                 else:
                     time_str = ''
                 
@@ -978,7 +980,6 @@ class MiniprogramMessagesHandler(tornado.web.RequestHandler):
                     'content': msg.get('message', ''),
                     'message': msg.get('message', ''),
                     'type': 'text',
-                    'timestamp': msg.get('timestamp').strftime('%Y-%m-%d %H:%M:%S') if isinstance(msg.get('timestamp'), datetime.datetime) else str(msg.get('timestamp', '')),
                     'time': time_str,
                     'status': msg.get('status', 'read')
                 })
