@@ -47,12 +47,19 @@ The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
 
 ## Recent Changes (November 29, 2025)
 
-### Critical Bug Fixes - Image Loading (Production)
+### Critical Bug Fixes - Image Loading (Production) - FINAL FIX
 -   **Image Handler Issue**: Fixed 500 errors in production mini program image loading
--   **Root Cause**: `/images/` route had handler compatibility issues with WeChat mini program
--   **Solution**: Migrated all image requests from `/images/{filename}` to `/static/images/{filename}` to use the proven working `/static/` route with `MyStaticFileHandler` (URL decoder)
--   **Changes**: Updated all WXML, JS, and utility files across miniprogram/ directory to call `/static/images/` instead of `/images/`
--   **Result**: All product and avatar images now load correctly via the `/static/` route which properly handles URL-encoded filenames (including Chinese characters)
+-   **Root Cause**: WeChat Mini Program `<image>` tags interpret relative paths (like `/static/images/xxx`) as local resources, not remote server URLs
+-   **Solution**: Created `getImageUrl()` and `getDefaultAvatarUrl()` utility functions in `config.js` to convert filenames to complete absolute URLs (e.g., `https://okashii.top/static/images/{filename}`)
+-   **Changes Made**:
+    -   Added `getImageUrl()` and `getDefaultAvatarUrl()` functions to `miniprogram/utils/config.js`
+    -   Modified `list.js` to process product images with `getImageUrl()`
+    -   Modified `detail.js` to use `getImageUrl()` for product images and seller avatars
+    -   Modified `chat/list.js` and `chat/room.js` to process avatar URLs
+    -   Modified `profile/profile.js` to handle user avatar URLs
+    -   Modified `utils/share.js` to use complete URLs for share images
+    -   Updated all WXML templates to use processed URLs directly (removed relative path prefixes)
+-   **Result**: All product images, user avatars, and share images now load correctly in production environment via complete absolute URLs
 
 ### Mini Program Fixes
 -   **WebSocket Path**: Fixed duplication issue (`/ws/ws/` -> `/ws/`)
@@ -61,7 +68,7 @@ The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
 -   **Publish Button**: Added "发布商品" text alongside "+" icon with improved styling
 -   **Navigation**: Fixed profile page navigation to use `wx.switchTab()` for tabBar pages
 -   **Categories**: Synchronized categories across list.js and publish.js (数码产品, 家用电器, 服装鞋包, 图书音像, 运动户外, 美妆个护, 家居用品, 其他)
--   **Image URLs**: Changed from hardcoded production domain to relative paths `/images/{filename}` for both dev and production environments
+-   **Image URLs**: All image URLs now use complete absolute paths via `getImageUrl()` function, supporting both dev (`http://localhost:5000`) and production (`https://okashii.top`) environments
 -   **Development Mode**: Set `isDev = true` in config.js for proper localhost development URLs (http://localhost:5000)
 -   **System Broadcasts**: Added 📢 系统广播 section to chat/room page showing latest 10 product uploads with room number, time, and product name
 -   **Chat Room Fixes**: Fixed undefined orderId error, added default avatar image, corrected orderId/productId null handling
