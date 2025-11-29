@@ -193,8 +193,8 @@ Page({
 
     try {
       const data = await api.sendMessage({
-        receiver_id: this.data.friendId,
-        content: content,
+        friend_id: this.data.friendId,
+        message: content,
         type: 'text'
       })
 
