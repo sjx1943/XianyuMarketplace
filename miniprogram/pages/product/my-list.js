@@ -47,21 +47,23 @@ Page({
       
       const data = await api.getMyProducts(this.data.currentTab)
       
-      if (data && data.products) {
+      if (data && data.success && data.products) {
         const products = data.products.map(p => ({
           ...p,
-          imageUrl: p.image ? getImageUrl(p.image) : '',
+          imageUrl: p.image ? getImageUrl(p.image) : (p.images && p.images[0] ? getImageUrl(p.images[0]) : ''),
           priceText: `¥${p.price}`
         }))
         
-        const sellingCount = products.filter(p => p.status === '在售').length
-        const soldCount = products.filter(p => p.status === '已售完').length
+        const allData = await api.getMyProducts('all')
+        const allProducts = allData.success ? allData.products : []
+        const sellingCount = allProducts.filter(p => p.status === '在售').length
+        const soldCount = allProducts.filter(p => p.status === '已售完').length
         
         this.setData({
           products: products,
           loading: false,
           stats: {
-            all: products.length,
+            all: allProducts.length,
             selling: sellingCount,
             sold: soldCount
           }
