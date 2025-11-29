@@ -44,3 +44,20 @@ The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
 -   **SMTP (Email Service)**: For password reset emails, supporting SSL/TLS (`SMTP_SERVER`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_USE_SSL`).
 -   **WeChat Open Platform OAuth**: For web WeChat login (`WECHAT_APP_ID`, `WECHAT_APP_SECRET`, `WECHAT_REDIRECT_URI`).
 -   **WeChat Mini Program**: Requires separate registration and AppID/AppSecret from WeChat Mini Program platform (`WX_MINIPROGRAM_APP_ID`, `WX_MINIPROGRAM_APP_SECRET`).
+
+## Recent Changes (November 29, 2025)
+
+### Mini Program Fixes
+-   **WebSocket Path**: Fixed duplication issue (`/ws/ws/` -> `/ws/`)
+-   **TabBar**: Reduced to 4 tabs (removed "首页"), now: 物品, 消息, 订单, 我的
+-   **Publish Button**: Added "发布商品" text alongside "+" icon with improved styling
+-   **Navigation**: Fixed profile page navigation to use `wx.switchTab()` for tabBar pages
+-   **Categories**: Synchronized categories across list.js and publish.js (数码产品, 家用电器, 服装鞋包, 图书音像, 运动户外, 美妆个护, 家居用品, 其他)
+-   **Image URLs**: Added `/images/` route for direct image access, frontend now uses `https://okashii.top/images/{filename}`
+
+### Backend Updates
+-   **New API**: `/api/miniprogram/messages/mark_read` for marking chat messages as read
+-   **Image Route**: Added `/images/(.*)` static file route mapping to `mystatics/images/`
+
+### Admin Script
+-   Created `scripts/add_admin_prod.py` for production VPS admin account setup
