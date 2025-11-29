@@ -15,18 +15,18 @@
 
   <!-- 我的商品统计 -->
   <view class="stats-card">
-    <navigator class="stat-item" url="/pages/product/my-list?type=selling">
+    <view class="stat-item" bindtap="goToMyProducts">
       <text class="stat-number">{{stats.selling || 0}}</text>
       <text class="stat-label">在售</text>
-    </navigator>
-    <navigator class="stat-item" url="/pages/product/my-list?type=sold">
+    </view>
+    <view class="stat-item" bindtap="goToMyProducts">
       <text class="stat-number">{{stats.sold || 0}}</text>
       <text class="stat-label">已售</text>
-    </navigator>
-    <navigator class="stat-item" url="/pages/product/my-list?type=favorites">
+    </view>
+    <view class="stat-item" bindtap="goToMyProducts">
       <text class="stat-number">{{stats.favorites || 0}}</text>
       <text class="stat-label">收藏</text>
-    </navigator>
+    </view>
   </view>
 
   <!-- 功能菜单 -->

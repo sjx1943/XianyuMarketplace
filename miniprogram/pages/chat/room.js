@@ -62,7 +62,7 @@ Page({
       this.setData({ loading: true })
 
       const data = await api.request({
-        url: '/api/messages',
+        url: '/api/miniprogram/messages',
         method: 'GET',
         data: {
           friend_id: this.data.friendId,
@@ -73,7 +73,7 @@ Page({
       if (data && data.messages) {
         this.setData({
           messages: data.messages || [],
-          friendAvatar: data.friend_avatar || '/images/default-avatar.png',
+          friendAvatar: data.friend?.avatar || '/images/default-avatar.png',
           loading: false
         })
 

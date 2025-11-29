@@ -173,7 +173,7 @@ class API {
   // 获取商品详情
   getProductDetail(id) {
     return this.request({
-      url: `/product/detail/${id}`,
+      url: `/api/miniprogram/product/${id}`,
       method: 'GET'
     })
   }
@@ -200,7 +200,7 @@ class API {
   // 删除商品
   deleteProduct(id) {
     return this.request({
-      url: `/api/product/${id}/delete`,
+      url: `/api/miniprogram/product/${id}/delete`,
       method: 'POST'
     })
   }
@@ -237,7 +237,7 @@ class API {
   // 确认订单（发货/收货）
   confirmOrder(orderId) {
     return this.request({
-      url: `/api/order/${orderId}/confirm`,
+      url: `/api/miniprogram/order/${orderId}/confirm`,
       method: 'POST'
     })
   }
@@ -279,7 +279,7 @@ class API {
   // 发送消息
   sendMessage(data) {
     return this.request({
-      url: '/api/send_message',
+      url: '/api/miniprogram/messages',
       method: 'POST',
       data: data
     })

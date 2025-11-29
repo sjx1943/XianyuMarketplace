@@ -643,6 +643,392 @@ class MiniprogramProductUploadHandler(tornado.web.RequestHandler):
         self.session.close()
 
 
+class MiniprogramProductDetailHandler(tornado.web.RequestHandler):
+    """小程序商品详情接口"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def _get_user_id(self):
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    def get(self, product_id):
+        """获取商品详情"""
+        from models.product import Product, ProductImage
+        from models.comment import Comment
+        
+        try:
+            product = self.session.query(Product).filter_by(id=product_id).first()
+            
+            if not product or product.status == '已删除':
+                self.set_status(404)
+                self.write(json.dumps({'success': False, 'error': '商品不存在或已被删除'}))
+                return
+            
+            seller = self.session.query(User).filter_by(id=product.user_id).first()
+            images = self.session.query(ProductImage).filter_by(product_id=product_id).all()
+            
+            comments = self.session.query(Comment).filter_by(product_id=product_id).order_by(Comment.id.desc()).limit(10).all()
+            
+            product_data = {
+                'id': product.id,
+                'name': product.name,
+                'description': product.description,
+                'price': float(product.price),
+                'quantity': product.quantity,
+                'status': product.status,
+                'condition': product.condition or '九成新',
+                'tag': product.tag,
+                'image': product.image,
+                'images': [{'filename': img.filename} for img in images],
+                'created_at': product.created_at.strftime('%Y-%m-%d %H:%M') if product.created_at else '',
+                'seller_id': product.user_id,
+                'seller': {
+                    'id': seller.id,
+                    'username': seller.username,
+                    'room_number': seller.room_number or '未设置',
+                    'avatar': seller.wechat_avatar or '/images/default-avatar.png'
+                } if seller else None,
+                'comments': [{
+                    'id': c.id,
+                    'content': c.content,
+                    'rating': c.rating,
+                    'created_at': c.created_at.strftime('%Y-%m-%d %H:%M') if c.created_at else ''
+                } for c in comments]
+            }
+            
+            self.write(json.dumps({'success': True, 'product': product_data}))
+            
+        except Exception as e:
+            logging.error(f"获取商品详情异常: {e}")
+            self.set_status(500)
+            self.write(json.dumps({'success': False, 'error': str(e)}))
+    
+    def on_finish(self):
+        self.session.close()
+
+
+class MiniprogramProductDeleteHandler(tornado.web.RequestHandler):
+    """小程序商品删除接口"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def _get_user_id(self):
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    def post(self, product_id):
+        """删除商品（软删除）"""
+        from models.product import Product
+        
+        user_id_str = self._get_user_id()
+        if not user_id_str:
+            self.set_status(401)
+            self.write(json.dumps({'success': False, 'error': '请先登录'}))
+            return
+        
+        user_id = int(user_id_str)
+        
+        try:
+            product = self.session.query(Product).filter_by(id=product_id).first()
+            
+            if not product:
+                self.set_status(404)
+                self.write(json.dumps({'success': False, 'error': '商品不存在'}))
+                return
+            
+            if product.user_id != user_id:
+                self.set_status(403)
+                self.write(json.dumps({'success': False, 'error': '无权删除此商品'}))
+                return
+            
+            product.status = '已删除'
+            self.session.commit()
+            
+            self.write(json.dumps({'success': True, 'message': '商品删除成功'}))
+            
+        except Exception as e:
+            self.session.rollback()
+            logging.error(f"删除商品异常: {e}")
+            self.set_status(500)
+            self.write(json.dumps({'success': False, 'error': str(e)}))
+    
+    def on_finish(self):
+        self.session.close()
+
+
+class MiniprogramOrderConfirmHandler(tornado.web.RequestHandler):
+    """小程序订单确认收货接口"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def _get_user_id(self):
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    def post(self, order_id):
+        """确认收货"""
+        from models.order import Order
+        
+        user_id_str = self._get_user_id()
+        if not user_id_str:
+            self.set_status(401)
+            self.write(json.dumps({'success': False, 'error': '请先登录'}))
+            return
+        
+        user_id = int(user_id_str)
+        
+        try:
+            order = self.session.query(Order).filter_by(id=order_id).first()
+            
+            if not order:
+                self.set_status(404)
+                self.write(json.dumps({'success': False, 'error': '订单不存在'}))
+                return
+            
+            if order.user_id != user_id:
+                self.set_status(403)
+                self.write(json.dumps({'success': False, 'error': '只有买家可以确认收货'}))
+                return
+            
+            if order.status != 'shipped':
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '订单状态不是已发货，无法确认收货'}))
+                return
+            
+            order.status = 'completed'
+            order.completed_at = datetime.datetime.now()
+            self.session.commit()
+            
+            self.write(json.dumps({'success': True, 'message': '确认收货成功'}))
+            
+        except Exception as e:
+            self.session.rollback()
+            logging.error(f"确认收货异常: {e}")
+            self.set_status(500)
+            self.write(json.dumps({'success': False, 'error': str(e)}))
+    
+    def on_finish(self):
+        self.session.close()
+
+
+class MiniprogramMessagesHandler(tornado.web.RequestHandler):
+    """小程序聊天消息接口"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self, mongo):
+        self.mongo = mongo
+        self.session = Session()
+    
+    def _get_user_id(self):
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    @tornado.gen.coroutine
+    def get(self):
+        """获取与指定好友的聊天记录"""
+        from models.friendship import Friendship
+        
+        user_id_str = self._get_user_id()
+        if not user_id_str:
+            self.set_status(401)
+            self.write(json.dumps({'success': False, 'error': '请先登录'}))
+            return
+        
+        user_id = int(user_id_str)
+        friend_id = self.get_argument('friend_id', None)
+        
+        if not friend_id:
+            self.set_status(400)
+            self.write(json.dumps({'success': False, 'error': '缺少friend_id参数'}))
+            return
+        
+        friend_id = int(friend_id)
+        
+        try:
+            friend = self.session.query(User).filter_by(id=friend_id).first()
+            if not friend:
+                self.set_status(404)
+                self.write(json.dumps({'success': False, 'error': '用户不存在'}))
+                return
+            
+            messages_cursor = self.mongo.chat_messages.find({
+                "$or": [
+                    {"from_user_id": user_id, "to_user_id": friend_id},
+                    {"from_user_id": friend_id, "to_user_id": user_id}
+                ]
+            }).sort("timestamp", 1).limit(100)
+            
+            messages = yield messages_cursor.to_list(length=100)
+            
+            result = []
+            for msg in messages:
+                result.append({
+                    'id': str(msg.get('_id', '')),
+                    'from_user_id': msg.get('from_user_id'),
+                    'to_user_id': msg.get('to_user_id'),
+                    'message': msg.get('message', ''),
+                    'timestamp': msg.get('timestamp').strftime('%Y-%m-%d %H:%M:%S') if isinstance(msg.get('timestamp'), datetime.datetime) else str(msg.get('timestamp', '')),
+                    'status': msg.get('status', 'read')
+                })
+            
+            yield self.mongo.chat_messages.update_many(
+                {"from_user_id": friend_id, "to_user_id": user_id, "status": "unread"},
+                {"$set": {"status": "read"}}
+            )
+            
+            self.write(json.dumps({
+                'success': True,
+                'messages': result,
+                'friend': {
+                    'id': friend.id,
+                    'username': friend.username,
+                    'room_number': friend.room_number or '未设置',
+                    'avatar': friend.wechat_avatar or '/images/default-avatar.png'
+                }
+            }))
+            
+        except Exception as e:
+            logging.error(f"获取消息异常: {e}")
+            self.write(json.dumps({'success': False, 'error': str(e), 'messages': []}))
+    
+    @tornado.gen.coroutine
+    def post(self):
+        """发送消息"""
+        from models.friendship import Friendship
+        
+        user_id_str = self._get_user_id()
+        if not user_id_str:
+            self.set_status(401)
+            self.write(json.dumps({'success': False, 'error': '请先登录'}))
+            return
+        
+        user_id = int(user_id_str)
+        
+        try:
+            data = json.loads(self.request.body)
+            friend_id = data.get('friend_id')
+            message = data.get('message', '').strip()
+            
+            if not friend_id or not message:
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '缺少必要参数'}))
+                return
+            
+            friend_id = int(friend_id)
+            
+            user = self.session.query(User).filter_by(id=user_id).first()
+            friend = self.session.query(User).filter_by(id=friend_id).first()
+            
+            if not user or not friend:
+                self.set_status(404)
+                self.write(json.dumps({'success': False, 'error': '用户不存在'}))
+                return
+            
+            friendship = self.session.query(Friendship).filter_by(user_id=user_id, friend_id=friend_id).first()
+            if not friendship:
+                friendship = Friendship(user_id=user_id, friend_id=friend_id)
+                self.session.add(friendship)
+            
+            reverse_friendship = self.session.query(Friendship).filter_by(user_id=friend_id, friend_id=user_id).first()
+            if not reverse_friendship:
+                reverse_friendship = Friendship(user_id=friend_id, friend_id=user_id)
+                self.session.add(reverse_friendship)
+            
+            self.session.commit()
+            
+            china_tz = datetime.timezone(datetime.timedelta(hours=8))
+            now = datetime.datetime.now(china_tz)
+            
+            message_doc = {
+                "from_user_id": user_id,
+                "from_username": user.username,
+                "to_user_id": friend_id,
+                "message": message,
+                "timestamp": now,
+                "status": "unread"
+            }
+            
+            yield self.mongo.chat_messages.insert_one(message_doc)
+            
+            self.write(json.dumps({
+                'success': True,
+                'message': '发送成功',
+                'data': {
+                    'from_user_id': user_id,
+                    'to_user_id': friend_id,
+                    'message': message,
+                    'timestamp': now.strftime('%Y-%m-%d %H:%M:%S')
+                }
+            }))
+            
+        except Exception as e:
+            logging.error(f"发送消息异常: {e}")
+            self.set_status(500)
+            self.write(json.dumps({'success': False, 'error': str(e)}))
+    
+    def on_finish(self):
+        self.session.close()
+
+
 class MiniprogramChatListHandler(tornado.web.RequestHandler):
     """小程序聊天列表接口"""
     
