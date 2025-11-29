@@ -9,10 +9,49 @@ from models.user import User
 import urllib.parse
 import tornado.web
 import logging
+import os
+
 class MyStaticFileHandler(tornado.web.StaticFileHandler):
     def validate_absolute_path(self, root, absolute_path):
-        absolute_path = urllib.parse.unquote(absolute_path)
-        return super().validate_absolute_path(root, absolute_path)
+        # URL 解码处理，支持多层编码
+        decoded_path = urllib.parse.unquote(absolute_path)
+        
+        # 处理可能的双重编码或其他编码问题
+        try:
+            # 尝试构建完整路径
+            abs_path = os.path.abspath(os.path.join(root, decoded_path))
+            root_abs = os.path.abspath(root)
+            
+            # 检查路径是否在根目录内
+            if not abs_path.startswith(root_abs):
+                logging.warning(f"路径超出根目录范围: {abs_path} (根目录: {root_abs})")
+                raise tornado.web.HTTPError(404)
+            
+            # 检查文件是否存在
+            if not os.path.exists(abs_path):
+                # 尝试查找相似的文件（处理编码问题）
+                if os.path.isdir(root):
+                    for filename in os.listdir(root):
+                        if filename.lower() == os.path.basename(decoded_path).lower():
+                            abs_path = os.path.join(root, filename)
+                            logging.info(f"找到匹配文件: {abs_path}")
+                            break
+            
+            if not os.path.exists(abs_path):
+                logging.warning(f"文件不存在: {abs_path} (原始路径: {absolute_path})")
+                raise tornado.web.HTTPError(404)
+            
+            if not os.path.isfile(abs_path):
+                logging.warning(f"路径不是文件: {abs_path}")
+                raise tornado.web.HTTPError(404)
+            
+            return abs_path
+            
+        except tornado.web.HTTPError:
+            raise
+        except Exception as e:
+            logging.error(f"路径验证异常: {e}, 路径: {absolute_path}")
+            raise tornado.web.HTTPError(404)
 
 
 Session = sessionmaker(bind=engine)
