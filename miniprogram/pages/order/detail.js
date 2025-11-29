@@ -127,7 +127,7 @@ Page({
   contactSeller() {
     const sellerId = this.data.order.seller_id
     wx.navigateTo({
-      url: `/pages/chat/room?userId=${sellerId}`
+      url: `/pages/chat/room?friendId=${sellerId}`
     })
   },
 
