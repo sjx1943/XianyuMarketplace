@@ -31,8 +31,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 复制应用代码
 COPY . .
 
-# 创建日志目录
-RUN mkdir -p /app/logs && chmod 755 /app/logs
+# 创建日志目录和图片上传目录
+RUN mkdir -p /app/logs /app/mystatics/images && \
+    chmod 755 /app/logs /app/mystatics/images
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \

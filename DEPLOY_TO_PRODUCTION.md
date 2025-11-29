@@ -329,6 +329,56 @@ sudo docker-compose -f docker-compose-prod.yml logs app
 | `DatabaseError` | 数据库迁移失败 | 检查SQL语句，手动修复数据库 |
 | `ConnectionRefused` | 应用无法启动 | 查看日志，检查配置文件 |
 | `Port already in use` | 端口被占用 | 重启Docker，杀死旧进程 |
+| 用户上传图片丢失 | Docker Volume 配置问题 | 参见下方【图片持久化说明】 |
+
+### ⚠️ 重要：图片持久化说明
+
+用户上传的商品图片存储在 `/app/mystatics/images/` 目录中。为防止重新部署后图片丢失，请注意以下几点：
+
+**1. 路径映射关系**
+
+| URL 路径 | 实际存储位置 | Docker Volume |
+|---------|-------------|---------------|
+| `/static/images/xxx.png` | `mystatics/images/xxx.png` | `app_uploads` |
+
+> `/static/images/` 是 Tornado 框架的 URL 前缀，实际文件存储在 `mystatics/images/` 目录
+
+**2. 正确的 Volume 配置**
+
+```yaml
+# docker-compose-prod.yml 中的配置
+volumes:
+  - app_uploads:/app/mystatics/images  # ✅ 正确：使用 Named Volume
+  - app_logs:/app/logs
+
+# ❌ 错误：不要使用整体挂载覆盖
+# volumes:
+#   - ./:/app                          # 这会导致图片丢失！
+#   - app_uploads:/app/mystatics/images
+```
+
+**3. 重新部署时保留图片**
+
+```bash
+# ✅ 正确：只重建容器，保留 volumes
+docker-compose -f docker-compose-prod.yml up -d --build
+
+# ❌ 错误：这会删除所有 volumes（包括图片）！
+docker-compose -f docker-compose-prod.yml down -v
+```
+
+**4. 备份用户图片**
+
+```bash
+# 查看当前图片 volume
+docker volume inspect secondhand_app_uploads
+
+# 备份图片到主机
+docker cp secondhand-app:/app/mystatics/images ./backup_images
+
+# 从备份恢复图片
+docker cp ./backup_images/. secondhand-app:/app/mystatics/images/
+```
 
 ### 紧急回滚
 

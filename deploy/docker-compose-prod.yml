@@ -104,9 +104,10 @@ services:
       - "8000:8000"
     
     volumes:
-      - ./:/app
-      - app_uploads:/app/mystatics/images
-      - app_logs:/app/logs
+      # 注意：不要使用 ./:/app 整体挂载，这会导致图片丢失
+      # 而是只挂载需要持久化的目录
+      - app_uploads:/app/mystatics/images  # 用户上传的图片（持久化存储）
+      - app_logs:/app/logs                  # 应用日志
     
     depends_on:
       postgres:
