@@ -89,14 +89,6 @@
   border-bottom-left-radius: 4rpx;
 }
 
-/* 图片消息 */
-.message-image {
-  max-width: 400rpx;
-  border-radius: 12rpx;
-  display: block;
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
-}
-
 /* 商品卡片 */
 .product-card {
   background: white;
@@ -186,26 +178,6 @@
   gap: 15rpx;
   border-top: 1rpx solid #f0f0f0;
   box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
-}
-
-.tool-btn {
-  width: 70rpx;
-  height: 70rpx;
-  background: #f8f9fa;
-  border-radius: 12rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  padding: 0;
-}
-
-.tool-btn::after {
-  border: none;
-}
-
-.tool-btn .icon {
-  font-size: 36rpx;
 }
 
 .message-input {

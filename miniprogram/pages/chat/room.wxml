@@ -47,15 +47,6 @@
           <text>{{item.content}}</text>
         </view>
         
-        <!-- 图片消息 -->
-        <image 
-          wx:if="{{item.type === 'image'}}"
-          class="message-image" 
-          src="{{item.content}}" 
-          mode="widthFix"
-          bindtap="previewImage"
-          data-url="{{item.content}}"
-        ></image>
         
         <!-- 商品卡片 -->
         <view 
@@ -88,10 +79,6 @@
 
   <!-- 输入框 -->
   <view class="input-bar">
-    <button class="tool-btn" bindtap="chooseImage">
-      <text class="icon">🖼</text>
-    </button>
-    
     <input 
       class="message-input"
       type="text"
