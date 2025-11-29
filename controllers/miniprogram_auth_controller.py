@@ -744,7 +744,7 @@ class MiniprogramProductDetailHandler(tornado.web.RequestHandler):
                 } if seller else None,
                 'comments': [{
                     'id': c.id,
-                    'content': c.content,
+                    'text': c.text,
                     'rating': c.rating,
                     'created_at': c.created_at.strftime('%Y-%m-%d %H:%M') if hasattr(c, 'created_at') and c.created_at else ''
                 } for c in comments]
@@ -934,12 +934,17 @@ class MiniprogramMessagesHandler(tornado.web.RequestHandler):
         user_id = int(user_id_str)
         friend_id = self.get_argument('friend_id', None)
         
-        if not friend_id:
+        if not friend_id or friend_id == 'undefined':
             self.set_status(400)
             self.write(json.dumps({'success': False, 'error': '缺少friend_id参数'}))
             return
         
-        friend_id = int(friend_id)
+        try:
+            friend_id = int(friend_id)
+        except (ValueError, TypeError):
+            self.set_status(400)
+            self.write(json.dumps({'success': False, 'error': '无效的friend_id参数'}))
+            return
         
         try:
             friend = self.session.query(User).filter_by(id=friend_id).first()
@@ -1107,12 +1112,17 @@ class MiniprogramMarkMessagesReadHandler(tornado.web.RequestHandler):
             data = json.loads(self.request.body)
             friend_id = data.get('friend_id')
             
-            if not friend_id:
+            if not friend_id or friend_id == 'undefined':
                 self.set_status(400)
                 self.write(json.dumps({'success': False, 'error': '缺少friend_id参数'}))
                 return
             
-            friend_id = int(friend_id)
+            try:
+                friend_id = int(friend_id)
+            except (ValueError, TypeError):
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '无效的friend_id参数'}))
+                return
             
             result = yield self.mongo.chat_messages.update_many(
                 {"from_user_id": friend_id, "to_user_id": user_id, "status": "unread"},
