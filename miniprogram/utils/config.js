@@ -73,10 +73,32 @@ function getWsBase() {
 const API_BASE = getApiBase()
 const WS_BASE = getWsBase()
 
+// 获取图片完整URL（用于小程序 image 标签）
+function getImageUrl(filename) {
+  if (!filename) return ''
+  // 如果已经是完整URL，直接返回
+  if (filename.startsWith('http://') || filename.startsWith('https://')) {
+    return filename
+  }
+  // 否则拼接完整URL
+  const env = isDev ? 'development' : 'production'
+  const host = config.api[env].host
+  return `${host}/static/images/${filename}`
+}
+
+// 获取默认头像URL
+function getDefaultAvatarUrl() {
+  const env = isDev ? 'development' : 'production'
+  const host = config.api[env].host
+  return `${host}/static/images/default-avatar.png`
+}
+
 module.exports = {
   config,
   getApiBase,
   getWsBase,
+  getImageUrl,
+  getDefaultAvatarUrl,
   isDev,
   API_BASE,
   WS_BASE

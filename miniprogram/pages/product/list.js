@@ -1,5 +1,5 @@
 const api = require('../../utils/api.js')
-const config = require('../../utils/config.js')
+const { getImageUrl, getDefaultAvatarUrl } = require('../../utils/config.js')
 
 Page({
   data: {
@@ -57,7 +57,12 @@ Page({
     }
 
     return api.getProducts(params).then(res => {
-      const newProducts = res.products || res.data || []
+      const rawProducts = res.products || res.data || []
+      // 处理每个商品的图片URL为完整路径
+      const newProducts = rawProducts.map(item => ({
+        ...item,
+        image: getImageUrl(item.image)
+      }))
       const products = this.data.page === 1 ? newProducts : [...this.data.products, ...newProducts]
       
       this.setData({
