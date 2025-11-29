@@ -1,6 +1,6 @@
 // 配置文件
 // ⚠️ 部署前必须修改 production.host 为您的实际后端域名
-const isDev = true // 生产环境设为 false，开发调试设为 true
+const isDev = false // 生产环境设为 false，开发调试设为 true
 
 // API配置
 const config = {
