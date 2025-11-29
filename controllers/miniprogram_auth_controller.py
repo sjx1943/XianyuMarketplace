@@ -28,6 +28,10 @@ WX_LOGIN_URL = 'https://api.weixin.qq.com/sns/jscode2session'
 class MiniprogramLoginHandler(tornado.web.RequestHandler):
     """小程序微信登录处理器"""
     
+    def check_xsrf_cookie(self):
+        """禁用XSRF检查（小程序无法携带XSRF token）"""
+        pass
+    
     def initialize(self):
         self.session = Session()
     
@@ -187,6 +191,10 @@ class MiniprogramLoginHandler(tornado.web.RequestHandler):
 
 class MiniprogramUserInfoHandler(tornado.web.RequestHandler):
     """小程序获取用户信息接口"""
+    
+    def check_xsrf_cookie(self):
+        """禁用XSRF检查（小程序无法携带XSRF token）"""
+        pass
     
     def initialize(self):
         self.session = Session()
