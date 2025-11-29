@@ -1,5 +1,6 @@
 // pages/order/list.js
 const api = require('../../utils/api.js')
+const { getImageUrl } = require('../../utils/config.js')
 const app = getApp()
 
 Page({
@@ -70,8 +71,14 @@ Page({
       // 后端返回的数据可能是数组或对象
       const orderList = Array.isArray(data) ? data : (data.orders || [])
       
+      // 处理每个订单的图片URL
+      const processedOrders = orderList.map(order => ({
+        ...order,
+        product_image: getImageUrl(order.product_image)
+      }))
+      
       // 根据tab过滤：0=买家，1=卖家
-      const filteredOrders = orderList.filter(order => {
+      const filteredOrders = processedOrders.filter(order => {
         if (this.data.activeTab === 0) {
           return order.buyer_id === app.globalData.userInfo?.id
         } else {
