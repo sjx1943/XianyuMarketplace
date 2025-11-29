@@ -83,3 +83,16 @@ The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
 ### Admin Script
 -   Created `scripts/add_admin_prod.py` for production VPS admin account setup
 -   Fixed import to use `from base.base import Base, engine`
+
+### Product Ownership Management (November 29, 2025)
+-   **Product Detail Page**: Added ownership detection (`isOwner` flag) to show different buttons:
+    -   **Own products**: Edit and Delete buttons with "我的商品" tag
+    -   **Other's products**: Favorite, Contact Seller, and Buy buttons
+-   **My Products Page** (`miniprogram/pages/product/my-list`): New management page with:
+    -   Status filtering tabs: 全部/在售/已售
+    -   Product list with image, name, price, status, quantity, and upload time
+    -   Edit and Delete actions for each product
+    -   Empty state with publish button
+    -   Pull-to-refresh support
+-   **Profile Navigation**: "我的商品" now navigates to dedicated management page instead of product list
+-   **Backend API**: `GET /api/miniprogram/my_products?status=all|在售|已售完` returns user's own products
