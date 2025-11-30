@@ -198,11 +198,19 @@ Page({
       // 上传新图片
       for (let i = 0; i < newImages.length; i++) {
         await new Promise((resolve, reject) => {
+          // 规范化文件名：移除空格和特殊字符
+          const filePath = newImages[i]
+          let filename = filePath.split('/').pop() || `image_${i}.jpg`
+          filename = filename.replace(/[^\w\-\.]/g, '_')
+          
           wx.uploadFile({
             url: api.baseURL + '/api/miniprogram/product/upload',
             filePath: newImages[i],
             name: 'images',
-            formData: { product_id: String(productId) },
+            formData: { 
+              product_id: String(productId),
+              filename: filename
+            },
             header: { 'Authorization': 'Bearer ' + token },
             success: (res) => {
               if (res.statusCode === 200) resolve()

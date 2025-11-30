@@ -1933,3 +1933,98 @@ class MiniprogramMyProductsHandler(tornado.web.RequestHandler):
     
     def on_finish(self):
         self.session.close()
+
+
+class MiniprogramProductUpdateHandler(tornado.web.RequestHandler):
+    """小程序编辑商品接口"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def _get_user_id(self):
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    def post(self):
+        """编辑商品信息"""
+        from models.product import Product
+        
+        user_id = self._get_user_id()
+        if not user_id:
+            self.set_status(401)
+            self.write(json.dumps({'success': False, 'error': '请先登录'}))
+            return
+        
+        try:
+            product_id = self.get_argument("product_id")
+            name = self.get_argument("name", "")
+            description = self.get_argument("description", "")
+            price_str = self.get_argument("price", "0")
+            tag = self.get_argument("tag", "其他")
+            condition = self.get_argument("condition", "九成新")
+            
+            if not product_id:
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '商品ID不能为空'}))
+                return
+            
+            product = self.session.query(Product).filter_by(id=int(product_id)).first()
+            if not product:
+                self.set_status(404)
+                self.write(json.dumps({'success': False, 'error': '商品不存在'}))
+                return
+            
+            if product.user_id != int(user_id):
+                self.set_status(403)
+                self.write(json.dumps({'success': False, 'error': '无权编辑该商品'}))
+                return
+            
+            if len(description) > 5000:
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '商品描述过长，最多5000字符'}))
+                return
+            
+            product.name = name
+            product.description = description
+            product.price = float(price_str)
+            product.tag = tag
+            product.condition = condition
+            
+            self.session.commit()
+            
+            self.write(json.dumps({
+                'success': True,
+                'message': '商品编辑成功',
+                'product': {
+                    'id': product.id,
+                    'name': product.name,
+                    'price': float(product.price)
+                }
+            }))
+            
+        except ValueError as e:
+            self.session.rollback()
+            self.set_status(400)
+            self.write(json.dumps({'success': False, 'error': '价格格式不正确'}))
+        except Exception as e:
+            self.session.rollback()
+            logging.error(f"编辑商品异常: {e}")
+            self.set_status(500)
+            self.write(json.dumps({'success': False, 'error': f'编辑失败: {str(e)}'}))
+    
+    def on_finish(self):
+        self.session.close()
