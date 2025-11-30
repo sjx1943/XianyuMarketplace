@@ -286,6 +286,7 @@ class ProductListHandler(tornado.web.RequestHandler):
         self.session = Session()
 
     def get(self):
+        from models.product import ProductImage
         tags = self.get_arguments("tag")
         query = self.session.query(Product).filter(
             Product.status == '在售',
@@ -296,19 +297,25 @@ class ProductListHandler(tornado.web.RequestHandler):
         
         products = query.all()
 
-        products_list = [
-            {
+        products_list = []
+        for product in products:
+            # 确保主图不为空：如果为空，使用第一张有效图片
+            main_image = product.image
+            if not main_image:
+                first_image = self.session.query(ProductImage).filter_by(product_id=product.id).first()
+                if first_image:
+                    main_image = first_image.filename
+            
+            products_list.append({
                 'id': product.id,
                 "name": product.name,
                 "description": product.description,
                 "price": product.price,
                 "tag": product.tag,
-                "image": product.image,
+                "image": main_image,
                 "quantity": product.quantity,
                 "user_id": product.user_id
-            }
-            for product in products
-        ]
+            })
         self.write(json.dumps(products_list))
 
 
