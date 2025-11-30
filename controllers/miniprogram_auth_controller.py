@@ -1986,7 +1986,19 @@ class MiniprogramProductDeleteImageHandler(tornado.web.RequestHandler):
                 if os.path.exists(image_path):
                     os.remove(image_path)
                 
+                # 检查删除的是否是主图
+                was_primary = (product.image == image.filename)
+                
                 self.session.delete(image)
+                
+                # 如果删除的是主图，更新为剩余图片的第一张
+                if was_primary:
+                    remaining_images = self.session.query(ProductImage).filter_by(product_id=int(product_id)).first()
+                    if remaining_images:
+                        product.image = remaining_images.filename
+                    else:
+                        product.image = ""
+                
                 self.session.commit()
                 
                 self.write(json.dumps({'success': True, 'message': '图片删除成功'}))
