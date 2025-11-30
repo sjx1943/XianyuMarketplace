@@ -1,0 +1,91 @@
+[渲染层网络层错误] Failed to load image https://okashii.top/static/images/22_0_grBbCQA4dmg72130ca7894a723a1c5e45d7b137fcee9.JPG
+the server responded with a status of 404 (HTTP/1.1 404) 
+From server 127.0.0.1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+[渲染层网络层错误] Failed to load image https://okashii.top/static/images/7_0_FullSizeRender%203.jpg
+the server responded with a status of 404 (HTTP/1.1 404) 
+From server 127.0.0.1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+[渲染层网络层错误] Failed to load image https://okashii.top/static/images/1_0_FullSizeRender%209.jpg
+the server responded with a status of 404 (HTTP/1.1 404) 
+From server 127.0.0.1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+[渲染层网络层错误] Failed to load image https://okashii.top/static/images/7_0_FullSizeRender%203.jpg
+the server responded with a status of 404 (HTTP/1.1 404) 
+From server 127.0.0.1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+[渲染层网络层错误] Failed to load image https://okashii.top/static/images/7_0_FullSizeRender%203.jpg
+the server responded with a status of 404 (HTTP/1.1 404) 
+From server 127.0.0.1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+[渲染层网络层错误] Failed to load image https://okashii.top/static/images/22_0_grBbCQA4dmg72130ca7894a723a1c5e45d7b137fcee9.JPG
+the server responded with a status of 404 (HTTP/1.1 404) 
+From server 127.0.0.1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+[渲染层网络层错误] Failed to load image https://okashii.top/static/images/1_0_FullSizeRender%209.jpg
+the server responded with a status of 404 (HTTP/1.1 404) 
+From server 127.0.0.1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+[渲染层网络层错误] Failed to load image https://okashii.top/static/images/23_0_G4w57EGLIrVT5cc89f288f4b731e53f9caa2bd393c15.JPG
+the server responded with a status of 404 (HTTP/1.1 404) 
+From server 127.0.0.1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+[渲染层网络层错误] Failed to load image https://okashii.top/static/images/23_0_G4w57EGLIrVT5cc89f288f4b731e53f9caa2bd393c15.JPG
+the server responded with a status of 404 (HTTP/1.1 404) 
+From server 127.0.0.1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+[渲染层网络层错误] Failed to load image https://okashii.top/static/images/22_0_grBbCQA4dmg72130ca7894a723a1c5e45d7b137fcee9.JPG
+the server responded with a status of 404 (HTTP/1.1 404) 
+From server 127.0.0.1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+[渲染层网络层错误] Failed to load image https://okashii.top/static/images/7_0_FullSizeRender%203.jpg
+the server responded with a status of 404 (HTTP/1.1 404) 
+From server 127.0.0.1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+[渲染层网络层错误] Failed to load image https://okashii.top/static/images/1_0_FullSizeRender%209.jpg
+the server responded with a status of 404 (HTTP/1.1 404) 
+From server 127.0.0.1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+[渲染层网络层错误] Failed to load image https://okashii.top/static/images/23_0_G4w57EGLIrVT5cc89f288f4b731e53f9caa2bd393c15.JPG
+the server responded with a status of 404 (HTTP/1.1 404) 
+From server 127.0.0.1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+[渲染层网络层错误] Failed to load image https://okashii.top/static/images/1_0_FullSizeRender%209.jpg
+the server responded with a status of 404 (HTTP/1.1 404) 
+From server 127.0.0.1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+[渲染层网络层错误] Failed to load image https://okashii.top/static/images/7_0_FullSizeRender%203.jpg
+the server responded with a status of 404 (HTTP/1.1 404) 
+From server 127.0.0.1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+[渲染层网络层错误] Failed to load image https://okashii.top/static/images/22_0_grBbCQA4dmg72130ca7894a723a1c5e45d7b137fcee9.JPG
+the server responded with a status of 404 (HTTP/1.1 404) 
+From server 127.0.0.1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+[渲染层网络层错误] Failed to load image https://okashii.top/static/images/23_0_G4w57EGLIrVT5cc89f288f4b731e53f9caa2bd393c15.JPG
+the server responded with a status of 404 (HTTP/1.1 404) 
+From server 127.0.0.1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+[渲染层网络层错误] Failed to load image https://okashii.top/static/images/22_0_grBbCQA4dmg72130ca7894a723a1c5e45d7b137fcee9.JPG
+the server responded with a status of 404 (HTTP/1.1 404) 
+From server 127.0.0.1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+[渲染层网络层错误] Failed to load image https://okashii.top/static/images/7_0_FullSizeRender%203.jpg
+the server responded with a status of 404 (HTTP/1.1 404) 
+From server 127.0.0.1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+[渲染层网络层错误] Failed to load image https://okashii.top/static/images/1_0_FullSizeRender%209.jpg
+the server responded with a status of 404 (HTTP/1.1 404) 
+From server 127.0.0.1(env: macOS,mp,1.06.2412050; lib: 3.11.3)
+api.js:39 API 响应: /api/miniprogram/product/22 Status: 200 Data: {success: true, product: {…}}
+api.js:39 API 响应: /api/miniprogram/products Status: 200 Data: {success: true, products: Array(4), total: 4, page: 1, page_size: 20, …}
+api.js:39 API 响应: /api/miniprogram/product/22 Status: 200 Data: {success: true, product: {…}}
+api.js:39 API 响应: /api/miniprogram/products Status: 200 Data: {success: true, products: Array(4), total: 4, page: 1, page_size: 20, …}
+[worker] reportRealtimeAction:fail not support
+V @ WAWorker.js:1
+invoke @ WAWorker.js:1
+invoke @ WAWorker.js:1
+G @ WAWorker.js:1
+(anonymous) @ WAWorker.js:1
+$e @ WAWorker.js:1
+Z @ WAWorker.js:1
+p @ WAWorker.js:1
+(anonymous) @ WAWorker.js:1
+(anonymous) @ WAWorker.js:1
+setTimeout (async)
+globalThis.setTimeout @ WAWorker.js:1
+Y @ WAWorker.js:1
+Le @ WAWorker.js:1
+(anonymous) @ WAWorker.js:1
+r @ WAWorker.js:1
+s @ WAWorker.js:1
+callAndRemove @ WAWorker.js:1
+invokeCallbackHandler @ WAWorker.js:1
+eval @ VM11:1
+api.js:39 API 响应: /api/miniprogram/product/7 Status: 200 Data: {success: true, product: {…}}
+detail.js? [sm]:185 图片加载失败: {type: "error", timeStamp: 668, target: {…}, currentTarget: {…}, mark: {…}, …}
+onAvatarError @ detail.js? [sm]:185
+api.js:39 API 响应: /api/miniprogram/products Status: 200 Data: {success: true, products: Array(4), total: 4, page: 1, page_size: 20, …}
+api.js:39 API 响应: /api/miniprogram/product/22 Status: 200 Data: {success: true, product: {…}}
+api.js:39 API 响应: /api/miniprogram/products Status: 200 Data: {success: true, products: Array(4), total: 4, page: 1, page_size: 20, …}
