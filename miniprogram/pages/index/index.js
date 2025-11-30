@@ -1,5 +1,6 @@
 // pages/index/index.js
 const app = getApp()
+const { getImageUrl } = require('../../utils/config.js')
 
 Page({
   data: {
@@ -88,8 +89,12 @@ Page({
       })
       
       if (res.statusCode === 200) {
+        const products = (res.data || []).slice(0, 6).map(item => ({
+          ...item,
+          image: getImageUrl(item.image)
+        }))
         this.setData({
-          hotProducts: res.data.slice(0, 6)
+          hotProducts: products
         })
       }
     } catch (error) {
@@ -108,8 +113,12 @@ Page({
       })
       
       if (res.statusCode === 200) {
+        const products = (res.data || []).map(item => ({
+          ...item,
+          image: getImageUrl(item.image)
+        }))
         this.setData({
-          recentProducts: res.data
+          recentProducts: products
         })
       }
     } catch (error) {

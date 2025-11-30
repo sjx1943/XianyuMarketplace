@@ -101,6 +101,11 @@ Page({
     })
   },
 
+  // 头像/图片加载失败处理
+  onAvatarError(e) {
+    console.warn('图片加载失败:', e)
+  },
+
   // 收藏/取消收藏（暂未实现后端API，本地模拟）
   async onFavorite() {
     if (!app.globalData.isLogin) {
