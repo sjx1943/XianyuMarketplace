@@ -741,7 +741,7 @@ class MiniprogramProductDetailHandler(tornado.web.RequestHandler):
                 'condition': product.condition or '九成新',
                 'tag': product.tag,
                 'image': product.image,
-                'images': [{'filename': img.filename} for img in images],
+                'images': [{'id': img.id, 'filename': img.filename} for img in images],
                 'upload_time': product.upload_time.strftime('%Y-%m-%d %H:%M') if product.upload_time else '',
                 'seller_id': product.user_id,
                 'seller': {
