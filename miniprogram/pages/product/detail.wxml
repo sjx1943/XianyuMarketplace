@@ -1,11 +1,30 @@
 <!--商品详情页-->
 <view class="page">
-  <!-- 图片轮播 - 修复版：添加 binderror 处理 -->
-  <swiper class="product-swiper" indicator-dots="{{true}}" autoplay="{{false}}" circular="{{true}}" wx:if="{{product.images && product.images.length > 0}}">
-    <swiper-item wx:for="{{product.images}}" wx:key="index">
-      <image src="{{item}}" mode="aspectFill" class="swiper-image" bindtap="previewImage" data-url="{{item}}" binderror="onAvatarError"></image>
-    </swiper-item>
-  </swiper>
+  <!-- 图片轮播 - 修复版：添加图片编辑功能 -->
+  <view class="swiper-container" wx:if="{{product.images && product.images.length > 0}}">
+    <swiper class="product-swiper" indicator-dots="{{true}}" autoplay="{{false}}" circular="{{true}}">
+      <swiper-item wx:for="{{product.images}}" wx:key="index" data-index="{{index}}">
+        <view class="swiper-item-wrapper">
+          <image src="{{item}}" mode="aspectFill" class="swiper-image" bindtap="previewImage" data-url="{{item}}" binderror="onAvatarError"></image>
+          <!-- 编辑模式下显示删除按钮 -->
+          <view class="image-edit-overlay" wx:if="{{isOwner && editingImage}}">
+            <button class="delete-image-btn" bindtap="selectImageForDelete" data-id="{{index}}" data-index="{{index}}">
+              🗑️ 删除
+            </button>
+          </view>
+        </view>
+      </swiper-item>
+    </swiper>
+    <!-- 自己商品时显示编辑/完成按钮 -->
+    <view class="image-control-bar" wx:if="{{isOwner}}">
+      <button class="control-btn" bindtap="{{editingImage ? 'exitEditMode' : 'enterEditMode'}}">
+        {{editingImage ? '完成' : '编辑图片'}}
+      </button>
+      <button class="control-btn confirm-delete" bindtap="deleteImage" wx:if="{{editingImage && selectedImageId}}">
+        确认删除
+      </button>
+    </view>
+  </view>
   <view class="no-image" wx:else>
     <text>暂无商品图片</text>
   </view>
