@@ -61,3 +61,9 @@ packages = ["cacert", "cargo", "freetype", "lcms2", "libiconv", "libimagequant",
 [deployment]
 deploymentTarget = "autoscale"
 run = ["python", "app.py", "--port=5000"]
+
+[userenv]
+
+[userenv.shared]
+WX_MINIPROGRAM_APP_ID = "PLACEHOLDER_APPID"
+WX_MINIPROGRAM_APP_SECRET = "PLACEHOLDER_APPSECRET"
