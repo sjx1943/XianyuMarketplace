@@ -228,6 +228,14 @@ class API {
     })
   }
 
+  // 删除商品图片
+  deleteProductImage(productId, imageId) {
+    return this.request({
+      url: `/api/miniprogram/product/${productId}/image/${imageId}/delete`,
+      method: 'POST'
+    })
+  }
+
   // 搜索商品
   searchProducts(keyword) {
     return this.request({

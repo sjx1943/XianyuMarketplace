@@ -7,7 +7,9 @@ Page({
     product: {},
     loading: true,
     isOwner: false,
-    currentUserId: null
+    currentUserId: null,
+    editingImage: false,
+    selectedImageId: null
   },
 
   onLoad(options) {
@@ -91,6 +93,65 @@ Page({
     wx.previewImage({
       current: url,
       urls: this.data.product.images
+    })
+  },
+
+  // 进入编辑模式
+  enterEditMode() {
+    this.setData({ editingImage: true })
+  },
+
+  // 退出编辑模式
+  exitEditMode() {
+    this.setData({ editingImage: false, selectedImageId: null })
+  },
+
+  // 选择要删除的图片
+  selectImageForDelete(e) {
+    const { id, index } = e.currentTarget.dataset
+    this.setData({ selectedImageId: { id, index } })
+  },
+
+  // 删除图片
+  async deleteImage() {
+    const { product, selectedImageId } = this.data
+    if (!selectedImageId) return
+
+    const { id, index } = selectedImageId
+    
+    wx.showModal({
+      title: '确认删除',
+      content: '确定要删除这张图片吗？',
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            wx.showLoading({ title: '删除中...' })
+            
+            // 调用后端API删除图片
+            await api.deleteProductImage(product.id, id)
+            
+            // 更新本地图片列表
+            const newImages = product.images.filter((_, i) => i !== index)
+            this.setData({
+              'product.images': newImages,
+              selectedImageId: null
+            })
+            
+            wx.hideLoading()
+            wx.showToast({
+              title: '删除成功',
+              icon: 'success'
+            })
+          } catch (error) {
+            wx.hideLoading()
+            console.error('删除图片失败:', error)
+            wx.showToast({
+              title: '删除失败',
+              icon: 'none'
+            })
+          }
+        }
+      }
     })
   },
 

@@ -1935,6 +1935,74 @@ class MiniprogramMyProductsHandler(tornado.web.RequestHandler):
         self.session.close()
 
 
+class MiniprogramProductDeleteImageHandler(tornado.web.RequestHandler):
+    """小程序删除商品图片接口"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def _get_user_id(self):
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    def post(self, product_id, image_id):
+        """删除商品图片"""
+        from models.product import Product, ProductImage
+        
+        user_id = self._get_user_id()
+        if not user_id:
+            self.set_status(401)
+            self.write(json.dumps({'success': False, 'error': '请先登录'}))
+            return
+        
+        try:
+            # 验证商品所有权
+            product = self.session.query(Product).filter_by(id=int(product_id)).first()
+            if not product or product.user_id != int(user_id):
+                self.set_status(403)
+                self.write(json.dumps({'success': False, 'error': '无权操作该商品'}))
+                return
+            
+            # 删除图片
+            image = self.session.query(ProductImage).filter_by(id=int(image_id), product_id=int(product_id)).first()
+            if image:
+                import os
+                upload_path = 'mystatics/images'
+                image_path = os.path.join(upload_path, image.filename)
+                if os.path.exists(image_path):
+                    os.remove(image_path)
+                
+                self.session.delete(image)
+                self.session.commit()
+                
+                self.write(json.dumps({'success': True, 'message': '图片删除成功'}))
+            else:
+                self.set_status(404)
+                self.write(json.dumps({'success': False, 'error': '图片不存在'}))
+        except Exception as e:
+            self.session.rollback()
+            logging.error(f"删除商品图片异常: {e}")
+            self.set_status(500)
+            self.write(json.dumps({'success': False, 'error': f'删除失败: {str(e)}'}))
+    
+    def on_finish(self):
+        self.session.close()
+
+
 class MiniprogramProductUpdateHandler(tornado.web.RequestHandler):
     """小程序编辑商品接口"""
     
