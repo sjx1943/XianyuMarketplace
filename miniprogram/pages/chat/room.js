@@ -120,19 +120,19 @@ Page({
     }
   },
 
-  // 连接WebSocket
+  // 连接WebSocket - 修复版
   connectWebSocket() {
     const config = require('../../utils/config.js')
+    const token = wx.getStorageSync('token')
     
-    // 后端WebSocket路由是 /ws/chat_room，需要传递user_id参数
-    const userId = this.data.currentUserId
-    if (!userId) {
-      console.error('WebSocket连接失败: 用户ID不存在')
+    const friendId = this.data.friendId
+    if (!friendId || !token) {
+      console.error('WebSocket连接失败: 好友ID或Token不存在')
       return
     }
     
-    // 构建WebSocket URL，包含user_id参数
-    const socketUrl = `${config.WS_BASE}/chat_room?user_id=${userId}`
+    // 后端路由：/ws/chat_room/{friendId}?token=xxx
+    const socketUrl = `${config.WS_BASE}/chat_room/${friendId}?token=${encodeURIComponent(token)}`
     console.log('WebSocket连接地址:', socketUrl)
     
     wx.connectSocket({

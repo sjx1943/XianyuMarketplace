@@ -1,9 +1,9 @@
 <!--商品详情页-->
 <view class="page">
-  <!-- 图片轮播 -->
+  <!-- 图片轮播 - 修复版：添加 binderror 处理 -->
   <swiper class="product-swiper" indicator-dots="{{true}}" autoplay="{{false}}" circular="{{true}}" wx:if="{{product.images && product.images.length > 0}}">
     <swiper-item wx:for="{{product.images}}" wx:key="index">
-      <image src="{{item}}" mode="aspectFill" class="swiper-image" bindtap="previewImage" data-url="{{item}}" onerror=""></image>
+      <image src="{{item}}" mode="aspectFill" class="swiper-image" bindtap="previewImage" data-url="{{item}}" binderror="onAvatarError"></image>
     </swiper-item>
   </swiper>
   <view class="no-image" wx:else>
