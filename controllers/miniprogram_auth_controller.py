@@ -1970,12 +1970,18 @@ class MiniprogramProductUpdateHandler(tornado.web.RequestHandler):
             return
         
         try:
-            product_id = self.get_argument("product_id")
-            name = self.get_argument("name", "")
-            description = self.get_argument("description", "")
-            price_str = self.get_argument("price", "0")
-            tag = self.get_argument("tag", "其他")
-            condition = self.get_argument("condition", "九成新")
+            # 从 JSON body 或查询参数中获取数据
+            try:
+                data = json.loads(self.request.body)
+            except:
+                data = {}
+            
+            product_id = data.get("product_id") or self.get_argument("product_id", None)
+            name = data.get("name", "") or self.get_argument("name", "")
+            description = data.get("description", "") or self.get_argument("description", "")
+            price_str = data.get("price", "0") or self.get_argument("price", "0")
+            tag = data.get("tag", "其他") or self.get_argument("tag", "其他")
+            condition = data.get("condition", "九成新") or self.get_argument("condition", "九成新")
             
             if not product_id:
                 self.set_status(400)
