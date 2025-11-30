@@ -1,0 +1,14 @@
+<div class="product-image-container">
+<img src="" alt="wx" id="main-image" class="main-image">
+<div class="thumbnails">
+
+<img src="/static/images/34_0_aVCl5gGjrmQ38f76e2789ac7f00b113b7d9d195c1aba.jpg?v=93ae1e4b8a06180eb7388cfb6557e82a4fe0c53aca9f69511eb2cacea30d90624368a80ef8d99c458e780be7b77e1889c00f73c5b7cca4563181148f5e7a0a25" alt="Thumbnail 1" class="thumb active" onclick="changeImage('/static/images/34_0_aVCl5gGjrmQ38f76e2789ac7f00b113b7d9d195c1aba.jpg?v=93ae1e4b8a06180eb7388cfb6557e82a4fe0c53aca9f69511eb2cacea30d90624368a80ef8d99c458e780be7b77e1889c00f73c5b7cca4563181148f5e7a0a25', this)">
+
+<img src="/static/images/34_1_m67iPh2UAiSue5c273d7d974579a7b92e39b0b5db3ef.jpg?v=5f208d7c2260f0c71a6cf98226c76171e1d1e0fe190ac7eb4672213d7d6a648a05b00aec99274afa89d63934d38deed9240fb7c753d9eaa5251e14e654d3ca0c" alt="Thumbnail 2" class="thumb " onclick="changeImage('/static/images/34_1_m67iPh2UAiSue5c273d7d974579a7b92e39b0b5db3ef.jpg?v=5f208d7c2260f0c71a6cf98226c76171e1d1e0fe190ac7eb4672213d7d6a648a05b00aec99274afa89d63934d38deed9240fb7c753d9eaa5251e14e654d3ca0c', this)">
+
+<img src="/static/images/34_2_9tpGWuByagjm907ed326eca173645def0fa2aaed565c.jpg?v=52098c12023dce28e3e825104b1330677b26b5a4578a5cd4c9b6fb29ec2ecb205a06f203bbbad82695c35df80d56463b4dd4089c0c08905ef6b4bc358b73f7d3" alt="Thumbnail 3" class="thumb " onclick="changeImage('/static/images/34_2_9tpGWuByagjm907ed326eca173645def0fa2aaed565c.jpg?v=52098c12023dce28e3e825104b1330677b26b5a4578a5cd4c9b6fb29ec2ecb205a06f203bbbad82695c35df80d56463b4dd4089c0c08905ef6b4bc358b73f7d3', this)">
+
+<img src="/static/images/34_3_735POvMh8dBnd5895860c02569cb17766b79a5ba03d9.jpg?v=ae4114f53904bdb29ae81f45102ccc8d97cbd1383c54887c3a8854277ff980d4f86a92e6e963226bbcc4d92184e42d8857ae043420887bca9efd7038be2a78d5" alt="Thumbnail 4" class="thumb " onclick="changeImage('/static/images/34_3_735POvMh8dBnd5895860c02569cb17766b79a5ba03d9.jpg?v=ae4114f53904bdb29ae81f45102ccc8d97cbd1383c54887c3a8854277ff980d4f86a92e6e963226bbcc4d92184e42d8857ae043420887bca9efd7038be2a78d5', this)">
+
+</div>
+</div>
