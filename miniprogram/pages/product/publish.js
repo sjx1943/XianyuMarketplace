@@ -191,11 +191,20 @@ Page({
         wx.showLoading({ title: `上传中 ${i + 1}/${images.length}` })
 
         const result = await new Promise((resolve, reject) => {
+          // 修复：获取文件名并规范化，移除特殊字符和空格
+          const filePath = images[i]
+          let filename = filePath.split('/').pop() || `image_${i}.jpg`
+          // 移除文件名中的空格和特殊字符，只保留字母、数字、下划线、连字符和点
+          filename = filename.replace(/[^\w\-\.]/g, '_')
+          
           wx.uploadFile({
             url: api.baseURL + '/api/miniprogram/product/upload',
             filePath: images[i],
             name: 'images',
-            formData: formData,
+            formData: {
+              ...formData,
+              filename: filename  // 显式传递规范化的文件名
+            },
             header: {
               'Authorization': 'Bearer ' + token
             },
