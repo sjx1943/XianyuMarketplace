@@ -6,6 +6,7 @@ Page({
   data: {
     productId: null,
     images: [],
+    imageIds: [],
     newImages: [],
     form: {
       name: '',
@@ -48,8 +49,11 @@ Page({
 
       if (product && product.id) {
         const { getImageUrl } = require('../../utils/config.js')
+        const imageIds = []
         const images = (product.images || []).map(img => {
           const filename = typeof img === 'string' ? img : img.filename
+          const id = typeof img === 'string' ? null : img.id
+          if (id) imageIds.push(id)
           return getImageUrl(filename)
         })
 
@@ -58,6 +62,7 @@ Page({
 
         this.setData({
           images,
+          imageIds,
           form: {
             name: product.name || '',
             price: product.price || '',
@@ -99,11 +104,33 @@ Page({
   },
 
   // 删除已有图片
-  deleteOldImage(e) {
+  async deleteOldImage(e) {
     const { index } = e.currentTarget.dataset
-    const images = this.data.images
-    images.splice(index, 1)
-    this.setData({ images })
+    const imageId = this.data.imageIds[index]
+    const token = wx.getStorageSync('token') || ''
+
+    try {
+      // 调用后端删除API
+      if (imageId) {
+        await api.request({
+          url: `/api/miniprogram/product/${this.data.productId}/image/${imageId}/delete`,
+          method: 'DELETE',
+          header: { 'Authorization': 'Bearer ' + token }
+        })
+      }
+
+      // 更新本地状态
+      const images = this.data.images
+      const imageIds = this.data.imageIds
+      images.splice(index, 1)
+      imageIds.splice(index, 1)
+      this.setData({ images, imageIds })
+      
+      wx.showToast({ title: '图片已删除', icon: 'success' })
+    } catch (error) {
+      console.error('删除图片失败:', error)
+      wx.showToast({ title: '删除失败，请重试', icon: 'none' })
+    }
   },
 
   // 删除新上传图片

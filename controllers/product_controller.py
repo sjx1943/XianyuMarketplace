@@ -34,6 +34,10 @@ class ProductDetailHandler(tornado.web.RequestHandler):
         user = self.get_current_user()
         images = self.session.query(ProductImage).filter_by(product_id=product_id).all()
 
+        # 确保主图不为空：如果为空，使用第一张有效图片
+        if not product.image and images:
+            product.image = images[0].filename
+
         if user:
             user_id = user.id
         else:
