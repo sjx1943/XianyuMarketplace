@@ -9,6 +9,12 @@
         </view>
       </swiper-item>
     </swiper>
+    <!-- 自己的商品时显示"我的商品"按钮 -->
+    <view class="image-control-bar" wx:if="{{isOwner}}">
+      <button class="control-btn" bindtap="goToMyProducts">
+        📦 我的商品
+      </button>
+    </view>
   </view>
   <view class="no-image" wx:else>
     <text>暂无商品图片</text>
@@ -81,19 +87,15 @@
       <button class="buy-btn" bindtap="onBuy">立即购买</button>
     </block>
     
-    <!-- 自己的商品：显示编辑、删除、我的商品按钮 -->
+    <!-- 自己的商品：显示编辑、删除按钮 -->
     <block wx:else>
       <button class="action-btn" bindtap="onEdit" style="flex: 1; margin-right: 10rpx">
         <text class="btn-icon">✏️</text>
         <text class="btn-text">编辑</text>
       </button>
-      <button class="action-btn delete-btn" bindtap="onDelete" style="flex: 1; margin-right: 10rpx">
+      <button class="action-btn delete-btn" bindtap="onDelete" style="flex: 1">
         <text class="btn-icon">🗑️</text>
         <text class="btn-text">删除</text>
-      </button>
-      <button class="action-btn" bindtap="goToMyProducts" style="flex: 1">
-        <text class="btn-icon">📦</text>
-        <text class="btn-text">我的商品</text>
       </button>
     </block>
 
