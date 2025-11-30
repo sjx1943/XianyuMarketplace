@@ -145,21 +145,20 @@ Page({
             // 调用后端API删除图片（使用实际的图片数据库ID）
             await api.deleteProductImage(product.id, id)
             
-            // 更新本地图片列表
-            const newImageDetails = imageDetails.filter((_, i) => i !== index)
-            const newImages = newImageDetails.map(img => img.url)
-            
-            this.setData({
-              imageDetails: newImageDetails,
-              'product.images': newImages,
-              'product.imageDetails': newImageDetails,
-              selectedImageId: null
-            })
-            
             wx.hideLoading()
             wx.showToast({
               title: '删除成功',
               icon: 'success'
+            })
+            
+            // 重新加载产品详情以获得最新的主图和图片列表
+            setTimeout(() => {
+              this.loadProductDetail(product.id)
+            }, 500)
+            
+            this.setData({
+              selectedImageId: null,
+              editingImage: false
             })
           } catch (error) {
             wx.hideLoading()
