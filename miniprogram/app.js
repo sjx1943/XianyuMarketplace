@@ -13,7 +13,8 @@ App({
     networkType: 'unknown',
     retryCount: 0,
     maxRetries: 3,
-    requestTimeout: 10000
+    requestTimeout: 10000,
+    justEditedProductId: null
   },
 
   onLaunch: function() {

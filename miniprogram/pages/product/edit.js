@@ -268,11 +268,22 @@ Page({
       wx.hideLoading()
       wx.showToast({ title: '更新成功', icon: 'success' })
 
-      // 5. 设置编辑标志，然后返回上一页
-      // 这样detail.js的onShow会检测到编辑标志并重新加载数据
+      // 5. 直接刷新上一页（detail页）的数据，而不依赖onShow
+      const pages = getCurrentPages()
+      if (pages.length >= 2) {
+        const prevPage = pages[pages.length - 2]
+        console.log('上一页:', prevPage.route)
+        
+        // 如果上一页是商品详情页，直接调用其loadProductDetail方法
+        if (prevPage.route === 'pages/product/detail' && prevPage.loadProductDetail) {
+          console.log('直接刷新detail页数据, productId:', productId)
+          prevPage.loadProductDetail(productId)
+        }
+      }
+      
+      // 同时设置编辑标志作为备份
       const app = getApp()
       app.globalData.justEditedProductId = parseInt(productId)
-      console.log('设置编辑标志:', app.globalData.justEditedProductId)
       
       setTimeout(() => {
         wx.navigateBack()
