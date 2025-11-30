@@ -1,6 +1,6 @@
 // 配置文件
 // ⚠️ 部署前必须修改 production.host 为您的实际后端域名
-const isDev = false // 生产环境设为 false，开发调试设为 true
+const isDev = true // 生产环境设为 false，开发调试设为 true（当前：开发模式）
 
 // API配置
 const config = {
@@ -14,9 +14,9 @@ const config = {
       apiBase: '',  // 后端路由不需要 /api 前缀
       wsBase: '/ws'
     },
-    // 开发环境（本地调试用）
+    // 开发环境（Replit 调试用）
     development: {
-      host: 'http://localhost:5000',
+      host: 'https://a150b5ca-a58b-4dc4-89b0-68930565b5a5-00-e3vx0z9fny4f.riker.replit.dev',
       apiBase: '',  // 后端路由不需要 /api 前缀
       wsBase: '/ws'
     }
