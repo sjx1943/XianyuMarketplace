@@ -7,6 +7,7 @@ Page({
     productId: null,
     images: [],
     imageIds: [],
+    originalImageIds: [],
     newImages: [],
     form: {
       name: '',
@@ -64,6 +65,7 @@ Page({
         this.setData({
           images,
           imageIds,
+          originalImageIds: [...imageIds],
           form: {
             name: product.name || '',
             price: product.price || '',
@@ -205,12 +207,14 @@ Page({
     try {
       wx.showLoading({ title: '更新中...' })
 
-      const { productId, form, newImages, imageIds } = this.data
+      const { productId, form, newImages, imageIds, originalImageIds } = this.data
       const token = wx.getStorageSync('token') || ''
 
-      // 1. 获取原始图片ID列表（从loadProduct时保存的）
-      const originalImageIds = this.data.imageIds || []
-      const deletedImageIds = originalImageIds.filter(id => !imageIds.includes(id))
+      // 1. 计算被删除的图片ID
+      const deletedImageIds = (originalImageIds || []).filter(id => !imageIds.includes(id))
+      console.log('原始图片IDs:', originalImageIds)
+      console.log('当前图片IDs:', imageIds)
+      console.log('需要删除的图片IDs:', deletedImageIds)
 
       // 2. 先删除被移除的图片
       for (const imageId of deletedImageIds) {
