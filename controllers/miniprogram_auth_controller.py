@@ -1973,8 +1973,8 @@ class MiniprogramProductDeleteImageHandler(tornado.web.RequestHandler):
                     pass
         return None
     
-    def post(self, product_id, image_id):
-        """删除商品图片"""
+    def _delete_image(self, product_id, image_id):
+        """删除图片的核心逻辑"""
         from models.product import Product, ProductImage
         
         user_id = self._get_user_id()
@@ -2024,6 +2024,14 @@ class MiniprogramProductDeleteImageHandler(tornado.web.RequestHandler):
             logging.error(f"删除商品图片异常: {e}")
             self.set_status(500)
             self.write(json.dumps({'success': False, 'error': f'删除失败: {str(e)}'}))
+    
+    def post(self, product_id, image_id):
+        """删除商品图片（POST方法）"""
+        self._delete_image(product_id, image_id)
+    
+    def delete(self, product_id, image_id):
+        """删除商品图片（DELETE方法）"""
+        self._delete_image(product_id, image_id)
     
     def on_finish(self):
         self.session.close()
