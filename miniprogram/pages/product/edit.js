@@ -268,11 +268,10 @@ Page({
       wx.hideLoading()
       wx.showToast({ title: '更新成功', icon: 'success' })
 
-      // 5. 使用redirectTo返回detail页面，让它重新加载所有数据（包括主图和图片列表）
-      // 这样保证页面一定会重新onLoad并拉取最新数据
+      // 5. 编辑成功后跳转至商品列表页，规避详情页缓存显示问题
       setTimeout(() => {
         wx.redirectTo({
-          url: `/pages/product/detail?id=${productId}`
+          url: '/pages/product/list'
         })
       }, 1500)
     } catch (error) {
