@@ -584,10 +584,14 @@ class MiniprogramProductUploadHandler(tornado.web.RequestHandler):
                     return
                 
                 if images:
+                    import re
                     existing_images = self.session.query(ProductImage).filter_by(product_id=product.id).count()
                     for i, image in enumerate(images):
                         idx = existing_images + i
-                        filename = f"{product.id}_{idx}_{image['filename']}"
+                        # 规范化文件名：移除空格和特殊字符
+                        orig_filename = image['filename']
+                        normalized_filename = re.sub(r'[^\w\-\.]', '_', orig_filename)
+                        filename = f"{product.id}_{idx}_{normalized_filename}"
                         filepath = os.path.join(upload_path, filename)
                         
                         with open(filepath, "wb") as f:
@@ -638,9 +642,13 @@ class MiniprogramProductUploadHandler(tornado.web.RequestHandler):
             self.session.flush()
             
             image_filenames = []
+            import re
             
             for i, image in enumerate(images):
-                filename = f"{new_product.id}_{i}_{image['filename']}"
+                # 规范化文件名：移除空格和特殊字符
+                orig_filename = image['filename']
+                normalized_filename = re.sub(r'[^\w\-\.]', '_', orig_filename)
+                filename = f"{new_product.id}_{i}_{normalized_filename}"
                 filepath = os.path.join(upload_path, filename)
                 
                 with open(filepath, "wb") as f:
