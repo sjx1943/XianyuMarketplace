@@ -32,6 +32,7 @@ Page({
 
     const { id } = options
     if (id) {
+      this.setData({ productId: id })
       this.loadProduct(id)
     } else {
       wx.showToast({ title: '商品不存在', icon: 'none' })
@@ -207,7 +208,24 @@ Page({
       const { productId, form, newImages, imageIds } = this.data
       const token = wx.getStorageSync('token') || ''
 
-      // 更新产品信息，同时传递保留的图片ID列表
+      // 1. 获取原始图片ID列表（从loadProduct时保存的）
+      const originalImageIds = this.data.imageIds || []
+      const deletedImageIds = originalImageIds.filter(id => !imageIds.includes(id))
+
+      // 2. 先删除被移除的图片
+      for (const imageId of deletedImageIds) {
+        try {
+          await api.request({
+            url: `/api/miniprogram/product/${productId}/image/${imageId}/delete`,
+            method: 'DELETE',
+            header: { 'Authorization': 'Bearer ' + token }
+          })
+        } catch (err) {
+          console.error(`删除图片${imageId}失败:`, err)
+        }
+      }
+
+      // 3. 更新产品信息（不再需要传递image_ids）
       await api.request({
         url: '/api/miniprogram/product/update',
         method: 'POST',
@@ -218,15 +236,13 @@ Page({
           description: form.description,
           price: String(form.price),
           tag: form.category,
-          condition: form.condition,
-          image_ids: imageIds
+          condition: form.condition
         }
       })
 
-      // 上传新图片
+      // 4. 上传新图片
       for (let i = 0; i < newImages.length; i++) {
         await new Promise((resolve, reject) => {
-          // 规范化文件名：移除空格和特殊字符
           const filePath = newImages[i]
           let filename = filePath.split('/').pop() || `image_${i}.jpg`
           filename = filename.replace(/[^\w\-\.]/g, '_')
@@ -252,8 +268,11 @@ Page({
       wx.hideLoading()
       wx.showToast({ title: '更新成功', icon: 'success' })
 
+      // 5. 用redirectTo重新加载详情页而不是navigateBack
       setTimeout(() => {
-        wx.navigateBack()
+        wx.redirectTo({
+          url: `/pages/product/detail?id=${productId}`
+        })
       }, 1500)
     } catch (error) {
       wx.hideLoading()
