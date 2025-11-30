@@ -326,12 +326,12 @@ class MiniprogramSetRoomNumberHandler(tornado.web.RequestHandler):
                 }))
                 return
             
-            # 验证房间号格式：楼号-单元号-房间号（如'3-1-801'）
+            # 验证房间号格式：楼号-单元号-房间号（如'3-1-901'）
             pattern = r'^\d{1,3}-\d{1,2}-\d{1,4}$'
             if not re.match(pattern, room_number):
                 self.write(json.dumps({
                     'success': False,
-                    'error': '房间号格式不正确，请按照"楼号-单元号-房间号"格式输入，例如：3-1-801'
+                    'error': '房间号格式不正确，请按照"楼号-单元号-房间号"格式输入，例如：3-1-901'
                 }))
                 return
             
@@ -731,6 +731,11 @@ class MiniprogramProductDetailHandler(tornado.web.RequestHandler):
             
             comments = self.session.query(Comment).filter_by(product_id=product_id).order_by(Comment.id.desc()).limit(10).all()
             
+            # 确保主图不为空：如果为空，使用第一张有效图片
+            main_image = product.image
+            if not main_image and images:
+                main_image = images[0].filename
+            
             product_data = {
                 'id': product.id,
                 'name': product.name,
@@ -740,7 +745,7 @@ class MiniprogramProductDetailHandler(tornado.web.RequestHandler):
                 'status': product.status,
                 'condition': product.condition or '九成新',
                 'tag': product.tag,
-                'image': product.image,
+                'image': main_image,
                 'images': [{'id': img.id, 'filename': img.filename} for img in images],
                 'upload_time': product.upload_time.strftime('%Y-%m-%d %H:%M') if product.upload_time else '',
                 'seller_id': product.user_id,
