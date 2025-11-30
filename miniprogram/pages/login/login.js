@@ -194,9 +194,11 @@ Page({
             });
           }, 1500);
         } else {
+          // 显示具体的错误信息（如：房间号已被占用）
           wx.showToast({
-            title: res.data.message || '设置失败',
-            icon: 'none'
+            title: res.data.error || res.data.message || '设置失败',
+            icon: 'none',
+            duration: 3000  // 增加显示时间让用户能看清错误信息
           });
         }
       },
