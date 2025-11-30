@@ -1220,9 +1220,18 @@ class MiniprogramProductsListHandler(tornado.web.RequestHandler):
             products = query.order_by(Product.upload_time.desc()).offset(offset).limit(page_size).all()
             
             # 构建返回数据
+            from models.product import ProductImage
             products_list = []
             for product in products:
                 seller = self.session.query(User).filter_by(id=product.user_id).first()
+                
+                # 确保主图不为空：如果为空，使用第一张有效图片
+                main_image = product.image
+                if not main_image:
+                    first_image = self.session.query(ProductImage).filter_by(product_id=product.id).first()
+                    if first_image:
+                        main_image = first_image.filename
+                
                 products_list.append({
                     'id': product.id,
                     'name': product.name,
@@ -1231,7 +1240,7 @@ class MiniprogramProductsListHandler(tornado.web.RequestHandler):
                     'quantity': product.quantity,
                     'tag': product.tag,
                     'condition': product.condition or '九成新',
-                    'image': product.image,
+                    'image': main_image,
                     'status': product.status,
                     'upload_time': product.upload_time.strftime('%Y-%m-%d %H:%M') if product.upload_time else '',
                     'seller_id': product.user_id,
