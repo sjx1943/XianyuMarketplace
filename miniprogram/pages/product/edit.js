@@ -16,7 +16,7 @@ Page({
       condition: '九成新',
       description: ''
     },
-    categories: ['数码产品', '家用电器', '服装鞋包', '图书音像', '运动户外', '美妆个护', '家居用品', '其他'],
+    categories: ['电子产品', '书籍', '家具', '服装鞋帽', '食品饮料', '母婴用品', '运动户外', '玩具', '美妆个护', '家电', '日用百货', '其他'],
     categoryIndex: -1,
     conditions: ['全新', '九成新', '八成新', '七成新', '六成新', '五成新', '四成新', '三成新', '二成新', '一成新', '很旧'],
     conditionIndex: 1,
@@ -106,34 +106,19 @@ Page({
     })
   },
 
-  // 删除已有图片
-  async deleteOldImage(e) {
+  // 删除已有图片（仅本地更新，不调用API，等提交时统一删除）
+  deleteOldImage(e) {
     const { index } = e.currentTarget.dataset
-    const imageId = this.data.imageIds[index]
-    const token = wx.getStorageSync('token') || ''
-
-    try {
-      // 调用后端删除API
-      if (imageId) {
-        await api.request({
-          url: `/api/miniprogram/product/${this.data.productId}/image/${imageId}/delete`,
-          method: 'DELETE',
-          header: { 'Authorization': 'Bearer ' + token }
-        })
-      }
-
-      // 更新本地状态
-      const images = this.data.images
-      const imageIds = this.data.imageIds
-      images.splice(index, 1)
-      imageIds.splice(index, 1)
-      this.setData({ images, imageIds })
-      
-      wx.showToast({ title: '图片已删除', icon: 'success' })
-    } catch (error) {
-      console.error('删除图片失败:', error)
-      wx.showToast({ title: '删除失败，请重试', icon: 'none' })
-    }
+    
+    // 只更新本地UI状态，不立即调用后端API
+    // 真正的API删除会在onSubmit()时统一处理
+    const images = this.data.images
+    const imageIds = this.data.imageIds
+    images.splice(index, 1)
+    imageIds.splice(index, 1)
+    this.setData({ images, imageIds })
+    
+    wx.showToast({ title: '图片已标记删除，提交时生效', icon: 'success' })
   },
 
   // 删除新上传图片
