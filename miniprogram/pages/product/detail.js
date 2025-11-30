@@ -9,8 +9,6 @@ Page({
     loading: true,
     isOwner: false,
     currentUserId: null,
-    editingImage: false,
-    selectedImageId: null,
     imageDetails: []
   },
 
@@ -129,69 +127,6 @@ Page({
     })
   },
 
-  // 进入编辑模式
-  enterEditMode() {
-    this.setData({ editingImage: true })
-  },
-
-  // 退出编辑模式
-  exitEditMode() {
-    this.setData({ editingImage: false, selectedImageId: null })
-  },
-
-  // 选择要删除的图片
-  selectImageForDelete(e) {
-    const { id, index } = e.currentTarget.dataset
-    this.setData({ selectedImageId: { id, index } })
-  },
-
-  // 删除图片
-  async deleteImage() {
-    const { product, selectedImageId, imageDetails } = this.data
-    if (!selectedImageId) return
-
-    const { id, index } = selectedImageId
-    
-    wx.showModal({
-      title: '确认删除',
-      content: '确定要删除这张图片吗？',
-      success: async (res) => {
-        if (res.confirm) {
-          try {
-            wx.showLoading({ title: '删除中...' })
-            
-            console.log('删除图片 - 商品ID:', product.id, '图片ID:', id)
-            
-            // 调用后端API删除图片（使用实际的图片数据库ID）
-            await api.deleteProductImage(product.id, id)
-            
-            wx.hideLoading()
-            wx.showToast({
-              title: '删除成功',
-              icon: 'success'
-            })
-            
-            // 重新加载产品详情以获得最新的主图和图片列表
-            setTimeout(() => {
-              this.loadProductDetail(product.id)
-            }, 500)
-            
-            this.setData({
-              selectedImageId: null,
-              editingImage: false
-            })
-          } catch (error) {
-            wx.hideLoading()
-            console.error('删除图片失败:', error)
-            wx.showToast({
-              title: '删除失败',
-              icon: 'none'
-            })
-          }
-        }
-      }
-    })
-  },
 
   // 查看卖家资料
   viewSellerProfile() {
@@ -325,6 +260,20 @@ Page({
           }
         }
       }
+    })
+  },
+
+  // 前往我的商品列表
+  goToMyProducts() {
+    wx.navigateTo({
+      url: '/pages/product/myProducts'
+    })
+  },
+
+  // 返回主页
+  goToHome() {
+    wx.navigateTo({
+      url: '/pages/product/list'
     })
   }
 })

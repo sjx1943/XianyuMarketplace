@@ -1,29 +1,14 @@
 <!--商品详情页-->
 <view class="page">
-  <!-- 图片轮播 - 修复版：添加图片编辑功能 -->
+  <!-- 图片轮播 -->
   <view class="swiper-container" wx:if="{{product.images && product.images.length > 0}}">
     <swiper class="product-swiper" indicator-dots="{{true}}" autoplay="{{false}}" circular="{{true}}">
       <swiper-item wx:for="{{product.imageDetails}}" wx:key="id" data-index="{{index}}">
         <view class="swiper-item-wrapper">
           <image src="{{item.url}}" mode="aspectFill" class="swiper-image" bindtap="previewImage" data-url="{{item.url}}" binderror="onAvatarError"></image>
-          <!-- 编辑模式下显示删除按钮 -->
-          <view class="image-edit-overlay" wx:if="{{isOwner && editingImage}}">
-            <button class="delete-image-btn" bindtap="selectImageForDelete" data-id="{{item.id}}" data-index="{{index}}">
-              🗑️ 删除
-            </button>
-          </view>
         </view>
       </swiper-item>
     </swiper>
-    <!-- 自己商品时显示编辑/完成按钮 -->
-    <view class="image-control-bar" wx:if="{{isOwner}}">
-      <button class="control-btn" bindtap="{{editingImage ? 'exitEditMode' : 'enterEditMode'}}">
-        {{editingImage ? '完成' : '编辑图片'}}
-      </button>
-      <button class="control-btn confirm-delete" bindtap="deleteImage" wx:if="{{editingImage && selectedImageId}}">
-        确认删除
-      </button>
-    </view>
   </view>
   <view class="no-image" wx:else>
     <text>暂无商品图片</text>
@@ -96,16 +81,26 @@
       <button class="buy-btn" bindtap="onBuy">立即购买</button>
     </block>
     
-    <!-- 自己的商品：显示编辑、删除按钮 -->
+    <!-- 自己的商品：显示编辑、删除、我的商品按钮 -->
     <block wx:else>
-      <button class="action-btn" bindtap="onEdit" style="flex: 1; margin-right: 20rpx">
+      <button class="action-btn" bindtap="onEdit" style="flex: 1; margin-right: 10rpx">
         <text class="btn-icon">✏️</text>
         <text class="btn-text">编辑</text>
       </button>
-      <button class="action-btn delete-btn" bindtap="onDelete" style="flex: 1">
+      <button class="action-btn delete-btn" bindtap="onDelete" style="flex: 1; margin-right: 10rpx">
         <text class="btn-icon">🗑️</text>
         <text class="btn-text">删除</text>
       </button>
+      <button class="action-btn" bindtap="goToMyProducts" style="flex: 1">
+        <text class="btn-icon">📦</text>
+        <text class="btn-text">我的商品</text>
+      </button>
     </block>
+
+    <!-- 返回主页按钮（所有用户都显示） -->
+    <button class="action-btn" bindtap="goToHome" style="flex: 1; margin-left: 20rpx; background-color: #f0f0f0; color: #666">
+      <text class="btn-icon">🏠</text>
+      <text class="btn-text">返回主页</text>
+    </button>
   </view>
 </view>
