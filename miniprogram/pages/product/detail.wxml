@@ -3,12 +3,12 @@
   <!-- 图片轮播 - 修复版：添加图片编辑功能 -->
   <view class="swiper-container" wx:if="{{product.images && product.images.length > 0}}">
     <swiper class="product-swiper" indicator-dots="{{true}}" autoplay="{{false}}" circular="{{true}}">
-      <swiper-item wx:for="{{product.images}}" wx:key="index" data-index="{{index}}">
+      <swiper-item wx:for="{{product.imageDetails}}" wx:key="id" data-index="{{index}}">
         <view class="swiper-item-wrapper">
-          <image src="{{item}}" mode="aspectFill" class="swiper-image" bindtap="previewImage" data-url="{{item}}" binderror="onAvatarError"></image>
+          <image src="{{item.url}}" mode="aspectFill" class="swiper-image" bindtap="previewImage" data-url="{{item.url}}" binderror="onAvatarError"></image>
           <!-- 编辑模式下显示删除按钮 -->
           <view class="image-edit-overlay" wx:if="{{isOwner && editingImage}}">
-            <button class="delete-image-btn" bindtap="selectImageForDelete" data-id="{{index}}" data-index="{{index}}">
+            <button class="delete-image-btn" bindtap="selectImageForDelete" data-id="{{item.id}}" data-index="{{index}}">
               🗑️ 删除
             </button>
           </view>

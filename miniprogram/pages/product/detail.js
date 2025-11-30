@@ -9,7 +9,8 @@ Page({
     isOwner: false,
     currentUserId: null,
     editingImage: false,
-    selectedImageId: null
+    selectedImageId: null,
+    imageDetails: []
   },
 
   onLoad(options) {
@@ -45,16 +46,27 @@ Page({
       if (product && product.id) {
         // 处理图片数据：将图片对象数组转换为完整的服务器URL
         const { getImageUrl, getDefaultAvatarUrl } = require('../../utils/config.js')
-        const images = (product.images || []).map(img => {
+        
+        // 构建包含 ID 的图片详情数组
+        const imageDetails = (product.images || []).map((img, idx) => {
           const filename = typeof img === 'string' ? img : img.filename
-          return getImageUrl(filename)
+          const id = img.id || idx  // 优先使用后端返回的图片 ID，否则使用索引
+          return {
+            id: id,
+            url: getImageUrl(filename),
+            filename: filename
+          }
         })
+        
+        // 兼容旧版本：保留原始 images 数组（URL 数组）供分享等功能使用
+        const images = imageDetails.map(img => img.url)
         
         // 处理卖家信息字段映射
         const sellerAvatar = product.seller?.avatar ? getImageUrl(product.seller.avatar) : getDefaultAvatarUrl()
         const productData = {
           ...product,
           images: images,
+          imageDetails: imageDetails,
           seller_avatar: sellerAvatar,
           seller_name: product.seller?.username || product.seller_name || '未知卖家',
           seller_room: product.seller?.room_number || product.seller_room || '未设置',
@@ -66,6 +78,7 @@ Page({
         
         this.setData({
           product: productData,
+          imageDetails: imageDetails,
           loading: false,
           isOwner: isOwner
         })
@@ -114,7 +127,7 @@ Page({
 
   // 删除图片
   async deleteImage() {
-    const { product, selectedImageId } = this.data
+    const { product, selectedImageId, imageDetails } = this.data
     if (!selectedImageId) return
 
     const { id, index } = selectedImageId
@@ -127,13 +140,19 @@ Page({
           try {
             wx.showLoading({ title: '删除中...' })
             
-            // 调用后端API删除图片
+            console.log('删除图片 - 商品ID:', product.id, '图片ID:', id)
+            
+            // 调用后端API删除图片（使用实际的图片数据库ID）
             await api.deleteProductImage(product.id, id)
             
             // 更新本地图片列表
-            const newImages = product.images.filter((_, i) => i !== index)
+            const newImageDetails = imageDetails.filter((_, i) => i !== index)
+            const newImages = newImageDetails.map(img => img.url)
+            
             this.setData({
+              imageDetails: newImageDetails,
               'product.images': newImages,
+              'product.imageDetails': newImageDetails,
               selectedImageId: null
             })
             
