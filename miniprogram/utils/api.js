@@ -1,4 +1,4 @@
-// API请求封装
+// API请求封装 - 修复版
 const config = require('./config.js')
 
 class API {
@@ -9,37 +9,43 @@ class API {
     }
   }
 
-  // 通用请求方法
+  // 通用请求方法 - 核心修复：手动注入 Token，处理 401/403
   request(options) {
     const app = getApp()
     const token = wx.getStorageSync('token') || ''
     
     return new Promise((resolve, reject) => {
-      wx.showLoading({
-        title: options.loadingText || '加载中...',
-        mask: true
-      })
+      if (options.loadingText !== false) {
+        wx.showLoading({
+          title: options.loadingText || '加载中...',
+          mask: true
+        })
+      }
 
       wx.request({
         url: this.baseURL + options.url,
         method: options.method || 'GET',
         data: options.data || {},
         header: {
-          ...this.header,
+          'content-type': 'application/json',
           'Authorization': token ? 'Bearer ' + token : '',
           ...options.header
         },
         success: (res) => {
-          wx.hideLoading()
+          if (options.loadingText !== false) {
+            wx.hideLoading()
+          }
           
           if (res.statusCode === 200) {
             resolve(res.data)
           } else if (res.statusCode === 401 || res.statusCode === 403) {
-            // 未登录或会话过期
             wx.showToast({
               title: '请先登录',
               icon: 'none'
             })
+            
+            wx.removeStorageSync('token')
+            wx.removeStorageSync('userInfo')
             
             setTimeout(() => {
               wx.reLaunch({
@@ -49,15 +55,18 @@ class API {
             
             reject(new Error('未登录'))
           } else {
+            const errorMsg = (res.data && res.data.message) || (res.data && res.data.error) || '请求失败'
             wx.showToast({
-              title: res.data.error || '请求失败',
+              title: errorMsg,
               icon: 'none'
             })
-            reject(new Error(res.data.error || '请求失败'))
+            reject(new Error(errorMsg))
           }
         },
         fail: (err) => {
-          wx.hideLoading()
+          if (options.loadingText !== false) {
+            wx.hideLoading()
+          }
           wx.showToast({
             title: '网络错误',
             icon: 'none'

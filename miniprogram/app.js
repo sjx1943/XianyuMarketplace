@@ -2,9 +2,10 @@
 App({
   globalData: {
     userInfo: null,
+    baseUrl: 'https://okashii.top',
+    apiUrl: 'https://okashii.top/api',
     apiBase: '',
     wsBase: '',
-    baseUrl: 'https://okashii.top',
     isLogin: false,
     currentUserId: null,
     unreadCount: 0,
@@ -22,6 +23,7 @@ App({
     var configModule = require('./utils/config.js');
     self.globalData.apiBase = configModule.API_BASE;
     self.globalData.wsBase = configModule.WS_BASE;
+    self.globalData.baseUrl = configModule.config.api.production.host;
 
     // 初始化日志
     var logs = wx.getStorageSync('logs') || [];
