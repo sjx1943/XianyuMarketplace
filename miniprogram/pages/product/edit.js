@@ -204,10 +204,10 @@ Page({
     try {
       wx.showLoading({ title: '更新中...' })
 
-      const { productId, form, newImages } = this.data
+      const { productId, form, newImages, imageIds } = this.data
       const token = wx.getStorageSync('token') || ''
 
-      // 更新产品信息
+      // 更新产品信息，同时传递保留的图片ID列表
       await api.request({
         url: '/api/miniprogram/product/update',
         method: 'POST',
@@ -218,7 +218,8 @@ Page({
           description: form.description,
           price: String(form.price),
           tag: form.category,
-          condition: form.condition
+          condition: form.condition,
+          image_ids: imageIds
         }
       })
 

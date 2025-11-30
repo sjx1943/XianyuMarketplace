@@ -2055,7 +2055,8 @@ class MiniprogramProductUpdateHandler(tornado.web.RequestHandler):
     
     def post(self):
         """编辑商品信息"""
-        from models.product import Product
+        from models.product import Product, ProductImage
+        import os
         
         user_id = self._get_user_id()
         if not user_id:
@@ -2076,6 +2077,7 @@ class MiniprogramProductUpdateHandler(tornado.web.RequestHandler):
             price_str = data.get("price", "0") or self.get_argument("price", "0")
             tag = data.get("tag", "其他") or self.get_argument("tag", "其他")
             condition = data.get("condition", "九成新") or self.get_argument("condition", "九成新")
+            image_ids = data.get("image_ids", []) or []
             
             if not product_id:
                 self.set_status(400)
@@ -2097,6 +2099,30 @@ class MiniprogramProductUpdateHandler(tornado.web.RequestHandler):
                 self.set_status(400)
                 self.write(json.dumps({'success': False, 'error': '商品描述过长，最多5000字符'}))
                 return
+            
+            # 处理图片删除：删除不在 image_ids 列表中的图片
+            if image_ids:
+                all_images = self.session.query(ProductImage).filter_by(product_id=int(product_id)).all()
+                for img in all_images:
+                    if img.id not in image_ids:
+                        # 删除文件
+                        try:
+                            file_path = os.path.join('uploads', img.filename)
+                            if os.path.exists(file_path):
+                                os.remove(file_path)
+                        except:
+                            pass
+                        
+                        # 删除数据库记录
+                        self.session.delete(img)
+                        
+                        # 如果删除的是主图，更新为保留的第一张图片
+                        if product.image == img.filename:
+                            first_image = self.session.query(ProductImage).filter(
+                                ProductImage.product_id == int(product_id),
+                                ProductImage.id.in_(image_ids)
+                            ).first()
+                            product.image = first_image.filename if first_image else ""
             
             product.name = name
             product.description = description
