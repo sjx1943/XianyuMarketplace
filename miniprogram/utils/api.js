@@ -36,11 +36,15 @@ class API {
             wx.hideLoading()
           }
           
+          console.log('API 响应:', options.url, 'Status:', res.statusCode, 'Data:', res.data)
+          
           if (res.statusCode === 200) {
             resolve(res.data)
-          } else if (res.statusCode === 401 || res.statusCode === 403) {
+          } else if (res.statusCode === 401) {
+            // 只在明确是 401 未认证时才清除登录状态
+            console.warn('API 401 未认证，清除登录状态:', options.url)
             wx.showToast({
-              title: '请先登录',
+              title: '登录已过期，请重新登录',
               icon: 'none'
             })
             
@@ -53,9 +57,19 @@ class API {
               })
             }, 1500)
             
-            reject(new Error('未登录'))
+            reject(new Error('未认证'))
+          } else if (res.statusCode === 403) {
+            // 403 禁止访问 - 通常是权限问题，而非登录问题
+            console.warn('API 403 禁止访问:', options.url, res.data)
+            const errorMsg = (res.data && res.data.error) || '无权限访问此资源'
+            wx.showToast({
+              title: errorMsg,
+              icon: 'none'
+            })
+            reject(new Error(errorMsg))
           } else {
-            const errorMsg = (res.data && res.data.message) || (res.data && res.data.error) || '请求失败'
+            const errorMsg = (res.data && res.data.message) || (res.data && res.data.error) || `请求失败 (${res.statusCode})`
+            console.error('API 请求失败:', options.url, res.statusCode, errorMsg)
             wx.showToast({
               title: errorMsg,
               icon: 'none'
