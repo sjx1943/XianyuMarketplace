@@ -5,6 +5,7 @@ const app = getApp()
 Page({
   data: {
     product: {},
+    productId: null,
     loading: true,
     isOwner: false,
     currentUserId: null,
@@ -22,6 +23,7 @@ Page({
     }
     
     if (id) {
+      this.setData({ productId: id })
       this.loadProductDetail(id)
     } else {
       wx.showToast({
@@ -31,6 +33,17 @@ Page({
       setTimeout(() => {
         wx.navigateBack()
       }, 1500)
+    }
+  },
+
+  onShow() {
+    // 检查是否刚刚编辑过产品，如果是则重新加载
+    const app = getApp()
+    if (app.globalData.justEditedProductId === this.data.productId) {
+      app.globalData.justEditedProductId = null
+      if (this.data.productId) {
+        this.loadProductDetail(this.data.productId)
+      }
     }
   },
 

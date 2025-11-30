@@ -268,11 +268,13 @@ Page({
       wx.hideLoading()
       wx.showToast({ title: '更新成功', icon: 'success' })
 
-      // 5. 用redirectTo重新加载详情页而不是navigateBack
+      // 5. 设置编辑标志，然后返回上一页
+      // 这样detail.js的onShow会检测到编辑标志并重新加载数据
+      const app = getApp()
+      app.globalData.justEditedProductId = productId
+      
       setTimeout(() => {
-        wx.redirectTo({
-          url: `/pages/product/detail?id=${productId}`
-        })
+        wx.navigateBack()
       }, 1500)
     } catch (error) {
       wx.hideLoading()
