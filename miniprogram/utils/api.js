@@ -69,12 +69,19 @@ class API {
             reject(new Error(errorMsg))
           } else {
             const errorMsg = (res.data && res.data.message) || (res.data && res.data.error) || `请求失败 (${res.statusCode})`
-            console.error('API 请求失败:', options.url, res.statusCode, errorMsg)
-            wx.showToast({
-              title: errorMsg,
-              icon: 'none'
-            })
-            reject(new Error(errorMsg))
+            
+            // 对于DELETE 404请求，静默处理（图片已被删除）
+            if (res.statusCode === 404 && options.method === 'DELETE') {
+              console.warn('API 请求返回404，图片已不存在:', options.url)
+              reject(new Error(errorMsg))
+            } else {
+              console.error('API 请求失败:', options.url, res.statusCode, errorMsg)
+              wx.showToast({
+                title: errorMsg,
+                icon: 'none'
+              })
+              reject(new Error(errorMsg))
+            }
           }
         },
         fail: (err) => {
