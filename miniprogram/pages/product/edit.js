@@ -271,7 +271,8 @@ Page({
       // 5. 设置编辑标志，然后返回上一页
       // 这样detail.js的onShow会检测到编辑标志并重新加载数据
       const app = getApp()
-      app.globalData.justEditedProductId = productId
+      app.globalData.justEditedProductId = parseInt(productId)
+      console.log('设置编辑标志:', app.globalData.justEditedProductId)
       
       setTimeout(() => {
         wx.navigateBack()

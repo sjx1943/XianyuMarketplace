@@ -39,20 +39,27 @@ Page({
   onShow() {
     // 检查是否刚刚编辑过产品，如果是则重新加载
     const app = getApp()
-    if (app.globalData.justEditedProductId === this.data.productId) {
+    const justEditedId = app.globalData.justEditedProductId
+    const currentId = String(this.data.productId)
+    
+    console.log('onShow - justEditedId:', justEditedId, 'currentId:', currentId)
+    
+    if (justEditedId && String(justEditedId) === currentId) {
+      console.log('检测到商品编辑，重新加载数据')
       app.globalData.justEditedProductId = null
-      if (this.data.productId) {
-        this.loadProductDetail(this.data.productId)
-      }
+      // 立即重新加载，不等待任何延迟
+      this.loadProductDetail(this.data.productId)
     }
   },
 
   // 加载商品详情
   async loadProductDetail(id) {
     try {
+      console.log('loadProductDetail - 开始加载商品:', id)
       wx.showLoading({ title: '加载中...' })
       
       const data = await api.getProductDetail(id)
+      console.log('loadProductDetail - API返回数据:', data)
       
       // 后端返回 {success: true, product: {...}} 格式
       const product = data.product || data
