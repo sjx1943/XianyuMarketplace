@@ -265,14 +265,14 @@ Page({
 
   // 前往我的商品列表
   goToMyProducts() {
-    wx.navigateTo({
+    wx.reLaunch({
       url: '/pages/product/myProducts'
     })
   },
 
   // 返回主页
   goToHome() {
-    wx.navigateTo({
+    wx.reLaunch({
       url: '/pages/product/list'
     })
   }

@@ -216,7 +216,7 @@ Page({
       console.log('当前图片IDs:', imageIds)
       console.log('需要删除的图片IDs:', deletedImageIds)
 
-      // 2. 先删除被移除的图片
+      // 2. 先删除被移除的图片（忽略404错误，这些图片可能已不存在）
       for (const imageId of deletedImageIds) {
         try {
           await api.request({
@@ -225,7 +225,12 @@ Page({
             header: { 'Authorization': 'Bearer ' + token }
           })
         } catch (err) {
-          console.error(`删除图片${imageId}失败:`, err)
+          // 如果是404错误（图片不存在），则静默忽略；其他错误才记录
+          if (err.message && err.message.includes('404')) {
+            console.warn(`图片${imageId}已不存在，跳过删除`)
+          } else {
+            console.error(`删除图片${imageId}失败:`, err)
+          }
         }
       }
 
