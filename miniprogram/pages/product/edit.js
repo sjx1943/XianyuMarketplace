@@ -268,25 +268,12 @@ Page({
       wx.hideLoading()
       wx.showToast({ title: '更新成功', icon: 'success' })
 
-      // 5. 直接刷新上一页（detail页）的数据，而不依赖onShow
-      const pages = getCurrentPages()
-      if (pages.length >= 2) {
-        const prevPage = pages[pages.length - 2]
-        console.log('上一页:', prevPage.route)
-        
-        // 如果上一页是商品详情页，直接调用其loadProductDetail方法
-        if (prevPage.route === 'pages/product/detail' && prevPage.loadProductDetail) {
-          console.log('直接刷新detail页数据, productId:', productId)
-          prevPage.loadProductDetail(productId)
-        }
-      }
-      
-      // 同时设置编辑标志作为备份
-      const app = getApp()
-      app.globalData.justEditedProductId = parseInt(productId)
-      
+      // 5. 使用redirectTo返回detail页面，让它重新加载所有数据（包括主图和图片列表）
+      // 这样保证页面一定会重新onLoad并拉取最新数据
       setTimeout(() => {
-        wx.navigateBack()
+        wx.redirectTo({
+          url: `/pages/product/detail?id=${productId}`
+        })
       }, 1500)
     } catch (error) {
       wx.hideLoading()
