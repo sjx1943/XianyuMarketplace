@@ -184,6 +184,11 @@ class API {
     })
   }
 
+  // 更新用户信息（别名，与edit.js兼容）
+  updateUserInfo(data) {
+    return this.updateProfile(data)
+  }
+
   // ========== 商品相关API ==========
   
   // 获取商品列表

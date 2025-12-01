@@ -172,6 +172,23 @@ Page({
 
       const { images, form } = this.data
       const token = wx.getStorageSync('token') || ''
+      
+      // 检查token是否存在
+      if (!token) {
+        wx.hideLoading()
+        wx.showToast({
+          title: '登录已过期，请重新登录',
+          icon: 'none'
+        })
+        setTimeout(() => {
+          wx.navigateTo({
+            url: '/pages/login/login'
+          })
+        }, 1500)
+        this.setData({ submitting: false })
+        return
+      }
+      
       let productId = null
 
       for (let i = 0; i < images.length; i++) {
