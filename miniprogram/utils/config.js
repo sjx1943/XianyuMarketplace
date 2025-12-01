@@ -80,14 +80,14 @@ function getImageUrl(filename) {
   if (filename.startsWith('http://') || filename.startsWith('https://')) {
     return filename
   }
-  // 处理旧格式路径 (如 /static/uploads/xxx -> xxx)
-  if (filename.startsWith('/static/uploads/')) {
-    filename = filename.replace('/static/uploads/', '')
+  // 如果已经是绝对路径（/static/...），拼接host
+  if (filename.startsWith('/static/')) {
+    const env = isDev ? 'development' : 'production'
+    const host = config.api[env].host
+    return `${host}${filename}`
   }
-  if (filename.startsWith('/static/images/')) {
-    filename = filename.replace('/static/images/', '')
-  }
-  // 否则拼接完整URL
+  // 处理旧格式路径 (如 uploads/xxx)
+  // 否则拼接完整URL到 /static/images/
   const env = isDev ? 'development' : 'production'
   const host = config.api[env].host
   return `${host}/static/images/${filename}`

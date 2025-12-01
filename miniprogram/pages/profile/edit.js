@@ -123,16 +123,19 @@ Page({
     // 如果头像有变化，需要处理
     if (avatarChanged && avatar) {
       console.log('🔍 头像已变化，检查处理方式...')
-      if (avatar.startsWith('wxfile://')) {
+      // 检查是否是本地临时文件（wxfile:// 或 http://tmp/ 等本地路径格式）
+      const isLocalFile = avatar.startsWith('wxfile://') || avatar.startsWith('http://tmp/') || avatar.startsWith('/tmp/')
+      
+      if (isLocalFile) {
         // 新选择的图片 - 需要上传
-        console.log('📤 触发上传新头像流程')
+        console.log('📤 触发上传新头像流程，路径:', avatar)
         this.uploadAvatarAndSave(username, phone, roomNumber)
       } else if (avatar === defaultAvatar) {
         // 选择的是默认头像 - 直接保存，不上传
         console.log('🎨 使用默认头像，直接保存')
         this.saveProfileData(username, phone, roomNumber, defaultAvatar)
       } else {
-        // 其他情况（已有头像） - 不更改头像
+        // 其他情况（已有头像或网络URL） - 不更改头像
         console.log('⚠️ 其他情况，不改变头像')
         this.saveProfileData(username, phone, roomNumber, null)
       }

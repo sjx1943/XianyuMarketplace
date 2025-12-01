@@ -1,0 +1,23 @@
+API 响应: /api/miniprogram/unread_count Status: 200 Data: {success: true, count: 0, unread_count: 0}
+[渲染层网络层错误] Failed to load image https://a150b5ca-a58b-4dc4-89b0-68930565b5a5-00-e3vx0z9fny4f.riker.replit.dev/static/images/static/avatars/avatar_22_c28c7841.png
+the server responded with a status of 404 (HTTP/1.1 404 Not Found) 
+From server 34.173.153.191(env: macOS,mp,2.01.2510250; lib: 3.12.0)
+api.js:39 API 响应: /api/miniprogram/user/info Status: 200 Data: {success: true, user: {…}}
+[渲染层网络层错误] Failed to load image https://a150b5ca-a58b-4dc4-89b0-68930565b5a5-00-e3vx0z9fny4f.riker.replit.dev/static/images/static/avatars/avatar_22_c28c7841.png
+the server responded with a status of 404 (HTTP/1.1 404 Not Found) 
+From server 34.173.153.191(env: macOS,mp,2.01.2510250; lib: 3.12.0)
+edit.js? [sm]:48 📸 选择头像成功: http://tmp/Wzn4BObpyO6wf6d6135aa2ce3a96a7370cb403507990.png
+edit.js? [sm]:53 ✅ avatarChanged已设置为true, 当前avatar: http://tmp/Wzn4BObpyO6wf6d6135aa2ce3a96a7370cb403507990.png
+edit.js? [sm]:88 💾 保存资料 - 调试信息:
+edit.js? [sm]:89   avatarChanged: true
+edit.js? [sm]:90   avatar: http://tmp/Wzn4BObpyO6wf6d6135aa2ce3a96a7370cb403507990.png
+edit.js? [sm]:91   defaultAvatar: https://a150b5ca-a58b-4dc4-89b0-68930565b5a5-00-e3vx0z9fny4f.riker.replit.dev/static/images/default-avatar.png
+edit.js? [sm]:92   avatar是否以wxfile://开头: false
+edit.js? [sm]:125 🔍 头像已变化，检查处理方式...
+edit.js? [sm]:136 ⚠️ 其他情况，不改变头像
+edit.js? [sm]:223 💾 调用updateUserInfo，数据: {username: "wxfirst", phone: "13487678899", room_number: "3-1-908"}
+api.js:39 API 响应: /api/miniprogram/update_profile Status: 200 Data: {success: true, message: "资料更新成功", user: {…}}
+edit.js? [sm]:233 ✅ 保存成功，userInfo已更新
+profile.js? [sm]:63 Setting avatar: https://a150b5ca-a58b-4dc4-89b0-68930565b5a5-00-e3vx0z9fny4f.riker.replit.dev/static/images//static/avatars/avatar_22_c28c7841.png
+api.js:39 API 响应: /api/miniprogram/products Status: 200 Data: {success: true, products: Array(1), total: 1, page: 1, page_size: 20, …}
+api.js:39 API 响应: /api/miniprogram/unread_count Status: 200 Data: {success: true, count: 0, unread_count: 0}
