@@ -408,7 +408,7 @@ class MiniprogramUpdateProfileHandler(tornado.web.RequestHandler):
         return None
     
     def post(self):
-        """更新用户资料（昵称、头像等）"""
+        """更新用户资料（用户名、手机号、房间号、昵称、头像等）"""
         try:
             user_id = self._get_user_id()
             
@@ -421,11 +421,20 @@ class MiniprogramUpdateProfileHandler(tornado.web.RequestHandler):
                 return
             
             data = json.loads(self.request.body)
+            username = data.get('username', '')
+            phone = data.get('phone', '')
+            room_number = data.get('room_number', '')
             nickname = data.get('nickname', '')
             avatar = data.get('avatar', '')
             
             user = self.session.query(User).filter_by(id=int(user_id)).first()
             if user:
+                if username:
+                    user.username = username
+                if phone:
+                    user.phone = phone
+                if room_number:
+                    user.room_number = room_number
                 if nickname:
                     user.wechat_nickname = nickname
                 if avatar:
@@ -439,6 +448,7 @@ class MiniprogramUpdateProfileHandler(tornado.web.RequestHandler):
                     'user': {
                         'id': user.id,
                         'username': user.username,
+                        'phone': user.phone,
                         'room_number': user.room_number,
                         'wechat_nickname': user.wechat_nickname,
                         'wechat_avatar': user.wechat_avatar
