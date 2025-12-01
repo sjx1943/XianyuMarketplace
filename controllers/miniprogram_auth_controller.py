@@ -2282,3 +2282,73 @@ class MiniprogramAvatarUploadHandler(tornado.web.RequestHandler):
     
     def on_finish(self):
         self.session.close()
+
+
+class MiniprogramProductStatsHandler(tornado.web.RequestHandler):
+    """小程序商品统计接口"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def _get_user_id(self):
+        """从Cookie或Authorization头获取用户ID"""
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    def get(self):
+        """获取用户商品统计数据"""
+        from models.product import Product
+        
+        try:
+            user_id = self._get_user_id()
+            if not user_id:
+                self.set_status(401)
+                self.write(json.dumps({'success': False, 'error': '请先登录'}))
+                return
+            
+            # 统计在售商品数量
+            selling_count = self.session.query(Product).filter(
+                Product.user_id == int(user_id),
+                Product.status == '在售',
+                Product.quantity > 0
+            ).count()
+            
+            # 统计已售商品数量
+            sold_count = self.session.query(Product).filter(
+                Product.user_id == int(user_id),
+                Product.status == '已售'
+            ).count()
+            
+            # 统计收藏数量（从本地存储或返回0）
+            # 注：收藏功能应该存储在用户的favorite表中，这里暂时返回0
+            # 实际应该查询 SELECT COUNT(*) FROM user_favorites WHERE user_id = ?
+            favorites_count = 0
+            
+            self.write(json.dumps({
+                'success': True,
+                'selling': selling_count,
+                'sold': sold_count,
+                'favorites': favorites_count
+            }))
+            
+        except Exception as e:
+            logging.error(f"获取商品统计异常: {e}")
+            self.set_status(500)
+            self.write(json.dumps({'success': False, 'error': str(e)}))
+    
+    def on_finish(self):
+        self.session.close()

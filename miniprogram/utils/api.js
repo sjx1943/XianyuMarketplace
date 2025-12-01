@@ -327,6 +327,14 @@ class API {
     })
   }
 
+  // 获取商品统计数据（在售、已售、收藏）
+  getProductStats() {
+    return this.request({
+      url: '/api/miniprogram/product_stats',
+      method: 'GET'
+    })
+  }
+
   // ========== 聊天相关API ==========
   
   // 获取未读消息数量

@@ -73,27 +73,19 @@ Page({
         return
       }
 
-      // 加载统计数据（从商品列表计算）
-      const data = await api.getProductList({ user_id: userInfo.id })
-      
-      // 后端直接返回数组，不是包装在products字段中
-      const products = Array.isArray(data) ? data : []
-      
-      if (products.length >= 0) {
-        const myProducts = products.filter(p => p.user_id === userInfo.id)
-        const selling = myProducts.filter(p => p.status === '在售').length
-        const sold = myProducts.filter(p => p.status === '已售').length
-        
-        // 从本地存储获取收藏数量
-        const favorites = wx.getStorageSync('favorites') || []
-        
+      // 加载统计数据（调用后端API获取统计）
+      const statsData = await api.getProductStats()
+      if (statsData && statsData.success) {
         this.setData({
           stats: {
-            selling: selling,
-            sold: sold,
-            favorites: favorites.length
+            selling: statsData.selling || 0,
+            sold: statsData.sold || 0,
+            favorites: statsData.favorites || 0
           }
         })
+        console.log('✅ 已加载统计数据:', statsData)
+      } else {
+        console.warn('⚠️ 获取统计数据失败，使用默认值')
       }
     } catch (error) {
       console.error('加载用户数据失败:', error)
