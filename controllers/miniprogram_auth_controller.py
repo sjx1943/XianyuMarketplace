@@ -425,7 +425,7 @@ class MiniprogramUpdateProfileHandler(tornado.web.RequestHandler):
             phone = data.get('phone', '')
             room_number = data.get('room_number', '')
             nickname = data.get('nickname', '')
-            avatar = data.get('avatar', '')
+            avatar = data.get('avatar', '') or data.get('wechat_avatar', '')
             
             user = self.session.query(User).filter_by(id=int(user_id)).first()
             if user:
