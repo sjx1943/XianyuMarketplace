@@ -14,12 +14,31 @@
   margin-bottom: 20rpx;
 }
 
+.avatar-wrapper {
+  position: relative;
+  width: 120rpx;
+  height: 120rpx;
+  margin-right: 25rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .avatar {
   width: 120rpx;
   height: 120rpx;
   border-radius: 60rpx;
   border: 4rpx solid rgba(255, 255, 255, 0.3);
-  margin-right: 25rpx;
+}
+
+.avatar-tip {
+  position: absolute;
+  bottom: -40rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  font-size: 20rpx;
+  opacity: 0.8;
 }
 
 .user-info {

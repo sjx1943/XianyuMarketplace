@@ -6,6 +6,7 @@ const app = getApp()
 Page({
   data: {
     userInfo: {},
+    displayAvatar: require('../../utils/config.js').getDefaultAvatarUrl(),
     stats: {
       selling: 0,
       sold: 0,
@@ -53,12 +54,12 @@ Page({
     try {
       const userInfo = wx.getStorageSync('userInfo')
       if (userInfo) {
-        // 处理头像URL
-        const processedUserInfo = {
-          ...userInfo,
-          wechat_avatar: userInfo.wechat_avatar ? getImageUrl(userInfo.wechat_avatar) : getDefaultAvatarUrl()
-        }
-        this.setData({ userInfo: processedUserInfo })
+        // 处理头像URL - 始终显示正确的头像
+        const avatarUrl = userInfo.wechat_avatar ? getImageUrl(userInfo.wechat_avatar) : getDefaultAvatarUrl()
+        this.setData({ 
+          userInfo: userInfo,
+          displayAvatar: avatarUrl
+        })
       }
 
       // 加载统计数据（从商品列表计算）
@@ -132,6 +133,13 @@ Page({
           app.logout()
         }
       }
+    })
+  },
+
+  // 跳转到编辑资料页
+  goToEditProfile() {
+    wx.navigateTo({
+      url: '/pages/profile/edit'
     })
   },
 
