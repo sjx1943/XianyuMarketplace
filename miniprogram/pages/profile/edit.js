@@ -207,6 +207,14 @@ Page({
   },
 
   saveProfileData(username, phone, roomNumber, avatarUrl) {
+    // 保存原始值，用于失败时回滚
+    const originalData = {
+      username: this.data.userInfo?.username || '',
+      phone: this.data.userInfo?.phone || '',
+      roomNumber: this.data.userInfo?.room_number || '',
+      avatar: this.data.userInfo?.wechat_avatar || this.data.defaultAvatar
+    }
+
     const updateData = {
       username: username.trim()
     }
@@ -224,6 +232,7 @@ Page({
     }
 
     console.log('💾 调用updateUserInfo，数据:', updateData)
+    console.log('📝 原始数据用于回滚:', originalData)
 
     api.updateUserInfo(updateData).then(() => {
       const userInfo = wx.getStorageSync('userInfo') || {}
@@ -238,16 +247,25 @@ Page({
         title: '保存成功',
         icon: 'success'
       })
+      this.setData({ saving: false })
       setTimeout(() => {
         wx.navigateBack()
       }, 1500)
     }).catch(err => {
       console.error('❌ 保存失败:', err)
+      // 恢复原始值，确保前端数据与数据库一致
+      this.setData({
+        username: originalData.username,
+        phone: originalData.phone,
+        roomNumber: originalData.roomNumber,
+        avatar: originalData.avatar,
+        saving: false
+      })
+      console.log('🔄 已恢复原始数据:', originalData)
       wx.showToast({
         title: err.message || '保存失败',
         icon: 'none'
       })
-      this.setData({ saving: false })
     })
   }
 })

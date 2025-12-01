@@ -18,7 +18,7 @@ class User(Base):
     password = Column(String(255), nullable=False)
     email = Column(String(255), unique=True, nullable=False)
     reset_token = Column(String(255))
-    room_number = Column(String(50), unique=True, nullable=True)
+    room_number = Column(String(50), nullable=True)
     phone = Column(String(20), unique=True, nullable=True)
     is_admin = Column(Integer, default=0)
     is_active = Column(Integer, default=1)
