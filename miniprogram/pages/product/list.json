@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "商品列表",
+  "navigationBarTitleText": "物品列表",
   "enablePullDownRefresh": true,
   "onReachBottomDistance": 100
 }

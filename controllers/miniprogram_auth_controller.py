@@ -2210,24 +2210,27 @@ class MiniprogramAvatarUploadHandler(tornado.web.RequestHandler):
             ext = os.path.splitext(filename)[1] or '.jpg'
             filename = f"avatar_{user_id}_{uuid.uuid4().hex[:8]}{ext}"
             
-            # 保存文件
-            upload_path = self.app_settings.get('upload_path', 'static/images')
+            # 保存文件到 mystatics/avatars
+            upload_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mystatics', 'avatars')
             os.makedirs(upload_path, exist_ok=True)
             filepath = os.path.join(upload_path, filename)
             
             with open(filepath, 'wb') as f:
                 f.write(avatar['body'])
             
+            # 返回完整的URL路径用于前端显示
+            avatar_url = f"/static/avatars/{filename}"
+            
             # 更新用户头像信息到数据库
             user = self.session.query(User).filter_by(id=int(user_id)).first()
             if user:
-                user.wechat_avatar = filename
+                user.wechat_avatar = avatar_url
                 self.session.commit()
                 
                 self.write(json.dumps({
                     'success': True,
                     'message': '头像上传成功',
-                    'avatar_url': filename
+                    'avatar_url': avatar_url
                 }))
             else:
                 self.set_status(404)
