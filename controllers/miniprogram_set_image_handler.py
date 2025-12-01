@@ -2,12 +2,7 @@ import tornado.web
 import json
 import logging
 from sqlalchemy.orm import sessionmaker
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# 导入数据库连接
-from config import engine
+from base.base import engine
 from models.product import Product, ProductImage
 
 Session = sessionmaker(bind=engine)
