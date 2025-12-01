@@ -80,29 +80,32 @@
         <text class="btn-icon">{{product.is_favorited ? '❤️' : '🤍'}}</text>
         <text class="btn-text">收藏</text>
       </button>
-      <button class="chat-btn" bindtap="onChat" style="flex: 1; margin-right: 20rpx">
+      <button class="action-btn" bindtap="onChat">
         <text class="btn-icon">💬</text>
-        <text>联系卖家</text>
+        <text class="btn-text">联系卖家</text>
       </button>
-      <button class="buy-btn" bindtap="onBuy">立即购买</button>
+      <button class="action-btn" bindtap="onBuy">
+        <text class="btn-icon">🛒</text>
+        <text class="btn-text">购买</text>
+      </button>
     </block>
     
     <!-- 自己的商品：显示编辑、删除按钮 -->
     <block wx:else>
-      <button class="action-btn" bindtap="onEdit" style="flex: 1; margin-right: 10rpx">
+      <button class="action-btn" bindtap="onEdit">
         <text class="btn-icon">✏️</text>
         <text class="btn-text">编辑</text>
       </button>
-      <button class="action-btn delete-btn" bindtap="onDelete" style="flex: 1">
+      <button class="action-btn delete-btn" bindtap="onDelete">
         <text class="btn-icon">🗑️</text>
         <text class="btn-text">删除</text>
       </button>
     </block>
 
     <!-- 返回主页按钮（所有用户都显示） -->
-    <button class="action-btn" bindtap="goToHome" style="flex: 1; margin-left: 20rpx; background-color: #f0f0f0; color: #666">
+    <button class="action-btn" bindtap="goToHome">
       <text class="btn-icon">🏠</text>
-      <text class="btn-text">返回主页</text>
+      <text class="btn-text">返回</text>
     </button>
   </view>
 </view>
