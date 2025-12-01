@@ -2147,3 +2147,102 @@ class MiniprogramProductUpdateHandler(tornado.web.RequestHandler):
     
     def on_finish(self):
         self.session.close()
+
+
+class MiniprogramAvatarUploadHandler(tornado.web.RequestHandler):
+    """小程序用户头像上传接口"""
+    
+    def check_xsrf_cookie(self):
+        """禁用XSRF检查"""
+        pass
+    
+    def initialize(self, app_settings=None):
+        self.session = Session()
+        self.app_settings = app_settings or {}
+    
+    def _get_user_id(self):
+        """从Cookie或Authorization头获取用户ID"""
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    user_id = token.split('_')[-1]
+                    return user_id
+                except:
+                    pass
+        return None
+    
+    def post(self):
+        """上传用户头像"""
+        import os
+        try:
+            user_id = self._get_user_id()
+            
+            if not user_id:
+                self.set_status(401)
+                self.write(json.dumps({
+                    'success': False,
+                    'error': '未登录'
+                }))
+                return
+            
+            # 获取上传的文件
+            avatar_files = self.request.files.get('avatar', [])
+            if not avatar_files:
+                self.set_status(400)
+                self.write(json.dumps({
+                    'success': False,
+                    'error': '请选择头像文件'
+                }))
+                return
+            
+            # 取第一个文件
+            avatar = avatar_files[0]
+            filename = avatar['filename']
+            
+            # 规范化文件名
+            import uuid
+            ext = os.path.splitext(filename)[1] or '.jpg'
+            filename = f"avatar_{user_id}_{uuid.uuid4().hex[:8]}{ext}"
+            
+            # 保存文件
+            upload_path = self.app_settings.get('upload_path', 'static/images')
+            os.makedirs(upload_path, exist_ok=True)
+            filepath = os.path.join(upload_path, filename)
+            
+            with open(filepath, 'wb') as f:
+                f.write(avatar['body'])
+            
+            # 更新用户头像信息到数据库
+            user = self.session.query(User).filter_by(id=int(user_id)).first()
+            if user:
+                user.wechat_avatar = filename
+                self.session.commit()
+                
+                self.write(json.dumps({
+                    'success': True,
+                    'message': '头像上传成功',
+                    'avatar_url': filename
+                }))
+            else:
+                self.set_status(404)
+                self.write(json.dumps({
+                    'success': False,
+                    'error': '用户不存在'
+                }))
+        except Exception as e:
+            self.session.rollback()
+            logging.error(f"头像上传异常: {e}")
+            self.set_status(500)
+            self.write(json.dumps({
+                'success': False,
+                'error': f'上传失败: {str(e)}'
+            }))
+    
+    def on_finish(self):
+        self.session.close()
