@@ -5,6 +5,18 @@
 
   <block wx:if="{{!loading}}">
     <view class="form-section">
+      <view class="section-title">个人头像</view>
+      
+      <view class="avatar-container">
+        <image class="avatar-preview" src="{{avatar || defaultAvatar}}"></image>
+        <view class="avatar-actions">
+          <button class="avatar-btn" bindtap="chooseAvatar">选择头像</button>
+          <button class="avatar-btn secondary" bindtap="useDefaultAvatar">使用默认</button>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-section">
       <view class="section-title">个人信息</view>
       
       <view class="form-item">
