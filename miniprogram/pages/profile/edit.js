@@ -45,10 +45,12 @@ Page({
       sourceType: ['album', 'camera'],
       success: (res) => {
         const filePath = res.tempFilePaths[0]
+        console.log('📸 选择头像成功:', filePath)
         this.setData({
           avatar: filePath,
           avatarChanged: true
         })
+        console.log('✅ avatarChanged已设置为true, 当前avatar:', filePath)
         wx.showToast({
           title: '已选择头像',
           icon: 'success'
@@ -83,6 +85,12 @@ Page({
   saveProfile() {
     const { username, phone, roomNumber, avatar, avatarChanged, defaultAvatar } = this.data
     
+    console.log('💾 保存资料 - 调试信息:')
+    console.log('  avatarChanged:', avatarChanged)
+    console.log('  avatar:', avatar)
+    console.log('  defaultAvatar:', defaultAvatar)
+    console.log('  avatar是否以wxfile://开头:', avatar ? avatar.startsWith('wxfile://') : 'avatar为空')
+    
     if (!username.trim()) {
       wx.showToast({
         title: '请输入用户名',
@@ -114,18 +122,23 @@ Page({
 
     // 如果头像有变化，需要处理
     if (avatarChanged && avatar) {
+      console.log('🔍 头像已变化，检查处理方式...')
       if (avatar.startsWith('wxfile://')) {
         // 新选择的图片 - 需要上传
+        console.log('📤 触发上传新头像流程')
         this.uploadAvatarAndSave(username, phone, roomNumber)
       } else if (avatar === defaultAvatar) {
         // 选择的是默认头像 - 直接保存，不上传
+        console.log('🎨 使用默认头像，直接保存')
         this.saveProfileData(username, phone, roomNumber, defaultAvatar)
       } else {
         // 其他情况（已有头像） - 不更改头像
+        console.log('⚠️ 其他情况，不改变头像')
         this.saveProfileData(username, phone, roomNumber, null)
       }
     } else {
       // 未改变头像 - 仅保存其他信息
+      console.log('📝 头像未改变，仅保存其他信息')
       this.saveProfileData(username, phone, roomNumber, null)
     }
   },
@@ -133,6 +146,10 @@ Page({
   uploadAvatarAndSave(username, phone, roomNumber) {
     const { avatar } = this.data
     const token = wx.getStorageSync('token') || ''
+
+    console.log('🚀 开始上传头像...')
+    console.log('  文件路径:', avatar)
+    console.log('  API地址:', api.baseURL + '/api/miniprogram/user/upload-avatar')
 
     wx.uploadFile({
       url: api.baseURL + '/api/miniprogram/user/upload-avatar',
@@ -142,12 +159,16 @@ Page({
         'Authorization': 'Bearer ' + token
       },
       success: (res) => {
+        console.log('✅ 上传成功，响应:', res)
         if (res.statusCode === 200) {
           try {
             const data = JSON.parse(res.data)
+            console.log('📦 解析后的数据:', data)
             if (data.success) {
+              console.log('🎉 头像上传成功，avatar_url:', data.avatar_url)
               this.saveProfileData(username, phone, roomNumber, data.avatar_url)
             } else {
+              console.error('❌ 头像上传失败:', data.error)
               wx.showToast({
                 title: data.error || '头像上传失败',
                 icon: 'none'
@@ -155,6 +176,7 @@ Page({
               this.setData({ saving: false })
             }
           } catch (e) {
+            console.error('❌ 解析响应数据失败:', e)
             wx.showToast({
               title: '头像上传失败',
               icon: 'none'
@@ -162,6 +184,7 @@ Page({
             this.setData({ saving: false })
           }
         } else {
+          console.error('❌ 上传失败，状态码:', res.statusCode)
           wx.showToast({
             title: '头像上传失败',
             icon: 'none'
@@ -170,6 +193,7 @@ Page({
         }
       },
       fail: (err) => {
+        console.error('❌ 上传请求失败:', err)
         wx.showToast({
           title: '网络错误，请重试',
           icon: 'none'
@@ -196,6 +220,8 @@ Page({
       updateData.wechat_avatar = avatarUrl
     }
 
+    console.log('💾 调用updateUserInfo，数据:', updateData)
+
     api.updateUserInfo(updateData).then(() => {
       const userInfo = wx.getStorageSync('userInfo') || {}
       userInfo.username = username.trim()
@@ -204,6 +230,7 @@ Page({
       if (avatarUrl) userInfo.wechat_avatar = avatarUrl
       wx.setStorageSync('userInfo', userInfo)
       
+      console.log('✅ 保存成功，userInfo已更新')
       wx.showToast({
         title: '保存成功',
         icon: 'success'
@@ -212,6 +239,7 @@ Page({
         wx.navigateBack()
       }, 1500)
     }).catch(err => {
+      console.error('❌ 保存失败:', err)
       wx.showToast({
         title: err.message || '保存失败',
         icon: 'none'
