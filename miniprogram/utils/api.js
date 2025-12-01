@@ -335,6 +335,22 @@ class API {
     })
   }
 
+  // 删除商品图片
+  deleteProductImage(productId, imageId) {
+    return this.request({
+      url: `/api/miniprogram/product/${productId}/image/${imageId}/delete`,
+      method: 'DELETE'
+    })
+  }
+
+  // 设置商品主图
+  setProductImagePrimary(productId, imageId) {
+    return this.request({
+      url: `/api/miniprogram/product/${productId}/image/${imageId}/primary`,
+      method: 'POST'
+    })
+  }
+
   // ========== 聊天相关API ==========
   
   // 获取未读消息数量

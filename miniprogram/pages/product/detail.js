@@ -127,6 +127,89 @@ Page({
     })
   },
 
+  // 轮播变化时更新当前显示的图片
+  onSwiperChange(e) {
+    const { current } = e.detail
+    this.setData({ currentImageIndex: current })
+  },
+
+  // 删除商品图片
+  deleteImage(e) {
+    const { imageId, index } = e.currentTarget.dataset
+    const { product, imageDetails } = this.data
+
+    wx.showModal({
+      title: '删除图片',
+      content: '确定要删除这张图片吗？',
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            wx.showLoading({ title: '删除中...' })
+            await api.deleteProductImage(product.id, imageId)
+            
+            // 删除本地数据
+            const newImageDetails = imageDetails.filter(img => img.id !== imageId)
+            const newImages = newImageDetails.map(img => img.url)
+            
+            // 如果删除的是主图，更新主图
+            let newMainImage = product.image
+            if (imageDetails[index].filename === product.image && newImageDetails.length > 0) {
+              newMainImage = newImageDetails[0].filename
+            }
+            
+            this.setData({
+              imageDetails: newImageDetails,
+              'product.images': newImages,
+              'product.image': newMainImage
+            })
+            
+            wx.showToast({
+              title: '删除成功',
+              icon: 'success'
+            })
+          } catch (error) {
+            console.error('删除图片失败:', error)
+            wx.showToast({
+              title: '删除失败',
+              icon: 'none'
+            })
+          } finally {
+            wx.hideLoading()
+          }
+        }
+      }
+    })
+  },
+
+  // 设置主图
+  async setPrimaryImage(e) {
+    const { imageId, filename } = e.currentTarget.dataset
+    const { product } = this.data
+
+    try {
+      wx.showLoading({ title: '设置中...' })
+      await api.setProductImagePrimary(product.id, imageId)
+      
+      // 更新本地数据
+      this.setData({
+        'product.image': filename
+      })
+      
+      wx.showToast({
+        title: '主图设置成功',
+        icon: 'success'
+      })
+    } catch (error) {
+      console.error('设置主图失败:', error)
+      wx.showToast({
+        title: '设置失败',
+        icon: 'none'
+      })
+    } finally {
+      wx.hideLoading()
+    }
+  },
+
 
   // 查看卖家资料
   viewSellerProfile() {

@@ -39,6 +39,7 @@ from controllers.miniprogram_auth_controller import (
     MiniprogramAvatarUploadHandler,
     MiniprogramProductStatsHandler
 )
+from controllers.miniprogram_set_image_handler import MiniprogramProductSetImagePrimaryHandler
 from controllers.product_controller import ProductUploadHandler, HomePageHandler, ProductDetailHandler, ProductListHandler, ElseHomePageHandler, UpdateProductStatusHandler, DeleteProductHandler, PhysicalDeleteProductHandler, AdminDashboardHandler, ProductEditHandler
 from controllers.admin_controller import AdminLoginHandler, AdminDashboardHandler as NewAdminDashboardHandler, AdminUserManagementHandler, AdminProductManagementHandler, AdminOrderManagementHandler, AdminOrderDetailHandler
 from controllers.chat_controller import ChatWebSocketHandler, ChatHandler, MessageAPIHandler, SendMessageAPIHandler, MarkMessagesReadHandler, DeleteMessagesHandler, UnreadCountHandler
@@ -163,6 +164,7 @@ def make_app():
         (r"/api/miniprogram/order/(\d+)/ship", MiniprogramOrderShipHandler),
         (r"/api/miniprogram/my_products", MiniprogramMyProductsHandler),
         (r"/api/miniprogram/product/(\d+)/image/(\d+)/delete", MiniprogramProductDeleteImageHandler),
+        (r"/api/miniprogram/product/(\d+)/image/(\d+)/primary", MiniprogramProductSetImagePrimaryHandler),
         (r"/api/miniprogram/product_stats", MiniprogramProductStatsHandler),
         # 管理员路由
         (r"/admin/login", AdminLoginHandler),

@@ -2,10 +2,16 @@
 <view class="page">
   <!-- 图片轮播 -->
   <view class="swiper-container" wx:if="{{product.images && product.images.length > 0}}">
-    <swiper class="product-swiper" indicator-dots="{{true}}" autoplay="{{false}}" circular="{{true}}">
+    <swiper class="product-swiper" indicator-dots="{{true}}" autoplay="{{false}}" circular="{{true}}" bindchange="onSwiperChange">
       <swiper-item wx:for="{{product.imageDetails}}" wx:key="id" data-index="{{index}}">
         <view class="swiper-item-wrapper">
           <image src="{{item.url}}" mode="aspectFill" class="swiper-image" bindtap="previewImage" data-url="{{item.url}}" binderror="onAvatarError"></image>
+          <!-- 卖家可以删除和设置主图 -->
+          <view class="image-controls" wx:if="{{isOwner && product.imageDetails.length > 1}}">
+            <button class="img-btn delete-btn" bindtap="deleteImage" data-image-id="{{item.id}}" data-index="{{index}}" size="mini">🗑️ 删除</button>
+            <button class="img-btn primary-btn" bindtap="setPrimaryImage" data-image-id="{{item.id}}" data-filename="{{item.filename}}" size="mini" wx:if="{{product.image !== item.filename}}">⭐ 设为主图</button>
+            <text class="primary-badge" wx:if="{{product.image === item.filename}}">★ 主图</text>
+          </view>
         </view>
       </swiper-item>
     </swiper>
