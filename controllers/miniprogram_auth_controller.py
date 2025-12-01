@@ -809,8 +809,9 @@ class MiniprogramProductDeleteHandler(tornado.web.RequestHandler):
         return None
     
     def post(self, product_id):
-        """删除商品（软删除）"""
-        from models.product import Product
+        """删除商品（软删除）- 并自动删除所有关联图片文件"""
+        from models.product import Product, ProductImage
+        import os
         
         user_id_str = self._get_user_id()
         if not user_id_str:
@@ -832,6 +833,21 @@ class MiniprogramProductDeleteHandler(tornado.web.RequestHandler):
                 self.set_status(403)
                 self.write(json.dumps({'success': False, 'error': '无权删除此商品'}))
                 return
+            
+            # 删除所有关联的图片文件（自动清理）
+            images = self.session.query(ProductImage).filter_by(product_id=product_id).all()
+            upload_path = 'mystatics/images'
+            for image in images:
+                try:
+                    image_path = os.path.join(upload_path, image.filename)
+                    if os.path.exists(image_path):
+                        os.remove(image_path)
+                        logging.info(f"已删除商品图片文件: {image_path}")
+                except Exception as e:
+                    logging.warning(f"删除商品图片文件失败: {e}")
+            
+            # 从数据库删除图片记录
+            self.session.query(ProductImage).filter_by(product_id=product_id).delete()
             
             product.status = '已删除'
             self.session.commit()
@@ -2009,6 +2025,7 @@ class MiniprogramProductDeleteImageHandler(tornado.web.RequestHandler):
                 image_path = os.path.join(upload_path, image.filename)
                 if os.path.exists(image_path):
                     os.remove(image_path)
+                    logging.info(f"已删除商品图片文件: {image_path}")
                 
                 # 检查删除的是否是主图
                 was_primary = (product.image == image.filename)
