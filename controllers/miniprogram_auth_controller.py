@@ -2227,6 +2227,19 @@ class MiniprogramAvatarUploadHandler(tornado.web.RequestHandler):
             # 更新用户头像信息到数据库
             user = self.session.query(User).filter_by(id=int(user_id)).first()
             if user:
+                # 删除旧头像文件（如果存在）
+                old_avatar = user.wechat_avatar
+                if old_avatar and old_avatar.startswith('/static/avatars/'):
+                    # 从URL提取文件名
+                    old_filename = old_avatar.split('/')[-1]
+                    old_filepath = os.path.join(upload_path, old_filename)
+                    try:
+                        if os.path.exists(old_filepath):
+                            os.remove(old_filepath)
+                            logging.info(f"已删除旧头像: {old_filepath}")
+                    except Exception as e:
+                        logging.warning(f"删除旧头像失败: {e}")
+                
                 user.wechat_avatar = avatar_url
                 self.session.commit()
                 
