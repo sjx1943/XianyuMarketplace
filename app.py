@@ -36,7 +36,8 @@ from controllers.miniprogram_auth_controller import (
     MiniprogramOrderShipHandler,
     MiniprogramMyProductsHandler,
     MiniprogramProductDeleteImageHandler,
-    MiniprogramAvatarUploadHandler
+    MiniprogramAvatarUploadHandler,
+    MiniprogramProductStatsHandler
 )
 from controllers.product_controller import ProductUploadHandler, HomePageHandler, ProductDetailHandler, ProductListHandler, ElseHomePageHandler, UpdateProductStatusHandler, DeleteProductHandler, PhysicalDeleteProductHandler, AdminDashboardHandler, ProductEditHandler
 from controllers.admin_controller import AdminLoginHandler, AdminDashboardHandler as NewAdminDashboardHandler, AdminUserManagementHandler, AdminProductManagementHandler, AdminOrderManagementHandler, AdminOrderDetailHandler
@@ -162,6 +163,7 @@ def make_app():
         (r"/api/miniprogram/order/(\d+)/ship", MiniprogramOrderShipHandler),
         (r"/api/miniprogram/my_products", MiniprogramMyProductsHandler),
         (r"/api/miniprogram/product/(\d+)/image/(\d+)/delete", MiniprogramProductDeleteImageHandler),
+        (r"/api/miniprogram/product_stats", MiniprogramProductStatsHandler),
         # 管理员路由
         (r"/admin/login", AdminLoginHandler),
         (r"/admin/dashboard", NewAdminDashboardHandler),
