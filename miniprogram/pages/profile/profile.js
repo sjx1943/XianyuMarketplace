@@ -6,7 +6,7 @@ const app = getApp()
 Page({
   data: {
     userInfo: {},
-    displayAvatar: require('../../utils/config.js').getDefaultAvatarUrl(),
+    displayAvatar: '',
     stats: {
       selling: 0,
       sold: 0,
@@ -16,6 +16,10 @@ Page({
   },
 
   onLoad() {
+    // 先设置默认头像
+    this.setData({
+      displayAvatar: getDefaultAvatarUrl()
+    })
     this.loadUserData()
   },
 
@@ -56,10 +60,17 @@ Page({
       if (userInfo) {
         // 处理头像URL - 始终显示正确的头像
         const avatarUrl = userInfo.wechat_avatar ? getImageUrl(userInfo.wechat_avatar) : getDefaultAvatarUrl()
+        console.log('Setting avatar:', avatarUrl)
         this.setData({ 
           userInfo: userInfo,
           displayAvatar: avatarUrl
         })
+      } else {
+        // 没有userInfo时设置默认头像
+        this.setData({
+          displayAvatar: getDefaultAvatarUrl()
+        })
+        return
       }
 
       // 加载统计数据（从商品列表计算）
