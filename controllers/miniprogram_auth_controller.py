@@ -1296,6 +1296,63 @@ class MiniprogramProductsListHandler(tornado.web.RequestHandler):
         self.session.close()
 
 
+class MiniprogramActiveTagsHandler(tornado.web.RequestHandler):
+    """小程序获取实际使用的商品标签接口"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def get(self):
+        """获取所有在售商品中实际使用的标签（去重）"""
+        from models.product import Product
+        from sqlalchemy import distinct
+        
+        try:
+            # 查询所有在售且有库存的商品的标签（去重）
+            tags_query = self.session.query(distinct(Product.tag)).filter(
+                Product.status == '在售',
+                Product.quantity > 0,
+                Product.tag.isnot(None),
+                Product.tag != ''
+            ).all()
+            
+            # 提取标签列表
+            active_tags = [tag[0] for tag in tags_query if tag[0]]
+            
+            # 按固定顺序排序（保持与预设标签相同的顺序）
+            preset_order = ['数码产品', '家用电器', '服装鞋包', '图书音像', '运动户外', '美妆个护', '家居用品', '其他']
+            sorted_tags = []
+            for preset_tag in preset_order:
+                if preset_tag in active_tags:
+                    sorted_tags.append(preset_tag)
+            
+            # 添加任何不在预设列表中的标签
+            for tag in active_tags:
+                if tag not in sorted_tags:
+                    sorted_tags.append(tag)
+            
+            self.write(json.dumps({
+                'success': True,
+                'tags': sorted_tags,
+                'count': len(sorted_tags)
+            }))
+            
+        except Exception as e:
+            logging.error(f"获取活跃标签异常: {e}")
+            self.set_status(500)
+            self.write(json.dumps({
+                'success': False,
+                'error': str(e),
+                'tags': []
+            }))
+    
+    def on_finish(self):
+        self.session.close()
+
+
 class MiniprogramChatListHandler(tornado.web.RequestHandler):
     """小程序聊天列表接口"""
     

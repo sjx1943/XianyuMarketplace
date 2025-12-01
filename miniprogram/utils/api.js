@@ -257,6 +257,15 @@ class API {
     })
   }
 
+  // 获取活跃标签（实际被商品使用的标签）
+  getActiveTags() {
+    return this.request({
+      url: '/api/miniprogram/active_tags',
+      method: 'GET',
+      loadingText: false
+    })
+  }
+
   // ========== 订单相关API ==========
   
   // 获取订单列表

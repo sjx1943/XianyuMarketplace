@@ -45,6 +45,27 @@ The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
 -   **WeChat Open Platform OAuth**: For web WeChat login (`WECHAT_APP_ID`, `WECHAT_APP_SECRET`, `WECHAT_REDIRECT_URI`).
 -   **WeChat Mini Program**: Requires separate registration and AppID/AppSecret from WeChat Mini Program platform (`WX_MINIPROGRAM_APP_ID`, `WX_MINIPROGRAM_APP_SECRET`).
 
+## Recent Changes (December 1, 2025)
+
+### Dynamic Tags Feature
+-   **New API**: `/api/miniprogram/active_tags` - Returns only tags that are actually used by active products (not preset categories)
+-   **Backend Handler**: `MiniprogramActiveTagsHandler` queries distinct product tags from database, filtering for active products with stock > 0
+-   **Frontend Integration**:
+    -   Added `getActiveTags()` method to `api.js`
+    -   Modified `list.js` to call `loadActiveTags()` on page load/show, dynamically updating the categories filter
+    -   Product list page now shows only tags that have associated products, improving UX and filter relevance
+-   **Example**: If platform only has products tagged "电子产品" and "书籍", only those 2 tags + "全部" are shown (not all 8 preset categories)
+
+### Room Number Constraint Removed
+-   **Database Change**: Removed UNIQUE constraint from `room_number` column in `xu_user` table
+-   **Model Update**: Modified `models/user.py` to remove `unique=True` from `room_number` field
+-   **Allows**: Multiple users can now have the same room number (e.g., family members in same apartment)
+
+### Profile Edit Data Consistency Fix
+-   **Issue**: When API update failed, frontend displayed modified values while database remained unchanged ("fake update")
+-   **Solution**: Added rollback logic to `saveProfileData()` in `edit.js` - on API failure, all form fields revert to original values from `userInfo`
+-   **Result**: Frontend display always matches actual database state
+
 ## Recent Changes (November 29, 2025)
 
 ### Critical Bug Fixes - Image Loading (Production) - FINAL FIX

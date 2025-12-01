@@ -8,7 +8,7 @@ Page({
     page: 1,
     pageSize: 20,
     hasMore: true,
-    categories: ['全部', '数码产品', '家用电器', '服装鞋包', '图书音像', '运动户外', '美妆个护', '家居用品', '其他'],
+    categories: ['全部'],
     currentCategory: '全部',
     searchKeyword: ''
   },
@@ -17,12 +17,26 @@ Page({
     if (options.category) {
       this.setData({ currentCategory: options.category })
     }
+    this.loadActiveTags()
     this.loadProducts()
   },
 
   onShow() {
     this.setData({ page: 1, products: [], hasMore: true })
+    this.loadActiveTags()
     this.loadProducts()
+  },
+
+  loadActiveTags() {
+    api.getActiveTags().then(res => {
+      if (res.success && res.tags) {
+        const categories = ['全部', ...res.tags]
+        this.setData({ categories: categories })
+        console.log('📌 动态加载标签:', categories)
+      }
+    }).catch(err => {
+      console.error('加载标签失败:', err)
+    })
   },
 
   onPullDownRefresh() {
