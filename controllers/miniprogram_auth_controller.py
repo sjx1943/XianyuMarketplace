@@ -2182,6 +2182,7 @@ class MiniprogramAvatarUploadHandler(tornado.web.RequestHandler):
         import os
         try:
             user_id = self._get_user_id()
+            logging.info(f"头像上传请求: user_id={user_id}, files={list(self.request.files.keys())}")
             
             if not user_id:
                 self.set_status(401)
@@ -2193,7 +2194,9 @@ class MiniprogramAvatarUploadHandler(tornado.web.RequestHandler):
             
             # 获取上传的文件
             avatar_files = self.request.files.get('avatar', [])
+            logging.info(f"上传的文件数量: {len(avatar_files)}")
             if not avatar_files:
+                logging.error("没有找到avatar文件")
                 self.set_status(400)
                 self.write(json.dumps({
                     'success': False,
