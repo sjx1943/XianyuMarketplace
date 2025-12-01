@@ -81,7 +81,7 @@ Page({
   },
 
   saveProfile() {
-    const { username, phone, roomNumber, avatar, avatarChanged } = this.data
+    const { username, phone, roomNumber, avatar, avatarChanged, defaultAvatar } = this.data
     
     if (!username.trim()) {
       wx.showToast({
@@ -112,10 +112,20 @@ Page({
 
     this.setData({ saving: true })
 
-    // 如果头像有变化，先上传头像
-    if (avatarChanged && avatar && avatar.startsWith('wxfile://')) {
-      this.uploadAvatarAndSave(username, phone, roomNumber)
+    // 如果头像有变化，需要处理
+    if (avatarChanged && avatar) {
+      if (avatar.startsWith('wxfile://')) {
+        // 新选择的图片 - 需要上传
+        this.uploadAvatarAndSave(username, phone, roomNumber)
+      } else if (avatar === defaultAvatar) {
+        // 选择的是默认头像 - 直接保存，不上传
+        this.saveProfileData(username, phone, roomNumber, defaultAvatar)
+      } else {
+        // 其他情况（已有头像） - 不更改头像
+        this.saveProfileData(username, phone, roomNumber, null)
+      }
     } else {
+      // 未改变头像 - 仅保存其他信息
       this.saveProfileData(username, phone, roomNumber, null)
     }
   },
