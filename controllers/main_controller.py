@@ -135,9 +135,14 @@ class MainHandler(tornado.web.RequestHandler):
 
             products = self.get_products()
             tags = []
+            # 支持逗号分隔的多标签，分割后去重
+            tag_set = set()
             for product in products:
-                if product['tag'] not in tags:
-                    tags.append(product['tag'])
+                if product['tag']:
+                    # 分割逗号分隔的标签（如"书籍,家电"）
+                    product_tags = [t.strip() for t in product['tag'].split(',')]
+                    tag_set.update(product_tags)
+            tags = sorted(list(tag_set))
 
             if username is not None:
                 username = username.decode('utf-8')

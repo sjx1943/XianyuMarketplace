@@ -291,13 +291,17 @@ class ProductListHandler(tornado.web.RequestHandler):
 
     def get(self):
         from models.product import ProductImage
+        from sqlalchemy import or_
         tags = self.get_arguments("tag")
         query = self.session.query(Product).filter(
             Product.status == '在售',
             Product.quantity > 0
         )
+        # 支持逗号分隔的多标签模糊匹配
         if tags and 'all' not in tags:
-            query = query.filter(Product.tag.in_(tags))
+            # 构建OR条件，每个标签都用LIKE进行模糊匹配
+            tag_filters = [Product.tag.ilike(f'%{tag}%') for tag in tags]
+            query = query.filter(or_(*tag_filters))
         
         products = query.all()
 
