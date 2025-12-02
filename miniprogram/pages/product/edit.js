@@ -172,6 +172,11 @@ Page({
       return false
     }
 
+    if (!form.quantity || parseInt(form.quantity) <= 0) {
+      wx.showToast({ title: '请输入正确的商品数量', icon: 'none' })
+      return false
+    }
+
     if (categoryIndex < 0) {
       wx.showToast({ title: '请选择商品分类', icon: 'none' })
       return false
@@ -221,7 +226,7 @@ Page({
         }
       }
 
-      // 3. 更新产品信息（不再需要传递image_ids）
+      // 3. 更新产品信息（包含数量）
       await api.request({
         url: '/api/miniprogram/product/update',
         method: 'POST',
@@ -231,6 +236,7 @@ Page({
           name: form.name,
           description: form.description,
           price: String(form.price),
+          quantity: String(form.quantity || '1'),
           tag: form.category,
           condition: form.condition
         }

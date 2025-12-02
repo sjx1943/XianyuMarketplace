@@ -2344,6 +2344,7 @@ class MiniprogramProductUpdateHandler(tornado.web.RequestHandler):
             price_str = data.get("price", "0") or self.get_argument("price", "0")
             tag = data.get("tag", "其他") or self.get_argument("tag", "其他")
             condition = data.get("condition", "九成新") or self.get_argument("condition", "九成新")
+            quantity_str = data.get("quantity") or self.get_argument("quantity", None)
             
             if not product_id:
                 self.set_status(400)
@@ -2371,6 +2372,17 @@ class MiniprogramProductUpdateHandler(tornado.web.RequestHandler):
             product.price = float(price_str)
             product.tag = tag
             product.condition = condition
+            
+            # 更新商品数量
+            if quantity_str is not None:
+                new_quantity = int(quantity_str)
+                product.quantity = new_quantity
+                # 如果数量从0变为大于0，将状态改为"在售"
+                if new_quantity > 0 and product.status == '已售完':
+                    product.status = '在售'
+                # 如果数量变为0，将状态改为"已售完"
+                elif new_quantity <= 0:
+                    product.status = '已售完'
             
             self.session.commit()
             
