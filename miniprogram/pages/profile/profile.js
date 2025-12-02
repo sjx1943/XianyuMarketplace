@@ -93,6 +93,11 @@ Page({
   },
 
   async loadUnreadCount() {
+    // 只在用户已登录时才加载未读计数
+    if (!app.globalData.isLogin) {
+      return
+    }
+    
     try {
       const data = await api.getUnreadCount()
       if (data.success) {

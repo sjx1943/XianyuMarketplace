@@ -29,12 +29,15 @@ Page({
     this.loadActiveTags()
     this.loadProducts()
     
-    // 每30秒刷新一次未读订单计数
-    if (!this.unreadCountInterval) {
-      const app = getApp()
-      this.unreadCountInterval = setInterval(() => {
-        app.getUnreadCount()
-      }, 30000)
+    // 只在用户已登录时才启动定时器
+    const app = getApp()
+    if (app.globalData.isLogin) {
+      // 每30秒刷新一次未读订单计数
+      if (!this.unreadCountInterval) {
+        this.unreadCountInterval = setInterval(() => {
+          app.getUnreadCount()
+        }, 30000)
+      }
     }
   },
   
