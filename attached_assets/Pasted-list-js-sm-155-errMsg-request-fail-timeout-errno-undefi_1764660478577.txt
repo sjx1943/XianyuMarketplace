@@ -1,0 +1,84 @@
+list.js? [sm]:155 加载聊天列表失败: {errMsg: "request:fail timeout", errno: undefined}(env: macOS,mp,2.01.2510250; lib: 3.12.0)
+_callee2$ @ list.js? [sm]:155
+s @ VM5563:1
+(anonymous) @ VM5563:1
+(anonymous) @ VM5563:1
+asyncGeneratorStep @ VM5565:1
+i @ VM5565:1
+Promise.then (async)
+asyncGeneratorStep @ VM5565:1
+c @ VM5565:1
+(anonymous) @ VM5565:1
+(anonymous) @ VM5565:1
+loadChatList @ list.js? [sm]:156
+checkLoginAndLoad @ list.js? [sm]:126
+onLoad @ list.js? [sm]:17
+api.js:89 请注意 showLoading 与 hideLoading 必须配对使用
+fail @ api.js:89
+list.js? [sm]:178 加载广播失败: {errMsg: "request:fail timeout", errno: undefined}(env: macOS,mp,2.01.2510250; lib: 3.12.0)
+_callee3$ @ list.js? [sm]:178
+s @ VM5563:1
+(anonymous) @ VM5563:1
+(anonymous) @ VM5563:1
+asyncGeneratorStep @ VM5565:1
+i @ VM5565:1
+Promise.then (async)
+asyncGeneratorStep @ VM5565:1
+c @ VM5565:1
+(anonymous) @ VM5565:1
+(anonymous) @ VM5565:1
+loadBroadcasts @ list.js? [sm]:179
+checkLoginAndLoad @ list.js? [sm]:127
+onLoad @ list.js? [sm]:17
+api.js:89 请注意 showLoading 与 hideLoading 必须配对使用
+fail @ api.js:89
+list.js? [sm]:155 加载聊天列表失败: {errMsg: "request:fail timeout", errno: undefined}(env: macOS,mp,2.01.2510250; lib: 3.12.0)
+_callee2$ @ list.js? [sm]:155
+s @ VM5563:1
+(anonymous) @ VM5563:1
+(anonymous) @ VM5563:1
+asyncGeneratorStep @ VM5565:1
+i @ VM5565:1
+Promise.then (async)
+asyncGeneratorStep @ VM5565:1
+c @ VM5565:1
+(anonymous) @ VM5565:1
+(anonymous) @ VM5565:1
+loadChatList @ list.js? [sm]:156
+checkLoginAndLoad @ list.js? [sm]:126
+onShow @ list.js? [sm]:21
+api.js:89 请注意 showLoading 与 hideLoading 必须配对使用
+fail @ api.js:89
+list.js? [sm]:178 加载广播失败: {errMsg: "request:fail timeout", errno: undefined}(env: macOS,mp,2.01.2510250; lib: 3.12.0)
+_callee3$ @ list.js? [sm]:178
+s @ VM5563:1
+(anonymous) @ VM5563:1
+(anonymous) @ VM5563:1
+asyncGeneratorStep @ VM5565:1
+i @ VM5565:1
+Promise.then (async)
+asyncGeneratorStep @ VM5565:1
+c @ VM5565:1
+(anonymous) @ VM5565:1
+(anonymous) @ VM5565:1
+loadBroadcasts @ list.js? [sm]:179
+checkLoginAndLoad @ list.js? [sm]:127
+onShow @ list.js? [sm]:21
+list.js? [sm]:99 静默刷新聊天列表失败: {errMsg: "request:fail timeout", errno: undefined}(env: macOS,mp,2.01.2510250; lib: 3.12.0)
+_callee$ @ list.js? [sm]:99
+s @ VM5563:1
+(anonymous) @ VM5563:1
+(anonymous) @ VM5563:1
+asyncGeneratorStep @ VM5565:1
+i @ VM5565:1
+Promise.then (async)
+asyncGeneratorStep @ VM5565:1
+c @ VM5565:1
+(anonymous) @ VM5565:1
+(anonymous) @ VM5565:1
+loadChatListSilent @ list.js? [sm]:99
+(anonymous) @ list.js? [sm]:42
+setInterval (async)
+startPolling @ list.js? [sm]:41
+onShow @ list.js? [sm]:22
+list.js? [sm]:99 静默刷新聊天列表失败: {errMsg: "request:fail timeout", errno: undefined}(env: macOS,mp,2.01.2510250; lib: 3.12.0)
