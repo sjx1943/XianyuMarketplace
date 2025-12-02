@@ -11,17 +11,64 @@ Page({
     broadcastLoading: false
   },
 
+  pollTimer: null,
+
   onLoad() {
     this.checkLoginAndLoad()
   },
 
   onShow() {
     this.checkLoginAndLoad()
+    this.startPolling()
     
     if (this.getTabBar()) {
       this.getTabBar().setData({
         selected: 1
       })
+    }
+  },
+
+  onHide() {
+    this.stopPolling()
+  },
+
+  onUnload() {
+    this.stopPolling()
+  },
+
+  startPolling() {
+    this.stopPolling()
+    this.pollTimer = setInterval(() => {
+      this.loadChatListSilent()
+    }, 30000)
+  },
+
+  stopPolling() {
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer)
+      this.pollTimer = null
+    }
+  },
+
+  async loadChatListSilent() {
+    try {
+      const data = await api.getChatList()
+      const rawChatList = Array.isArray(data) ? data : (data.conversations || data.chats || [])
+      const chatList = rawChatList.map(chat => ({
+        ...chat,
+        avatar: chat.avatar ? getImageUrl(chat.avatar) : getDefaultAvatarUrl()
+      }))
+
+      this.setData({ chatList: chatList })
+
+      if (chatList.length > 0) {
+        const unreadCount = chatList.reduce((sum, chat) => sum + (chat.unread_count || 0), 0)
+        if (app.updateUnreadCount) {
+          app.updateUnreadCount(unreadCount)
+        }
+      }
+    } catch (error) {
+      console.error('静默刷新聊天列表失败:', error)
     }
   },
 

@@ -20,6 +20,10 @@ Page({
     socketConnected: false
   },
 
+  pollTimer: null,
+  lastMessageTimestamp: 0,
+  messageIdSet: new Set(),
+
   onLoad(options) {
     const friendId = options.friendId || options.friend_id
     const productId = options.productId || options.product_id
@@ -60,12 +64,97 @@ Page({
       })
     }
 
+    this.messageIdSet = new Set()
+    this.lastMessageTimestamp = 0
     this.loadChatHistory()
     this.connectWebSocket()
+    this.startPolling()
     this.markAsRead()
   },
 
   onUnload() {
+    this.stopPolling()
+    this.closeWebSocket()
+  },
+
+  onHide() {
+    this.stopPolling()
+  },
+
+  onShow() {
+    this.startPolling()
+    this.pollNewMessages()
+  },
+
+  startPolling() {
+    this.stopPolling()
+    this.pollTimer = setInterval(() => {
+      this.pollNewMessages()
+    }, 5000)
+  },
+
+  stopPolling() {
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer)
+      this.pollTimer = null
+    }
+  },
+
+  async pollNewMessages() {
+    if (this.data.loading) return
+    
+    try {
+      const data = await api.request({
+        url: '/api/miniprogram/messages',
+        method: 'GET',
+        data: {
+          friend_id: this.data.friendId,
+          limit: 50
+        }
+      })
+
+      if (data && data.messages && data.messages.length > 0) {
+        let hasNewMessages = false
+        const newMessages = []
+        
+        for (const msg of data.messages) {
+          const msgId = msg.id || `${msg.from_user_id}_${msg.timestamp}`
+          if (!this.messageIdSet.has(msgId)) {
+            this.messageIdSet.add(msgId)
+            const ts = this.parseTimestamp(msg.timestamp)
+            newMessages.push({
+              ...msg,
+              timestamp: ts,
+              time: msg.time || ''
+            })
+            hasNewMessages = true
+          }
+        }
+        
+        if (hasNewMessages) {
+          const allMessages = [...this.data.messages, ...newMessages]
+            .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
+          
+          const uniqueMessages = []
+          const seenIds = new Set()
+          for (const m of allMessages) {
+            const mId = m.id || `${m.from_user_id}_${m.timestamp}`
+            if (!seenIds.has(mId)) {
+              seenIds.add(mId)
+              uniqueMessages.push(m)
+            }
+          }
+          
+          this.setData({ messages: uniqueMessages }, () => {
+            this.scrollToBottom()
+          })
+          
+          this.markAsRead()
+        }
+      }
+    } catch (error) {
+      console.error('轮询新消息失败:', error)
+    }
   },
 
   async loadChatHistory() {
@@ -82,29 +171,23 @@ Page({
       })
 
       if (data && data.messages) {
-        // 根据时间戳排序消息（按时间升序）
-        // 统一解析时间戳为毫秒级数字
-        const parseTs = (ts) => {
-          if (!ts) return 0
-          if (typeof ts === 'number') return ts
-          if (typeof ts === 'string') {
-            try {
-              const date = new Date(ts.replace(' ', 'T') + '+08:00')
-              return date.getTime()
-            } catch (e) {
-              return 0
-            }
-          }
-          return 0
-        }
+        this.messageIdSet = new Set()
         
         const messages = (data.messages || [])
-          .map(msg => ({
-            ...msg,
-            timestamp: parseTs(msg.timestamp),
-            time: msg.time || ''
-          }))
+          .map(msg => {
+            const msgId = msg.id || `${msg.from_user_id}_${msg.timestamp}`
+            this.messageIdSet.add(msgId)
+            return {
+              ...msg,
+              timestamp: this.parseTimestamp(msg.timestamp),
+              time: msg.time || ''
+            }
+          })
           .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
+        
+        if (messages.length > 0) {
+          this.lastMessageTimestamp = messages[messages.length - 1].timestamp
+        }
         
         const friendInfo = data.friend || {}
         const friendRoomNumber = friendInfo.room_number || this.data.friendRoomNumber || '未设置'
@@ -212,7 +295,6 @@ Page({
   },
 
   addMessage(message) {
-    // 确保消息有timestamp用于排序，统一转换为毫秒级数字
     message.timestamp = this.parseTimestamp(message.timestamp)
     
     if (!message.time) {
@@ -220,14 +302,26 @@ Page({
       message.time = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
     }
     
-    // 检查是否重复消息
-    const existingIds = this.data.messages.map(m => m.id)
-    if (message.id && existingIds.includes(message.id)) {
-      console.log('消息已存在，跳过添加:', message.id)
+    const msgId = message.id || `${message.from_user_id || message.sender_id}_${message.timestamp}`
+    
+    if (this.messageIdSet.has(msgId)) {
+      console.log('消息已存在(Set检查)，跳过:', msgId)
       return
     }
     
-    // 创建新消息数组并排序，确保UI更新
+    const existingTimestamps = this.data.messages.map(m => m.timestamp)
+    if (existingTimestamps.includes(message.timestamp)) {
+      const sameTimestampMsgs = this.data.messages.filter(m => m.timestamp === message.timestamp)
+      for (const m of sameTimestampMsgs) {
+        if (m.content === message.content && m.sender_id === message.sender_id) {
+          console.log('消息已存在(内容+时间戳检查)，跳过')
+          return
+        }
+      }
+    }
+    
+    this.messageIdSet.add(msgId)
+    
     const updatedMessages = [
       ...this.data.messages,
       message
