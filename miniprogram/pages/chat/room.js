@@ -337,15 +337,9 @@ Page({
   },
 
   closeAllWebSocketListeners() {
-    try {
-      wx.offSocketOpen()
-      wx.offSocketMessage()
-      wx.offSocketError()
-      wx.offSocketClose()
-      console.log('已清理所有WebSocket监听器')
-    } catch (err) {
-      console.warn('清理WebSocket监听器异常:', err)
-    }
+    // 注：WebSocket事件监听器在页面卸载时会自动清理
+    // 不需要手动调用off方法（某些WeChat版本不支持）
+    console.log('WebSocket监听器将在页面卸载时自动清理')
   },
 
   parseTimestamp(ts) {
