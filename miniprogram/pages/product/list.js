@@ -19,12 +19,31 @@ Page({
     }
     this.loadActiveTags()
     this.loadProducts()
+    
+    // 初始化定时器引用
+    this.unreadCountInterval = null
   },
 
   onShow() {
     this.setData({ page: 1, products: [], hasMore: true })
     this.loadActiveTags()
     this.loadProducts()
+    
+    // 每30秒刷新一次未读订单计数
+    if (!this.unreadCountInterval) {
+      const app = getApp()
+      this.unreadCountInterval = setInterval(() => {
+        app.getUnreadCount()
+      }, 30000)
+    }
+  },
+  
+  onHide() {
+    // 页面隐藏时清除定时器
+    if (this.unreadCountInterval) {
+      clearInterval(this.unreadCountInterval)
+      this.unreadCountInterval = null
+    }
   },
 
   loadActiveTags() {

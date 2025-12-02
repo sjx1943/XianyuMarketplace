@@ -2568,3 +2568,60 @@ class MiniprogramProductStatsHandler(tornado.web.RequestHandler):
     
     def on_finish(self):
         self.session.close()
+
+
+class MiniprogramUnreadCountHandler(tornado.web.RequestHandler):
+    """小程序未读订单计数接口"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def _get_user_id(self):
+        """从Cookie或Authorization头获取用户ID"""
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    def get(self):
+        """获取用户未读订单数量（卖家待处理订单）"""
+        from models.order import Order
+        
+        try:
+            user_id = self._get_user_id()
+            if not user_id:
+                self.set_status(401)
+                self.write(json.dumps({'success': False, 'error': '请先登录'}))
+                return
+            
+            # 查询该卖家的待处理订单数量 (status='pending' AND seller_id=user_id)
+            unread_count = self.session.query(Order).filter(
+                Order.seller_id == int(user_id),
+                Order.status == 'pending'
+            ).count()
+            
+            self.write(json.dumps({
+                'success': True,
+                'count': unread_count,
+                'unread_count': unread_count
+            }))
+            
+        except Exception as e:
+            logging.error(f"获取未读订单计数异常: {e}")
+            self.set_status(500)
+            self.write(json.dumps({'success': False, 'error': str(e), 'count': 0}))
+    
+    def on_finish(self):
+        self.session.close()
