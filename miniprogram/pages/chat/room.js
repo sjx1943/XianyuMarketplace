@@ -75,10 +75,12 @@ Page({
   onUnload() {
     this.stopPolling()
     this.closeWebSocket()
+    this.closeAllWebSocketListeners()
   },
 
   onHide() {
     this.stopPolling()
+    this.closeWebSocket()
   },
 
   onShow() {
@@ -242,57 +244,92 @@ Page({
       return
     }
     
-    const socketUrl = `${config.WS_BASE}/chat_room/${friendId}?token=${encodeURIComponent(token)}`
-    console.log('WebSocket连接地址:', socketUrl)
+    // 先关闭之前的连接，避免快速切换时出现"未完成的操作"错误
+    this.closeWebSocket()
     
-    wx.connectSocket({
-      url: socketUrl,
-      success: () => {
-        console.log('WebSocket连接中...')
-      },
-      fail: (err) => {
-        console.error('WebSocket连接失败:', err)
-        console.log('WebSocket连接可能受平台限制，聊天功能将使用HTTP轮询')
-      }
-    })
-
-    wx.onSocketOpen(() => {
-      console.log('WebSocket已连接')
-      this.setData({ socketConnected: true })
-    })
-
-    wx.onSocketMessage((res) => {
-      try {
-        const message = JSON.parse(res.data)
-        console.log('收到WebSocket消息:', message)
-        
-        // 判断消息是否来自当前聊天对象（兼容两种字段名）
-        const fromUserId = message.sender_id || message.from_user_id
-        if (fromUserId === this.data.friendId) {
-          // 确保消息格式统一
-          message.sender_id = fromUserId
-          message.content = message.content || message.message || ''
-          this.addMessage(message)
-          this.markAsRead()
+    // 延迟建立新连接，确保旧连接完全关闭
+    setTimeout(() => {
+      const socketUrl = `${config.WS_BASE}/chat_room/${friendId}?token=${encodeURIComponent(token)}`
+      console.log('WebSocket连接地址:', socketUrl)
+      
+      wx.connectSocket({
+        url: socketUrl,
+        success: () => {
+          console.log('WebSocket连接中...')
+        },
+        fail: (err) => {
+          console.error('WebSocket连接失败:', err)
+          console.log('WebSocket连接可能受平台限制，聊天功能将使用HTTP轮询')
         }
-      } catch (error) {
-        console.error('解析消息失败:', error)
-      }
-    })
+      })
 
-    wx.onSocketError((err) => {
-      console.error('WebSocket错误:', err)
-      this.setData({ socketConnected: false })
-    })
+      wx.onSocketOpen(() => {
+        console.log('WebSocket已连接')
+        this.setData({ socketConnected: true })
+      })
 
-    wx.onSocketClose(() => {
-      console.log('WebSocket已关闭')
-      this.setData({ socketConnected: false })
-    })
+      wx.onSocketMessage((res) => {
+        try {
+          if (!this.data || !this.data.friendId) return
+          const message = JSON.parse(res.data)
+          console.log('收到WebSocket消息:', message)
+          
+          // 判断消息是否来自当前聊天对象（兼容两种字段名）
+          const fromUserId = message.sender_id || message.from_user_id
+          if (fromUserId === this.data.friendId) {
+            // 确保消息格式统一
+            message.sender_id = fromUserId
+            message.content = message.content || message.message || ''
+            this.addMessage(message)
+            this.markAsRead()
+          }
+        } catch (error) {
+          console.error('解析消息失败:', error)
+        }
+      })
+
+      wx.onSocketError((err) => {
+        console.error('WebSocket错误:', err)
+        this.setData({ socketConnected: false })
+      })
+
+      wx.onSocketClose(() => {
+        console.log('WebSocket已关闭')
+        this.setData({ socketConnected: false })
+      })
+    }, 100)
   },
 
   closeWebSocket() {
-    wx.closeSocket()
+    try {
+      wx.closeSocket({
+        code: 1000,
+        reason: '用户离开页面',
+        success: () => {
+          console.log('WebSocket已主动关闭')
+        },
+        fail: (err) => {
+          // 连接不存在或已关闭，不报错
+          if (err.errMsg && err.errMsg.indexOf('已关闭') === -1) {
+            console.warn('WebSocket关闭失败:', err)
+          }
+        }
+      })
+    } catch (err) {
+      console.warn('WebSocket关闭异常:', err)
+    }
+  },
+
+  closeAllWebSocketListeners() {
+    try {
+      wx.offSocketOpen()
+      wx.offSocketMessage()
+      wx.offSocketError()
+      wx.offSocketClose()
+      console.log('已清理所有WebSocket监听器')
+    } catch (err) {
+      console.warn('清理WebSocket监听器异常:', err)
+    }
   },
 
   parseTimestamp(ts) {
