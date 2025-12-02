@@ -115,20 +115,26 @@ Page({
 
       if (!data || !data.messages) return
       
-      const currentMsgIds = new Set(this.data.messages.map(m => m.id))
+      // 使用_id或id作为主键（与WebSocket和addMessage保持一致）
+      const currentMsgIds = new Set(this.data.messages.map(m => m._id || m.id))
       let hasNewMessages = false
       
       const allBackendMessages = data.messages.map(msg => {
-        const timestamp = this.parseTimestamp(msg.timestamp)
+        // 优先使用timestamp_ms，否则使用parseTimestamp（与addMessage保持一致）
+        const timestamp = msg.timestamp_ms && typeof msg.timestamp_ms === 'number' 
+          ? msg.timestamp_ms 
+          : this.parseTimestamp(msg.timestamp)
         return {
           ...msg,
+          _id: msg._id || msg.id,
           timestamp: timestamp,
           time: msg.time || ''
         }
       })
       
       const newMessages = allBackendMessages.filter(msg => {
-        const isNew = !currentMsgIds.has(msg.id)
+        const msgId = msg._id || msg.id
+        const isNew = !currentMsgIds.has(msgId)
         if (isNew) hasNewMessages = true
         return isNew
       })
@@ -139,8 +145,9 @@ Page({
         const deduplicatedMessages = []
         const seenIds = new Set()
         for (const m of mergedMessages) {
-          if (!seenIds.has(m.id)) {
-            seenIds.add(m.id)
+          const msgId = m._id || m.id
+          if (!seenIds.has(msgId)) {
+            seenIds.add(msgId)
             deduplicatedMessages.push(m)
           }
         }
@@ -178,11 +185,17 @@ Page({
         
         const messages = (data.messages || [])
           .map(msg => {
-            const msgId = msg.id || `${msg.from_user_id}_${msg.timestamp}`
+            // 优先使用_id作为唯一标识（与WebSocket和addMessage保持一致）
+            const msgId = msg._id || msg.id || `${msg.from_user_id}_${msg.timestamp_ms || msg.timestamp}`
             this.messageIdSet.add(msgId)
+            // 优先使用timestamp_ms（与addMessage保持一致）
+            const timestamp = msg.timestamp_ms && typeof msg.timestamp_ms === 'number'
+              ? msg.timestamp_ms
+              : this.parseTimestamp(msg.timestamp)
             return {
               ...msg,
-              timestamp: this.parseTimestamp(msg.timestamp),
+              _id: msg._id || msg.id,
+              timestamp: timestamp,
               time: msg.time || ''
             }
           })
@@ -298,39 +311,56 @@ Page({
   },
 
   addMessage(message) {
-    message.timestamp = this.parseTimestamp(message.timestamp)
-    
-    if (!message.time) {
-      const now = new Date()
-      message.time = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+    // 优先使用timestamp_ms作为时间戳（后端统一返回UTC+8毫秒时间戳）
+    // 否则解析timestamp字符串
+    if (message.timestamp_ms && typeof message.timestamp_ms === 'number') {
+      message.timestamp = message.timestamp_ms
+    } else {
+      message.timestamp = this.parseTimestamp(message.timestamp)
     }
     
-    const msgId = message.id || `${message.from_user_id || message.sender_id}_${message.timestamp}`
+    // 使用后端返回的time字段，否则从timestamp计算
+    if (!message.time) {
+      const date = new Date(message.timestamp)
+      const hours = String(date.getHours()).padStart(2, '0')
+      const mins = String(date.getMinutes()).padStart(2, '0')
+      message.time = `${hours}:${mins}`
+    }
+    
+    // 优先使用MongoDB的_id或id作为唯一标识（关键修复：防止重复）
+    const msgId = message._id || message.id || `${message.from_user_id || message.sender_id}_${message.timestamp}`
     
     if (this.messageIdSet.has(msgId)) {
       console.log('消息已存在(Set检查)，跳过:', msgId)
       return
     }
     
-    const existingTimestamps = this.data.messages.map(m => m.timestamp)
-    if (existingTimestamps.includes(message.timestamp)) {
-      const sameTimestampMsgs = this.data.messages.filter(m => m.timestamp === message.timestamp)
-      for (const m of sameTimestampMsgs) {
-        if (m.content === message.content && m.sender_id === message.sender_id) {
-          console.log('消息已存在(内容+时间戳检查)，跳过')
-          return
-        }
+    // 二次检查：相同内容+发送者+时间范围（1秒内）的消息
+    const existingMsgs = this.data.messages
+    const msgContent = message.content || message.message
+    const msgSender = message.sender_id || message.from_user_id
+    for (const m of existingMsgs) {
+      const existingContent = m.content || m.message
+      const existingSender = m.sender_id || m.from_user_id
+      const timeDiff = Math.abs((m.timestamp || 0) - (message.timestamp || 0))
+      if (existingContent === msgContent && existingSender === msgSender && timeDiff < 1000) {
+        console.log('消息已存在(内容+发送者+时间范围检查)，跳过')
+        return
       }
     }
     
     this.messageIdSet.add(msgId)
+    
+    // 统一消息格式
+    message.content = message.content || message.message
+    message.sender_id = message.sender_id || message.from_user_id
     
     const updatedMessages = [
       ...this.data.messages,
       message
     ].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
     
-    console.log('添加消息:', message.content, '时间戳:', message.timestamp, '总计:', updatedMessages.length, '条')
+    console.log('添加消息:', message.content, 'ID:', msgId, '时间戳:', message.timestamp, '总计:', updatedMessages.length, '条')
     
     this.setData({ 
       messages: updatedMessages 

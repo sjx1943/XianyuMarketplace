@@ -89,20 +89,43 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
             messages = yield self.mongo.chat_messages.find(query).to_list(length=None)
             logging.info(f"Found {len(messages)} unread messages for user_id: {user_id}")
 
+            china_tz = datetime.timezone(datetime.timedelta(hours=8))
             for message in messages:
                 message['_id'] = str(message['_id'])
+                message['id'] = message['_id']
 
-                # 格式化时间戳
+                # 格式化时间戳并添加timestamp_ms
+                # 注意：存储时使用的是UTC+8 aware datetime，读取时需正确处理
                 if 'timestamp' in message:
-                    if isinstance(message['timestamp'], datetime.datetime):
-                        message['timestamp'] = message['timestamp'].strftime("%Y-%m-%d %H:%M:%S")
-                    else:
+                    ts = message['timestamp']
+                    if isinstance(ts, datetime.datetime):
+                        if ts.tzinfo is not None:
+                            # 有时区信息 - 可能是UTC+8或UTC，统一转换为UTC+8
+                            ts_beijing = ts.astimezone(china_tz)
+                        else:
+                            # naive datetime - 数据库可能已转换为UTC
+                            # MongoDB存储UTC并返回UTC naive datetime
+                            ts_utc = ts.replace(tzinfo=datetime.timezone.utc)
+                            ts_beijing = ts_utc.astimezone(china_tz)
+                        message['timestamp'] = ts_beijing.strftime("%Y-%m-%d %H:%M:%S")
+                        message['timestamp_ms'] = int(ts_beijing.timestamp() * 1000)
+                        message['time'] = ts_beijing.strftime('%H:%M')
+                    elif isinstance(ts, str):
+                        # 字符串格式 "YYYY-MM-DD HH:MM:SS" - 假设为北京时间
                         try:
-                            message['timestamp'] = datetime.datetime.fromisoformat(message['timestamp']).strftime(
-                                "%Y-%m-%d %H:%M:%S")
+                            dt = datetime.datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
+                            dt_beijing = dt.replace(tzinfo=china_tz)
+                            message['timestamp'] = ts
+                            message['timestamp_ms'] = int(dt_beijing.timestamp() * 1000)
+                            message['time'] = dt_beijing.strftime('%H:%M')
                         except ValueError:
-                            logging.error(f"Invalid timestamp format: {message['timestamp']}")
-                            message['timestamp'] = "Invalid Date"
+                            logging.error(f"Invalid timestamp format: {ts}")
+                            message['timestamp'] = ts
+                            message['timestamp_ms'] = 0
+                            message['time'] = ''
+                    else:
+                        message['timestamp_ms'] = 0
+                        message['time'] = ''
 
                 # 添加isSelf字段并处理发送方显示名称
                 message['isSelf'] = message['from_user_id'] == user_id
@@ -178,7 +201,9 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
 
             # 使用中国时区
             china_tz = datetime.timezone(datetime.timedelta(hours=8))
-            timestamp = datetime.datetime.now(china_tz).strftime("%Y-%m-%d %H:%M:%S")
+            now_beijing = datetime.datetime.now(china_tz)
+            timestamp = now_beijing.strftime("%Y-%m-%d %H:%M:%S")
+            timestamp_ms = int(now_beijing.timestamp() * 1000)
 
             # 构建消息数据结构 - 使用房间号而非用户名
             message_data = {
@@ -188,24 +213,42 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
                 "message": message_content,
                 "product_id": product_id,
                 "product_name": product_name,
-                "timestamp": timestamp,
-                "status": "unread"  # 设置消息状态为未读
+                "timestamp": now_beijing,
+                "status": "unread"
             }
 
             # 保存到数据库
-            yield self.mongo.chat_messages.insert_one(message_data)
+            result = yield self.mongo.chat_messages.insert_one(message_data)
+            message_id = str(result.inserted_id)
+
+            # 构建推送消息（包含_id和timestamp_ms用于去重和排序）
+            push_data = {
+                "_id": message_id,
+                "id": message_id,
+                "from_user_id": from_user_id,
+                "from_username": from_display_name,
+                "to_user_id": target_user_id,
+                "message": message_content,
+                "content": message_content,
+                "product_id": product_id,
+                "product_name": product_name,
+                "timestamp": timestamp,
+                "timestamp_ms": timestamp_ms,
+                "time": now_beijing.strftime('%H:%M'),
+                "status": "unread"
+            }
 
             # 如果目标用户在线，发送消息
             if target_user_id in connections:
-                connections[target_user_id].write_message(json.dumps(message_data))
+                connections[target_user_id].write_message(json.dumps(push_data))
 
             # 发送成功的响应
             self.write_message(json.dumps({"status": "success", "message": "消息已发送"}))
 
             # 也发回给发送者 - 显示为"我(房间号)"格式
             if from_user_id in connections and from_user_id != target_user_id:
-                sender_data = message_data.copy()
-                sender_data["status"] = "read"  # 发送者看到的消息默认为已读
+                sender_data = push_data.copy()
+                sender_data["status"] = "read"
                 sender_data["from_username"] = f'我({from_display_name})'
                 sender_data["isSelf"] = True
                 connections[from_user_id].write_message(json.dumps(sender_data))
@@ -401,11 +444,38 @@ class MessageAPIHandler(tornado.web.RequestHandler):
             ]
         }).sort("timestamp", 1).to_list(length=None)
 
+        china_tz = datetime.timezone(datetime.timedelta(hours=8))
         for msg in messages:
             msg['_id'] = str(msg['_id'])
+            msg['id'] = msg['_id']
             msg['isSelf'] = msg['from_user_id'] == user_id
-            if isinstance(msg['timestamp'], datetime.datetime):
-                msg['timestamp'] = msg['timestamp'].strftime("%Y-%m-%d %H:%M:%S")
+            
+            ts = msg.get('timestamp')
+            if isinstance(ts, datetime.datetime):
+                if ts.tzinfo is not None:
+                    # 有时区信息 - 统一转换为UTC+8
+                    ts_beijing = ts.astimezone(china_tz)
+                else:
+                    # naive datetime - MongoDB返回UTC naive datetime
+                    ts_utc = ts.replace(tzinfo=datetime.timezone.utc)
+                    ts_beijing = ts_utc.astimezone(china_tz)
+                msg['timestamp'] = ts_beijing.strftime("%Y-%m-%d %H:%M:%S")
+                msg['timestamp_ms'] = int(ts_beijing.timestamp() * 1000)
+                msg['time'] = ts_beijing.strftime('%H:%M')
+            elif isinstance(ts, str):
+                # 字符串格式 "YYYY-MM-DD HH:MM:SS" - 假设为北京时间
+                try:
+                    dt = datetime.datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
+                    dt_beijing = dt.replace(tzinfo=china_tz)
+                    msg['timestamp'] = ts
+                    msg['timestamp_ms'] = int(dt_beijing.timestamp() * 1000)
+                    msg['time'] = dt_beijing.strftime('%H:%M')
+                except:
+                    msg['timestamp_ms'] = 0
+                    msg['time'] = ts
+            else:
+                msg['timestamp_ms'] = 0
+                msg['time'] = ''
 
         self.write(json.dumps(messages))
 
@@ -456,14 +526,16 @@ class SendMessageAPIHandler(tornado.web.RequestHandler):
 
             # 使用中国时区（东8区）
             china_tz = datetime.timezone(datetime.timedelta(hours=8))
-            timestamp = datetime.datetime.now(china_tz).strftime("%Y-%m-%d %H:%M:%S")
+            now_beijing = datetime.datetime.now(china_tz)
+            timestamp = now_beijing.strftime("%Y-%m-%d %H:%M:%S")
+            timestamp_ms = int(now_beijing.timestamp() * 1000)
             
             message = {
                 "from_user_id": user_id,
                 "from_username": self.get_secure_cookie("username").decode("utf-8"),
                 "to_user_id": friend_id,
                 "message": data["message"],
-                "timestamp": timestamp,
+                "timestamp": now_beijing,
                 "status": "unread",
                 "temp_id": temp_id
             }
@@ -472,17 +544,29 @@ class SendMessageAPIHandler(tornado.web.RequestHandler):
             result = yield self.mongo.chat_messages.insert_one(message)
             message_id = str(result.inserted_id)
 
+            # 构建推送数据（包含_id, id和timestamp_ms用于去重和排序）
+            push_data = {
+                "_id": message_id,
+                "id": message_id,
+                "from_user_id": user_id,
+                "from_username": self.get_secure_cookie("username").decode("utf-8"),
+                "to_user_id": friend_id,
+                "message": data["message"],
+                "content": data["message"],
+                "timestamp": timestamp,
+                "timestamp_ms": timestamp_ms,
+                "time": now_beijing.strftime('%H:%M'),
+                "status": "unread"
+            }
+
             # 检查目标用户是否在线且WebSocket连接正常
             target_user_id = friend_id
             if target_user_id in connections and connections[target_user_id].ws_connection:
-                message_data = message.copy()
-                message_data["_id"] = message_id
-                connections[target_user_id].write_message(json.dumps(message_data))
+                connections[target_user_id].write_message(json.dumps(push_data))
 
             # 也发回给发送者
             if user_id in connections and connections[user_id].ws_connection:
-                sender_data = message.copy()
-                sender_data["_id"] = message_id
+                sender_data = push_data.copy()
                 sender_data["status"] = "read"
                 connections[user_id].write_message(json.dumps(sender_data))
 

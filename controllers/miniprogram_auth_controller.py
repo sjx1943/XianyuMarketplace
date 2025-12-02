@@ -1006,38 +1006,38 @@ class MiniprogramMessagesHandler(tornado.web.RequestHandler):
             for msg in messages:
                 ts = msg.get('timestamp')
                 if isinstance(ts, datetime.datetime):
-                    # 确保时间戳是UTC+8北京时间
-                    if ts.tzinfo is None:
-                        # 如果是naive datetime，假设为UTC，转换为UTC+8
+                    # MongoDB将timezone-aware datetime转换为UTC存储
+                    # 返回时可能是naive UTC或带时区的datetime
+                    if ts.tzinfo is not None:
+                        # 有时区信息 - 统一转换为UTC+8
+                        ts_beijing = ts.astimezone(china_tz)
+                    else:
+                        # naive datetime - MongoDB返回的是UTC时间
                         ts_utc = ts.replace(tzinfo=datetime.timezone.utc)
                         ts_beijing = ts_utc.astimezone(china_tz)
-                    else:
-                        # 如果已有timezone，直接转换为UTC+8
-                        ts_beijing = ts.astimezone(china_tz)
                     
                     time_str = ts_beijing.strftime('%H:%M')
-                    # 毫秒级时间戳基于北京时间
+                    timestamp_str = ts_beijing.strftime('%Y-%m-%d %H:%M:%S')
                     timestamp_ms = int(ts_beijing.timestamp() * 1000)
                 elif isinstance(ts, str):
-                    # 如果是字符串格式的时间戳，尝试解析
+                    # 字符串格式 "YYYY-MM-DD HH:MM:SS" - 假设为北京时间
                     try:
-                        dt = datetime.datetime.fromisoformat(ts.replace('Z', '+00:00'))
-                        # 确保转换为UTC+8
-                        if dt.tzinfo is None:
-                            dt_utc = dt.replace(tzinfo=datetime.timezone.utc)
-                            dt_beijing = dt_utc.astimezone(china_tz)
-                        else:
-                            dt_beijing = dt.astimezone(china_tz)
+                        dt = datetime.datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
+                        dt_beijing = dt.replace(tzinfo=china_tz)
                         time_str = dt_beijing.strftime('%H:%M')
+                        timestamp_str = ts
                         timestamp_ms = int(dt_beijing.timestamp() * 1000)
                     except:
                         time_str = ts
+                        timestamp_str = ts
                         timestamp_ms = 0
                 else:
                     time_str = ''
+                    timestamp_str = ''
                     timestamp_ms = 0
                 
                 result.append({
+                    '_id': str(msg.get('_id', '')),
                     'id': str(msg.get('_id', '')),
                     'from_user_id': msg.get('from_user_id'),
                     'to_user_id': msg.get('to_user_id'),
@@ -1046,7 +1046,8 @@ class MiniprogramMessagesHandler(tornado.web.RequestHandler):
                     'message': msg.get('message', ''),
                     'type': 'text',
                     'time': time_str,
-                    'timestamp': timestamp_ms,
+                    'timestamp': timestamp_str,
+                    'timestamp_ms': timestamp_ms,
                     'status': msg.get('status', 'read')
                 })
             

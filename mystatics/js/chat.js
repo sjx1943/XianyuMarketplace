@@ -288,12 +288,16 @@ function appendMessage(sender, content, isSelf, timestamp, messageId) {
     try {
         let date;
         if (typeof timestamp === 'number') {
-            // 数字时间戳（毫秒）- 后端返回的UTC+8时间戳
-            // JavaScript的new Date会按UTC解释，所以需要减去8小时的差异
-            date = new Date(timestamp - 8 * 60 * 60 * 1000);
-        } else if (typeof timestamp === 'string') {
-            // 字符串格式 - 直接创建Date对象
+            // 数字时间戳（毫秒）- 直接解析，JavaScript会根据本地时区显示
             date = new Date(timestamp);
+        } else if (typeof timestamp === 'string') {
+            // 字符串格式 (如 "2025-12-02 10:47:55")
+            // 如果是 "YYYY-MM-DD HH:MM:SS" 格式，按UTC+8解析
+            if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(timestamp)) {
+                date = new Date(timestamp.replace(' ', 'T') + '+08:00');
+            } else {
+                date = new Date(timestamp);
+            }
         } else {
             date = new Date(timestamp);
         }
@@ -301,11 +305,11 @@ function appendMessage(sender, content, isSelf, timestamp, messageId) {
         if (!isNaN(date)) {
             timeSpan.textContent = formatMessageTime(date);
         } else {
-            timeSpan.textContent = timestamp; // 如果格式不对，显示原始字符串
+            timeSpan.textContent = timestamp;
         }
     } catch (e) {
         console.error('时间戳格式化出错:', e, '原始值:', timestamp);
-        timeSpan.textContent = timestamp; // 解析出错，显示原始字符串
+        timeSpan.textContent = timestamp;
     }
 
     msgDiv.appendChild(contentDiv);
