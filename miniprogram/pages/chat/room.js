@@ -83,13 +83,28 @@ Page({
 
       if (data && data.messages) {
         // 根据时间戳排序消息（按时间升序）
+        // 统一解析时间戳为毫秒级数字
+        const parseTs = (ts) => {
+          if (!ts) return 0
+          if (typeof ts === 'number') return ts
+          if (typeof ts === 'string') {
+            try {
+              const date = new Date(ts.replace(' ', 'T') + '+08:00')
+              return date.getTime()
+            } catch (e) {
+              return 0
+            }
+          }
+          return 0
+        }
+        
         const messages = (data.messages || [])
           .map(msg => ({
             ...msg,
-            timestamp: msg.timestamp || new Date(msg.created_at).getTime() || Date.now(),
-            time: msg.time || new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+            timestamp: parseTs(msg.timestamp),
+            time: msg.time || ''
           }))
-          .sort((a, b) => a.timestamp - b.timestamp)
+          .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
         
         const friendInfo = data.friend || {}
         const friendRoomNumber = friendInfo.room_number || this.data.friendRoomNumber || '未设置'
@@ -150,8 +165,14 @@ Page({
     wx.onSocketMessage((res) => {
       try {
         const message = JSON.parse(res.data)
+        console.log('收到WebSocket消息:', message)
         
-        if (message.sender_id === this.data.friendId) {
+        // 判断消息是否来自当前聊天对象（兼容两种字段名）
+        const fromUserId = message.sender_id || message.from_user_id
+        if (fromUserId === this.data.friendId) {
+          // 确保消息格式统一
+          message.sender_id = fromUserId
+          message.content = message.content || message.message || ''
           this.addMessage(message)
           this.markAsRead()
         }
@@ -175,23 +196,48 @@ Page({
     wx.closeSocket()
   },
 
+  parseTimestamp(ts) {
+    if (!ts) return Date.now()
+    if (typeof ts === 'number') return ts
+    if (typeof ts === 'string') {
+      // 尝试解析字符串时间戳 (格式: "2025-12-02 09:39:00")
+      try {
+        const date = new Date(ts.replace(' ', 'T') + '+08:00')
+        return date.getTime()
+      } catch (e) {
+        return Date.now()
+      }
+    }
+    return Date.now()
+  },
+
   addMessage(message) {
-    const now = new Date()
-    message.timestamp = message.timestamp || Date.now()
-    message.time = message.time || now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+    // 确保消息有timestamp用于排序，统一转换为毫秒级数字
+    message.timestamp = this.parseTimestamp(message.timestamp)
+    
+    if (!message.time) {
+      const now = new Date()
+      message.time = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+    }
+    
+    // 检查是否重复消息
+    const existingIds = this.data.messages.map(m => m.id)
+    if (message.id && existingIds.includes(message.id)) {
+      console.log('消息已存在，跳过添加:', message.id)
+      return
+    }
     
     // 创建新消息数组并排序，确保UI更新
     const updatedMessages = [
       ...this.data.messages,
       message
-    ].sort((a, b) => {
-      const timeA = a.timestamp || 0
-      const timeB = b.timestamp || 0
-      return timeA - timeB
-    })
+    ].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
     
-    this.setData({ messages: updatedMessages }, () => {
-      console.log('消息已更新，总计:', updatedMessages.length, '条')
+    console.log('添加消息:', message.content, '时间戳:', message.timestamp, '总计:', updatedMessages.length, '条')
+    
+    this.setData({ 
+      messages: updatedMessages 
+    }, () => {
       this.scrollToBottom()
     })
   },
@@ -213,6 +259,9 @@ Page({
       return
     }
 
+    // 先清空输入框，提升用户体验
+    this.setData({ inputText: '' })
+
     try {
       const data = await api.sendMessage({
         friend_id: this.data.friendId,
@@ -221,28 +270,21 @@ Page({
       })
 
       if (data.success) {
+        // 使用后端返回的完整消息数据
+        const messageData = data.data || {}
         this.addMessage({
-          id: data.message_id,
+          id: data.message_id || messageData.id,
           sender_id: this.data.currentUserId,
+          from_user_id: this.data.currentUserId,
           content: content,
+          message: content,
           type: 'text',
-          time: '刚刚'
+          time: messageData.time || '刚刚',
+          timestamp: messageData.timestamp || Date.now()
         })
-
-        this.setData({
-          inputText: ''
-        })
-
-        if (this.data.socketConnected) {
-          wx.sendSocketMessage({
-            data: JSON.stringify({
-              type: 'text',
-              receiver_id: this.data.friendId,
-              content: content
-            })
-          })
-        }
       } else {
+        // 发送失败，恢复输入框内容
+        this.setData({ inputText: content })
         wx.showToast({
           title: data.error || '发送失败',
           icon: 'none'
@@ -250,6 +292,8 @@ Page({
       }
     } catch (error) {
       console.error('发送消息失败:', error)
+      // 发送失败，恢复输入框内容
+      this.setData({ inputText: content })
       wx.showToast({
         title: '发送失败',
         icon: 'none'

@@ -1008,8 +1008,20 @@ class MiniprogramMessagesHandler(tornado.web.RequestHandler):
                     # 转换为北京时间（UTC+8）
                     beijing_time = ts + datetime.timedelta(hours=8)
                     time_str = beijing_time.strftime('%H:%M')
+                    # 添加时间戳（毫秒级）用于前端排序
+                    timestamp_ms = int(ts.timestamp() * 1000)
+                elif isinstance(ts, str):
+                    # 如果是字符串格式的时间戳，尝试解析
+                    try:
+                        dt = datetime.datetime.fromisoformat(ts.replace('Z', '+00:00'))
+                        time_str = dt.strftime('%H:%M')
+                        timestamp_ms = int(dt.timestamp() * 1000)
+                    except:
+                        time_str = ts
+                        timestamp_ms = 0
                 else:
                     time_str = ''
+                    timestamp_ms = 0
                 
                 result.append({
                     'id': str(msg.get('_id', '')),
@@ -1020,6 +1032,7 @@ class MiniprogramMessagesHandler(tornado.web.RequestHandler):
                     'message': msg.get('message', ''),
                     'type': 'text',
                     'time': time_str,
+                    'timestamp': timestamp_ms,
                     'status': msg.get('status', 'read')
                 })
             
@@ -1100,16 +1113,41 @@ class MiniprogramMessagesHandler(tornado.web.RequestHandler):
                 "status": "unread"
             }
             
-            yield self.mongo.chat_messages.insert_one(message_doc)
+            result = yield self.mongo.chat_messages.insert_one(message_doc)
+            message_id = str(result.inserted_id)
+            timestamp_ms = int(now.timestamp() * 1000)
+            
+            # 通过WebSocket推送给接收方
+            from controllers.chat_controller import connections
+            if friend_id in connections and connections[friend_id].ws_connection:
+                ws_message = {
+                    'id': message_id,
+                    'from_user_id': user_id,
+                    'to_user_id': friend_id,
+                    'sender_id': user_id,
+                    'content': message,
+                    'message': message,
+                    'type': 'text',
+                    'time': now.strftime('%H:%M'),
+                    'timestamp': timestamp_ms,
+                    'status': 'unread'
+                }
+                connections[friend_id].write_message(json.dumps(ws_message))
             
             self.write(json.dumps({
                 'success': True,
                 'message': '发送成功',
+                'message_id': message_id,
                 'data': {
+                    'id': message_id,
                     'from_user_id': user_id,
                     'to_user_id': friend_id,
+                    'sender_id': user_id,
+                    'content': message,
                     'message': message,
-                    'timestamp': now.strftime('%Y-%m-%d %H:%M:%S')
+                    'type': 'text',
+                    'time': now.strftime('%H:%M'),
+                    'timestamp': timestamp_ms
                 }
             }))
             

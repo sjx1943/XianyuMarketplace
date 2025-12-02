@@ -225,10 +225,12 @@ App({
   updateUnreadCount: function(count) {
     this.globalData.unreadCount = count;
     
+    // tabBar索引: 0=物品, 1=消息, 2=订单, 3=我的
+    // 未读消息徽章应该显示在"消息"tab上，即 index: 1
     if (count > 0) {
       try {
         wx.setTabBarBadge({
-          index: 2,
+          index: 1,
           text: count > 99 ? '99+' : count.toString()
         });
       } catch (err) {
@@ -237,7 +239,7 @@ App({
     } else {
       try {
         wx.removeTabBarBadge({
-          index: 2
+          index: 1
         });
       } catch (err) {
         console.error('移除tabBar徽标失败:', err);
