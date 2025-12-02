@@ -1769,10 +1769,26 @@ class MiniprogramOrdersHandler(tornado.web.RequestHandler):
                 self.write(json.dumps({'success': False, 'error': '购买数量必须大于0'}))
                 return
             
-            product = self.session.query(Product).filter_by(id=product_id).first()
+            # 使用行锁FOR UPDATE防止并发下单导致超卖
+            from sqlalchemy.exc import OperationalError as SQLOperationalError
+            
+            try:
+                product = self.session.query(Product).filter_by(id=product_id).with_for_update(nowait=True).first()
+            except SQLOperationalError:
+                # 行锁冲突，说明有其他用户正在购买
+                self.set_status(409)
+                self.write(json.dumps({'success': False, 'error': '有其他用户正在购买此商品，请稍后重试'}))
+                return
+            
             if not product:
                 self.set_status(404)
                 self.write(json.dumps({'success': False, 'error': '商品不存在'}))
+                return
+            
+            # 再次检查库存（加锁后检查）
+            if product.status == '已售完':
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '商品已售完'}))
                 return
             
             if product.quantity < quantity:

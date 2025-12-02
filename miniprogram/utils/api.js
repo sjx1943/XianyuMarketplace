@@ -439,6 +439,14 @@ class API {
       data: data
     })
   }
+
+  // 检查用户是否可以评价商品
+  canReview(productId) {
+    return this.request({
+      url: `/api/product/${productId}/can_review`,
+      method: 'GET'
+    })
+  }
 }
 
 module.exports = new API()

@@ -138,3 +138,15 @@
   background-color: #ff4444;
   color: #fff;
 }
+
+.countdown-text {
+  display: block;
+  color: #fff;
+  background-color: #e74c3c;
+  font-size: 24rpx;
+  padding: 10rpx 20rpx;
+  margin-top: 15rpx;
+  border-radius: 8rpx;
+  font-weight: bold;
+  text-align: center;
+}

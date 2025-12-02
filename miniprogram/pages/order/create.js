@@ -1,8 +1,10 @@
 const api = require('../../utils/api.js')
+const { getImageUrl } = require('../../utils/config.js')
 
 Page({
   data: {
     product: null,
+    productImage: '',
     quantity: 1,
     note: '',
     loading: true,
@@ -21,8 +23,24 @@ Page({
     
     api.getProductDetail(productId).then(res => {
       const product = res.product || res
+      
+      // 使用getImageUrl处理图片路径，确保是完整的服务器URL
+      const imageFilename = product.image || (product.images && product.images[0])
+      const productImage = imageFilename ? getImageUrl(imageFilename) : ''
+      
+      // 检查库存是否充足
+      if (product.quantity <= 0 || product.status === '已售完') {
+        wx.showToast({
+          title: '商品已售完',
+          icon: 'none'
+        })
+        setTimeout(() => wx.navigateBack(), 1500)
+        return
+      }
+      
       this.setData({
         product: product,
+        productImage: productImage,
         loading: false,
         totalPrice: this.calculateTotal(product.price, 1)
       })

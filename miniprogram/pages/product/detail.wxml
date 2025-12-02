@@ -73,6 +73,71 @@
     <text class="arrow">></text>
   </view>
 
+  <!-- 商品评价区域 -->
+  <view class="review-section">
+    <view class="section-header" bindtap="toggleComments">
+      <text class="section-title">📝 商品评价 ({{comments.length}})</text>
+      <text class="toggle-arrow">{{showComments ? '▲' : '▼'}}</text>
+    </view>
+    
+    <!-- 评价按钮 -->
+    <view class="review-action" wx:if="{{canReview}}" bindtap="openReviewModal">
+      <text class="review-btn">✍️ 写评价</text>
+    </view>
+    
+    <!-- 评论列表 -->
+    <view class="comments-list" wx:if="{{showComments && comments.length > 0}}">
+      <view class="comment-item" wx:for="{{comments}}" wx:key="id">
+        <view class="comment-header">
+          <text class="comment-user">{{item.user_name}}</text>
+          <view class="comment-rating">
+            <text wx:for="{{5}}" wx:for-item="star" wx:key="star">{{star < item.rating ? '⭐' : '☆'}}</text>
+          </view>
+        </view>
+        <text class="comment-content">{{item.content}}</text>
+        <text class="comment-time">{{item.created_at}}</text>
+      </view>
+    </view>
+    
+    <view class="no-comments" wx:if="{{showComments && comments.length === 0}}">
+      <text>暂无评价</text>
+    </view>
+  </view>
+
+  <!-- 评价弹框 -->
+  <view class="review-modal" wx:if="{{showReviewModal}}">
+    <view class="modal-mask" bindtap="closeReviewModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text class="modal-title">评价商品</text>
+        <text class="modal-close" bindtap="closeReviewModal">✕</text>
+      </view>
+      
+      <view class="rating-section">
+        <text class="rating-label">评分：</text>
+        <view class="rating-stars">
+          <text 
+            wx:for="{{[1,2,3,4,5]}}" 
+            wx:key="*this" 
+            class="star {{reviewRating >= item ? 'active' : ''}}"
+            bindtap="setRating"
+            data-rating="{{item}}"
+          >{{reviewRating >= item ? '⭐' : '☆'}}</text>
+        </view>
+      </view>
+      
+      <textarea 
+        class="review-textarea" 
+        placeholder="请输入您的评价内容..."
+        value="{{reviewContent}}"
+        bindinput="onReviewInput"
+        maxlength="500"
+      />
+      
+      <button class="submit-review-btn" bindtap="submitReview">提交评价</button>
+    </view>
+  </view>
+
   <!-- 底部操作栏 -->
   <view class="bottom-bar">
     <button class="action-btn" open-type="share">

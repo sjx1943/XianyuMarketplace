@@ -9,11 +9,17 @@ Page({
     loading: true,
     isOwner: false,
     currentUserId: null,
-    imageDetails: []
+    imageDetails: [],
+    canReview: false,
+    showReviewModal: false,
+    reviewRating: 5,
+    reviewContent: '',
+    comments: [],
+    showComments: false
   },
 
   onLoad(options) {
-    const { id } = options
+    const { id, showReview } = options
     
     const userInfo = wx.getStorageSync('userInfo')
     if (userInfo && userInfo.id) {
@@ -23,6 +29,17 @@ Page({
     if (id) {
       this.setData({ productId: id })
       this.loadProductDetail(id)
+      this.checkCanReview(id)
+      this.loadComments(id)
+      
+      // 如果从订单详情页跳转来评价，自动打开评价弹框
+      if (showReview === '1') {
+        setTimeout(() => {
+          if (this.data.canReview) {
+            this.setData({ showReviewModal: true })
+          }
+        }, 500)
+      }
     } else {
       wx.showToast({
         title: '商品不存在',
@@ -360,5 +377,105 @@ Page({
     wx.reLaunch({
       url: '/pages/product/list'
     })
+  },
+
+  // 检查用户是否可以评价此商品
+  async checkCanReview(productId) {
+    try {
+      const res = await api.canReview(productId)
+      this.setData({ canReview: res.can_review === true })
+    } catch (err) {
+      console.error('检查评价权限失败:', err)
+      this.setData({ canReview: false })
+    }
+  },
+
+  // 加载商品评论
+  async loadComments(productId) {
+    try {
+      const res = await api.getComments(productId)
+      if (res.success && res.comments) {
+        this.setData({ comments: res.comments })
+      }
+    } catch (err) {
+      console.error('加载评论失败:', err)
+    }
+  },
+
+  // 打开评价弹框
+  openReviewModal() {
+    if (!this.data.canReview) {
+      wx.showToast({
+        title: '只有完成交易后才能评价',
+        icon: 'none'
+      })
+      return
+    }
+    this.setData({ showReviewModal: true })
+  },
+
+  // 关闭评价弹框
+  closeReviewModal() {
+    this.setData({ showReviewModal: false })
+  },
+
+  // 设置评分
+  setRating(e) {
+    const rating = e.currentTarget.dataset.rating
+    this.setData({ reviewRating: rating })
+  },
+
+  // 评价内容输入
+  onReviewInput(e) {
+    this.setData({ reviewContent: e.detail.value })
+  },
+
+  // 提交评价
+  async submitReview() {
+    const { reviewRating, reviewContent, productId } = this.data
+    
+    if (!reviewContent.trim()) {
+      wx.showToast({
+        title: '请输入评价内容',
+        icon: 'none'
+      })
+      return
+    }
+
+    try {
+      wx.showLoading({ title: '提交中...' })
+      await api.postComment({
+        product_id: productId,
+        rating: reviewRating,
+        content: reviewContent
+      })
+      
+      wx.hideLoading()
+      wx.showToast({
+        title: '评价成功',
+        icon: 'success'
+      })
+      
+      this.setData({ 
+        showReviewModal: false,
+        reviewContent: '',
+        reviewRating: 5,
+        canReview: false
+      })
+      
+      // 重新加载评论
+      this.loadComments(productId)
+    } catch (err) {
+      wx.hideLoading()
+      wx.showToast({
+        title: err.message || '评价失败',
+        icon: 'none'
+      })
+    }
+  },
+
+  // 切换显示评论
+  toggleComments() {
+    this.setData({ showComments: !this.data.showComments })
   }
 })

@@ -191,17 +191,29 @@ class CanReviewHandler(tornado.web.RequestHandler):
     def initialize(self):
         self.session = Session()
 
-    def get_current_user(self):
+    def _get_user_id(self):
+        """获取用户ID，支持cookie和token两种认证方式"""
+        # 首先尝试cookie认证
         user_id = self.get_secure_cookie("user_id")
         if user_id:
-            return self.session.query(User).filter_by(id=int(user_id)).first()
+            return int(user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id)
+        
+        # 然后尝试token认证（小程序使用）
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return int(token.split('_')[-1])
+                except:
+                    pass
         return None
 
     def get(self, product_id):
         """检查用户是否可以评价指定商品"""
         try:
-            user = self.get_current_user()
-            if not user:
+            user_id = self._get_user_id()
+            if not user_id:
                 self.write(json.dumps({'can_review': False, 'reason': '未登录'}))
                 return
 
@@ -211,13 +223,13 @@ class CanReviewHandler(tornado.web.RequestHandler):
                 return
             
             # 卖家不能评价自己的商品
-            if product.user_id == user.id:
+            if product.user_id == user_id:
                 self.write(json.dumps({'can_review': False, 'reason': '不能评价自己的商品'}))
                 return
 
             # 检查是否已经评价过
             existing_comment = self.session.query(Comment).filter(
-                Comment.user_id == user.id,
+                Comment.user_id == user_id,
                 Comment.product_id == product_id
             ).first()
             
@@ -228,7 +240,7 @@ class CanReviewHandler(tornado.web.RequestHandler):
             # 检查是否有已完成的订单
             completed_order = self.session.query(Order).filter(
                 Order.product_id == product_id,
-                Order.user_id == user.id,
+                Order.user_id == user_id,
                 Order.status == 'completed'
             ).first()
             
