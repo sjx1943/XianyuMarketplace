@@ -286,13 +286,25 @@ function appendMessage(sender, content, isSelf, timestamp, messageId) {
     timeSpan.className = 'message-time';
     // 格式化时间戳，支持跨日期显示
     try {
-        const date = new Date(timestamp);
+        let date;
+        if (typeof timestamp === 'number') {
+            // 数字时间戳（毫秒）- 后端返回的UTC+8时间戳
+            // JavaScript的new Date会按UTC解释，所以需要减去8小时的差异
+            date = new Date(timestamp - 8 * 60 * 60 * 1000);
+        } else if (typeof timestamp === 'string') {
+            // 字符串格式 - 直接创建Date对象
+            date = new Date(timestamp);
+        } else {
+            date = new Date(timestamp);
+        }
+        
         if (!isNaN(date)) {
             timeSpan.textContent = formatMessageTime(date);
         } else {
             timeSpan.textContent = timestamp; // 如果格式不对，显示原始字符串
         }
     } catch (e) {
+        console.error('时间戳格式化出错:', e, '原始值:', timestamp);
         timeSpan.textContent = timestamp; // 解析出错，显示原始字符串
     }
 
