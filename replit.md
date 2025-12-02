@@ -47,6 +47,31 @@ The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
 
 ## Recent Changes (December 2, 2025)
 
+### Chat List and Broadcasts Timezone Fix
+-   **Issue**: Chat list (`/api/miniprogram/chat/list`) and broadcasts displayed UTC time instead of Beijing time (UTC+8)
+-   **Backend Fixes**:
+    -   `MiniprogramChatListHandler.get`: Fixed `last_time` field - MongoDB UTC timestamps now correctly converted to UTC+8 Beijing time
+    -   `MiniprogramBroadcastsHandler.get`: Fixed relative time calculation ("刚刚", "x小时前") - upload_time now correctly treated as UTC and converted to UTC+8
+-   **Result**: Chat list "最新消息时间" and broadcasts "上传时间" now display correct Beijing time
+
+### Message Long-Press Delete (Mini Program)
+-   **Feature**: Added long-press message deletion in chat room page, matching Web version functionality
+-   **Frontend Changes**:
+    -   `room.wxml`: Added `bindlongpress` event and data attributes to message items
+    -   `room.js`: Added `onMessageLongPress()` and `deleteMessage()` functions with action sheet UI
+    -   `api.js`: Added `deleteMessage()` and `deleteMessages()` API methods
+-   **Backend Changes**:
+    -   `DeleteMessagesHandler`: Added Bearer Token authentication support and disabled XSRF for mini program compatibility
+    -   Fixed code indentation bug causing HTTP 405 errors
+
+### WebSocket Connection Stability
+-   **Issue**: Fast page switching caused "未完成的操作" WebSocket errors
+-   **Fix**: Improved WebSocket lifecycle management in `room.js`:
+    -   Close existing connection before opening new one
+    -   Added 100ms delay between close and connect
+    -   Added `closeAllWebSocketListeners()` to cleanup event handlers
+    -   Enhanced error handling in `closeWebSocket()`
+
 ### Chat Message Timestamp and Deduplication Fix
 -   **Root Cause**: WebSocket and REST API returned inconsistent message formats - WebSocket lacked `_id` field and used different timestamp formats, causing Set-based deduplication to fail
 -   **Backend Fixes**:
