@@ -40,7 +40,7 @@ Page({
     this.stopPolling()
     this.pollTimer = setInterval(() => {
       this.loadChatListSilent()
-    }, 30000)
+    }, 10000)
   },
 
   stopPolling() {

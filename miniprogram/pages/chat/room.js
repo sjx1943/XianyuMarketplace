@@ -90,7 +90,7 @@ Page({
     this.stopPolling()
     this.pollTimer = setInterval(() => {
       this.pollNewMessages()
-    }, 5000)
+    }, 10000)
   },
 
   stopPolling() {
@@ -101,7 +101,7 @@ Page({
   },
 
   async pollNewMessages() {
-    if (this.data.loading) return
+    if (this.data.loading || !this.data.messages || this.data.messages.length === 0) return
     
     try {
       const data = await api.request({
@@ -109,48 +109,39 @@ Page({
         method: 'GET',
         data: {
           friend_id: this.data.friendId,
-          limit: 50
+          limit: 100
         }
       })
 
-      if (data && data.messages && data.messages.length > 0) {
-        let hasNewMessages = false
-        const newMessages = []
+      if (!data || !data.messages) return
+      
+      const currentMsgIds = new Set(this.data.messages.map(m => m.id))
+      const allBackendMessages = data.messages.map(msg => ({
+        ...msg,
+        timestamp: this.parseTimestamp(msg.timestamp),
+        time: msg.time || ''
+      }))
+      
+      const newMessages = allBackendMessages.filter(msg => !currentMsgIds.has(msg.id))
+      
+      if (newMessages.length > 0) {
+        const allMessages = [...this.data.messages, ...newMessages]
+          .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
         
-        for (const msg of data.messages) {
-          const msgId = msg.id || `${msg.from_user_id}_${msg.timestamp}`
-          if (!this.messageIdSet.has(msgId)) {
-            this.messageIdSet.add(msgId)
-            const ts = this.parseTimestamp(msg.timestamp)
-            newMessages.push({
-              ...msg,
-              timestamp: ts,
-              time: msg.time || ''
-            })
-            hasNewMessages = true
+        const deduplicatedMessages = []
+        const seenIds = new Set()
+        for (const m of allMessages) {
+          if (!seenIds.has(m.id)) {
+            seenIds.add(m.id)
+            deduplicatedMessages.push(m)
           }
         }
         
-        if (hasNewMessages) {
-          const allMessages = [...this.data.messages, ...newMessages]
-            .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
-          
-          const uniqueMessages = []
-          const seenIds = new Set()
-          for (const m of allMessages) {
-            const mId = m.id || `${m.from_user_id}_${m.timestamp}`
-            if (!seenIds.has(mId)) {
-              seenIds.add(mId)
-              uniqueMessages.push(m)
-            }
-          }
-          
-          this.setData({ messages: uniqueMessages }, () => {
-            this.scrollToBottom()
-          })
-          
-          this.markAsRead()
-        }
+        this.setData({ messages: deduplicatedMessages }, () => {
+          this.scrollToBottom()
+        })
+        
+        this.markAsRead()
       }
     } catch (error) {
       console.error('轮询新消息失败:', error)
