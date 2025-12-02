@@ -1565,6 +1565,85 @@ class MiniprogramChatListHandler(tornado.web.RequestHandler):
         self.session.close()
 
 
+class MiniprogramClearChatHandler(tornado.web.RequestHandler):
+    """小程序清除聊天记录接口"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self, mongo):
+        self.mongo = mongo
+        self.session = Session()
+    
+    def _get_user_id(self):
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    async def delete(self, friend_id):
+        """删除与指定好友的所有聊天记录"""
+        from models.friendship import Friendship
+        
+        user_id_str = self._get_user_id()
+        if not user_id_str:
+            self.set_status(401)
+            self.write(json.dumps({'success': False, 'error': '请先登录'}))
+            return
+        
+        user_id = int(user_id_str)
+        friend_id = int(friend_id)
+        
+        try:
+            # 从MongoDB删除双向聊天记录
+            result = await self.mongo.chat_messages.delete_many({
+                "$or": [
+                    {"from_user_id": user_id, "to_user_id": friend_id},
+                    {"from_user_id": friend_id, "to_user_id": user_id}
+                ]
+            })
+            
+            deleted_count = result.deleted_count
+            logging.info(f"用户 {user_id} 删除了与用户 {friend_id} 的 {deleted_count} 条聊天记录")
+            
+            # 可选：删除好友关系（让用户的聊天列表中不再显示该会话）
+            friendship = self.session.query(Friendship).filter_by(
+                user_id=user_id, friend_id=friend_id
+            ).first()
+            
+            if friendship:
+                self.session.delete(friendship)
+                self.session.commit()
+                logging.info(f"已删除用户 {user_id} 与 {friend_id} 的好友关系")
+            
+            self.set_header("Content-Type", "application/json")
+            self.write(json.dumps({
+                'success': True,
+                'message': f'已删除 {deleted_count} 条聊天记录',
+                'deleted_count': deleted_count
+            }))
+            
+        except Exception as e:
+            logging.error(f"删除聊天记录异常: {e}")
+            import traceback
+            traceback.print_exc()
+            self.session.rollback()
+            self.set_status(500)
+            self.write(json.dumps({'success': False, 'error': str(e)}))
+    
+    def on_finish(self):
+        self.session.close()
+
+
 class MiniprogramBroadcastsHandler(tornado.web.RequestHandler):
     """获取系统广播（最近10条商品发布）"""
     
