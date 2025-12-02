@@ -1,0 +1,56 @@
+list.js? [sm]:200 确认订单失败: Error: 只有买家可以确认收货
+    at success (api.js:69)
+    at Object.success (VM6848 WASubContext.js:1)
+    at Object.success (VM6848 WASubContext.js:1)
+    at Function.I.forEach.v.<computed> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1
+    at u (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at Function.<anonymous> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1(env: macOS,mp,2.01.2510250; lib: 3.12.0)
+_callee3$ @ list.js? [sm]:200
+s @ VM6925:1
+(anonymous) @ VM6925:1
+(anonymous) @ VM6925:1
+asyncGeneratorStep @ VM6927:1
+i @ VM6927:1
+Promise.then (async)
+asyncGeneratorStep @ VM6927:1
+c @ VM6927:1
+Promise.then (async)
+asyncGeneratorStep @ VM6927:1
+c @ VM6927:1
+(anonymous) @ VM6927:1
+(anonymous) @ VM6927:1
+confirmOrder @ list.js? [sm]:204
+api.js:25 POST https://a150b5ca-a58b-4dc4-89b0-68930565b5a5-00-e3vx0z9fny4f.riker.replit.dev/api/miniprogram/order/36/confirm 403 (Forbidden)(env: macOS,mp,2.01.2510250; lib: 3.12.0)
+(anonymous) @ api.js:25
+request @ api.js:17
+confirmOrder @ api.js:300
+_callee3$ @ list.js? [sm]:185
+s @ VM6925:1
+(anonymous) @ VM6925:1
+(anonymous) @ VM6925:1
+asyncGeneratorStep @ VM6927:1
+c @ VM6927:1
+Promise.then (async)
+asyncGeneratorStep @ VM6927:1
+c @ VM6927:1
+(anonymous) @ VM6927:1
+(anonymous) @ VM6927:1
+confirmOrder @ list.js? [sm]:204
+api.js:39 API 响应: /api/miniprogram/order/36/confirm Status: 403 Data: {success: false, error: "只有买家可以确认收货"}
+api.js:63 API 403 禁止访问: /api/miniprogram/order/36/confirm {success: false, error: "只有买家可以确认收货"}
+success @ api.js:63
+list.js? [sm]:200 确认订单失败: Error: 只有买家可以确认收货
+    at success (api.js:69)
+    at Object.success (VM6848 WASubContext.js:1)
+    at Object.success (VM6848 WASubContext.js:1)
+    at Function.I.forEach.v.<computed> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1
+    at u (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at Function.<anonymous> (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at p (WAServiceMainContext.js?t=wechat&v=3.12.0:1)
+    at WAServiceMainContext.js?t=wechat&v=3.12.0:1(env: macOS,mp,2.01.2510250; lib: 3.12.0)

@@ -33,6 +33,20 @@ Page({
     
     // 刷新未读订单数量
     app.getUnreadCount()
+    
+    // 检查是否需要自动跳转到"我卖出的"标签
+    // 如果没有待售订单但有待发货订单，则自动跳转
+    const queryTab = wx.getWindowInfo().pageRoute
+    if (queryTab && this.data.orderList.length > 0) {
+      const buyingOrders = this.data.orderList.filter(o => parseInt(o.buyer_id) === parseInt(app.globalData.userInfo?.id || app.globalData.currentUserId))
+      const sellingOrders = this.data.orderList.filter(o => parseInt(o.seller_id) === parseInt(app.globalData.userInfo?.id || app.globalData.currentUserId))
+      
+      // 如果当前是"我买到的"但只有卖出的订单，自动切换到"我卖出的"
+      if (this.data.activeTab === 0 && buyingOrders.length === 0 && sellingOrders.length > 0) {
+        this.setData({ activeTab: 1 })
+        this.loadOrders()
+      }
+    }
   },
 
   onPullDownRefresh() {
@@ -172,7 +186,24 @@ Page({
 
   async confirmOrder(e) {
     const { order } = e.currentTarget.dataset
-    const action = order.status === 'pending' ? '发货' : '收货'
+    const currentUserId = app.globalData.userInfo?.id || app.globalData.currentUserId
+    const currentUserIdNum = parseInt(currentUserId)
+    const isSeller = parseInt(order.seller_id) === currentUserIdNum
+    const isBuyer = parseInt(order.buyer_id) === currentUserIdNum
+    
+    // 判断操作类型：卖家在pending状态发货，买家在shipped状态收货
+    const isSelling = order.status === 'pending' && isSeller
+    const isBuying = order.status === 'shipped' && isBuyer
+    
+    if (!isSelling && !isBuying) {
+      wx.showToast({
+        title: '您无权执行此操作',
+        icon: 'none'
+      })
+      return
+    }
+    
+    const action = isSelling ? '发货' : '收货'
 
     const result = await wx.showModal({
       title: `确认${action}`,
@@ -182,7 +213,10 @@ Page({
     if (!result.confirm) return
 
     try {
-      const data = await api.confirmOrder(order.id)
+      // 根据用户身份调用正确的API
+      const data = isSelling 
+        ? await api.shipOrder(order.id)  // 卖家发货
+        : await api.confirmOrder(order.id)  // 买家收货
 
       if (data.success) {
         wx.showToast({
