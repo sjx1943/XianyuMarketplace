@@ -42,6 +42,14 @@ The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
     -   **Image Handling**: All image URLs are converted to complete absolute URLs for correct display across environments (dev/prod, web/mini program).
     -   **Product Ownership**: Product detail pages differentiate between owner's products (edit/delete) and others' products (favorite/contact seller/buy). A dedicated "My Products" page allows users to manage their listings.
     -   **System Broadcasts**: Real-time broadcast of new product uploads in chat rooms.
+    -   **Performance Optimization (2024-12)**: Mini program pages optimized to reduce loading lag:
+        - 5-second API timeout mechanisms to prevent infinite loading states
+        - Smart caching with `lastLoadTime` to avoid redundant API calls within 2 seconds
+        - Anti-duplicate loading flags (`isLoading`, `isSilentLoading`) to prevent concurrent requests
+        - Loading initial values set to `false` to avoid showing loading state on page open
+        - Chat polling interval increased from 10s to 20s to reduce API frequency
+        - Parallel loading with `Promise.all` where appropriate
+        - Primary image setting only available on product detail page for owners
 
 ## External Dependencies
 -   **PostgreSQL**: Primary relational database.
