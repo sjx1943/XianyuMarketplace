@@ -116,28 +116,40 @@ Page({
       if (!data || !data.messages) return
       
       const currentMsgIds = new Set(this.data.messages.map(m => m.id))
-      const allBackendMessages = data.messages.map(msg => ({
-        ...msg,
-        timestamp: this.parseTimestamp(msg.timestamp),
-        time: msg.time || ''
-      }))
+      let hasNewMessages = false
       
-      const newMessages = allBackendMessages.filter(msg => !currentMsgIds.has(msg.id))
+      const allBackendMessages = data.messages.map(msg => {
+        const timestamp = this.parseTimestamp(msg.timestamp)
+        return {
+          ...msg,
+          timestamp: timestamp,
+          time: msg.time || ''
+        }
+      })
       
-      if (newMessages.length > 0) {
-        const allMessages = [...this.data.messages, ...newMessages]
-          .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
+      const newMessages = allBackendMessages.filter(msg => {
+        const isNew = !currentMsgIds.has(msg.id)
+        if (isNew) hasNewMessages = true
+        return isNew
+      })
+      
+      if (hasNewMessages && newMessages.length > 0) {
+        const mergedMessages = [...this.data.messages, ...newMessages]
         
         const deduplicatedMessages = []
         const seenIds = new Set()
-        for (const m of allMessages) {
+        for (const m of mergedMessages) {
           if (!seenIds.has(m.id)) {
             seenIds.add(m.id)
             deduplicatedMessages.push(m)
           }
         }
         
-        this.setData({ messages: deduplicatedMessages }, () => {
+        const sortedMessages = deduplicatedMessages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
+        
+        console.log('轮询新消息数:', newMessages.length, '总计:', sortedMessages.length)
+        
+        this.setData({ messages: sortedMessages }, () => {
           this.scrollToBottom()
         })
         

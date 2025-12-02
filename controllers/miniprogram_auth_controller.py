@@ -1146,7 +1146,10 @@ class MiniprogramMessagesHandler(tornado.web.RequestHandler):
                     'timestamp': timestamp_ms,
                     'status': 'unread'
                 }
-                connections[friend_id].write_message(json.dumps(ws_message))
+                try:
+                    connections[friend_id].write_message(json.dumps(ws_message))
+                except Exception as ws_error:
+                    logging.error(f"WebSocket推送失败: {ws_error}")
             
             self.write(json.dumps({
                 'success': True,
