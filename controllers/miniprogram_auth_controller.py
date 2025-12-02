@@ -1002,20 +1002,34 @@ class MiniprogramMessagesHandler(tornado.web.RequestHandler):
             messages = yield messages_cursor.to_list(length=100)
             
             result = []
+            china_tz = datetime.timezone(datetime.timedelta(hours=8))
             for msg in messages:
                 ts = msg.get('timestamp')
                 if isinstance(ts, datetime.datetime):
-                    # 转换为北京时间（UTC+8）
-                    beijing_time = ts + datetime.timedelta(hours=8)
-                    time_str = beijing_time.strftime('%H:%M')
-                    # 添加时间戳（毫秒级）用于前端排序
-                    timestamp_ms = int(ts.timestamp() * 1000)
+                    # 确保时间戳是UTC+8北京时间
+                    if ts.tzinfo is None:
+                        # 如果是naive datetime，假设为UTC，转换为UTC+8
+                        ts_utc = ts.replace(tzinfo=datetime.timezone.utc)
+                        ts_beijing = ts_utc.astimezone(china_tz)
+                    else:
+                        # 如果已有timezone，直接转换为UTC+8
+                        ts_beijing = ts.astimezone(china_tz)
+                    
+                    time_str = ts_beijing.strftime('%H:%M')
+                    # 毫秒级时间戳基于北京时间
+                    timestamp_ms = int(ts_beijing.timestamp() * 1000)
                 elif isinstance(ts, str):
                     # 如果是字符串格式的时间戳，尝试解析
                     try:
                         dt = datetime.datetime.fromisoformat(ts.replace('Z', '+00:00'))
-                        time_str = dt.strftime('%H:%M')
-                        timestamp_ms = int(dt.timestamp() * 1000)
+                        # 确保转换为UTC+8
+                        if dt.tzinfo is None:
+                            dt_utc = dt.replace(tzinfo=datetime.timezone.utc)
+                            dt_beijing = dt_utc.astimezone(china_tz)
+                        else:
+                            dt_beijing = dt.astimezone(china_tz)
+                        time_str = dt_beijing.strftime('%H:%M')
+                        timestamp_ms = int(dt_beijing.timestamp() * 1000)
                     except:
                         time_str = ts
                         timestamp_ms = 0
