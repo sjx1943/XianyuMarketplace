@@ -1002,35 +1002,26 @@ class MiniprogramMessagesHandler(tornado.web.RequestHandler):
             messages = yield messages_cursor.to_list(length=100)
             
             result = []
-            china_tz = datetime.timezone(datetime.timedelta(hours=8))
             for msg in messages:
                 ts = msg.get('timestamp')
                 if isinstance(ts, datetime.datetime):
-                    # MongoDB将timezone-aware datetime转换为UTC存储
-                    # 返回时可能是naive UTC或带时区的datetime
+                    # 返回原始UTC时间，前端负责UTC→UTC+8转换
                     if ts.tzinfo is not None:
-                        # 有时区信息 - 统一转换为UTC+8
-                        ts_beijing = ts.astimezone(china_tz)
+                        # 有时区信息 - 转换为UTC
+                        ts_utc = ts.astimezone(datetime.timezone.utc)
                     else:
                         # naive datetime - MongoDB返回的是UTC时间
                         ts_utc = ts.replace(tzinfo=datetime.timezone.utc)
-                        ts_beijing = ts_utc.astimezone(china_tz)
                     
-                    time_str = ts_beijing.strftime('%H:%M')
-                    timestamp_str = ts_beijing.strftime('%Y-%m-%d %H:%M:%S')
-                    timestamp_ms = int(ts_beijing.timestamp() * 1000)
+                    # 返回UTC时间字符串和毫秒时间戳
+                    time_str = ts_utc.strftime('%H:%M')
+                    timestamp_str = ts_utc.strftime('%Y-%m-%d %H:%M:%S')
+                    timestamp_ms = int(ts_utc.timestamp() * 1000)
                 elif isinstance(ts, str):
-                    # 字符串格式 "YYYY-MM-DD HH:MM:SS" - 假设为北京时间
-                    try:
-                        dt = datetime.datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
-                        dt_beijing = dt.replace(tzinfo=china_tz)
-                        time_str = dt_beijing.strftime('%H:%M')
-                        timestamp_str = ts
-                        timestamp_ms = int(dt_beijing.timestamp() * 1000)
-                    except:
-                        time_str = ts
-                        timestamp_str = ts
-                        timestamp_ms = 0
+                    # 字符串格式 - 直接返回
+                    time_str = ts[-8:-3] if len(ts) >= 8 else ts
+                    timestamp_str = ts
+                    timestamp_ms = 0
                 else:
                     time_str = ''
                     timestamp_str = ''

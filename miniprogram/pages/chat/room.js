@@ -122,15 +122,23 @@ Page({
       let hasNewMessages = false
       
       const allBackendMessages = data.messages.map(msg => {
-        // 优先使用timestamp_ms，否则使用parseTimestamp（与addMessage保持一致）
-        const timestamp = msg.timestamp_ms && typeof msg.timestamp_ms === 'number' 
-          ? msg.timestamp_ms 
-          : this.parseTimestamp(msg.timestamp)
+        // 后端返回UTC时间戳，需要加8小时转换为北京时间
+        let timestamp
+        if (msg.timestamp_ms && typeof msg.timestamp_ms === 'number') {
+          timestamp = msg.timestamp_ms + 8 * 60 * 60 * 1000
+        } else {
+          timestamp = this.parseTimestamp(msg.timestamp)
+        }
+        // 前端统一计算time字段（确保显示UTC+8北京时间）
+        const date = new Date(timestamp)
+        const hours = String(date.getUTCHours()).padStart(2, '0')
+        const mins = String(date.getUTCMinutes()).padStart(2, '0')
+        const time = `${hours}:${mins}`
         return {
           ...msg,
           _id: msg._id || msg.id,
           timestamp: timestamp,
-          time: msg.time || ''
+          time: time
         }
       })
       
@@ -190,15 +198,23 @@ Page({
             // 优先使用_id作为唯一标识（与WebSocket和addMessage保持一致）
             const msgId = msg._id || msg.id || `${msg.from_user_id}_${msg.timestamp_ms || msg.timestamp}`
             this.messageIdSet.add(msgId)
-            // 优先使用timestamp_ms（与addMessage保持一致）
-            const timestamp = msg.timestamp_ms && typeof msg.timestamp_ms === 'number'
-              ? msg.timestamp_ms
-              : this.parseTimestamp(msg.timestamp)
+            // 后端返回UTC时间戳，需要加8小时转换为北京时间
+            let timestamp
+            if (msg.timestamp_ms && typeof msg.timestamp_ms === 'number') {
+              timestamp = msg.timestamp_ms + 8 * 60 * 60 * 1000
+            } else {
+              timestamp = this.parseTimestamp(msg.timestamp)
+            }
+            // 前端统一计算time字段（确保显示UTC+8北京时间）
+            const date = new Date(timestamp)
+            const hours = String(date.getUTCHours()).padStart(2, '0')
+            const mins = String(date.getUTCMinutes()).padStart(2, '0')
+            const time = `${hours}:${mins}`
             return {
               ...msg,
               _id: msg._id || msg.id,
               timestamp: timestamp,
-              time: msg.time || ''
+              time: time
             }
           })
           .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
@@ -336,10 +352,13 @@ Page({
     if (!ts) return Date.now()
     if (typeof ts === 'number') return ts
     if (typeof ts === 'string') {
-      // 尝试解析字符串时间戳 (格式: "2025-12-02 09:39:00")
+      // 后端返回UTC时间字符串 (格式: "2025-12-02 01:39:00")
+      // 需要转换为UTC+8北京时间的毫秒时间戳
       try {
-        const date = new Date(ts.replace(' ', 'T') + '+08:00')
-        return date.getTime()
+        // 解析为UTC时间
+        const date = new Date(ts.replace(' ', 'T') + 'Z')
+        // 加8小时转换为北京时间
+        return date.getTime() + 8 * 60 * 60 * 1000
       } catch (e) {
         return Date.now()
       }
@@ -348,21 +367,20 @@ Page({
   },
 
   addMessage(message) {
-    // 优先使用timestamp_ms作为时间戳（后端统一返回UTC+8毫秒时间戳）
-    // 否则解析timestamp字符串
+    // 后端返回UTC时间戳，需要转换为UTC+8北京时间
     if (message.timestamp_ms && typeof message.timestamp_ms === 'number') {
-      message.timestamp = message.timestamp_ms
+      // 后端返回UTC毫秒时间戳，加8小时转换为北京时间
+      message.timestamp = message.timestamp_ms + 8 * 60 * 60 * 1000
     } else {
+      // 字符串格式由parseTimestamp处理（已包含UTC+8转换）
       message.timestamp = this.parseTimestamp(message.timestamp)
     }
     
-    // 使用后端返回的time字段，否则从timestamp计算
-    if (!message.time) {
-      const date = new Date(message.timestamp)
-      const hours = String(date.getHours()).padStart(2, '0')
-      const mins = String(date.getMinutes()).padStart(2, '0')
-      message.time = `${hours}:${mins}`
-    }
+    // 前端统一计算time字段（确保显示UTC+8北京时间）
+    const date = new Date(message.timestamp)
+    const hours = String(date.getUTCHours()).padStart(2, '0')
+    const mins = String(date.getUTCMinutes()).padStart(2, '0')
+    message.time = `${hours}:${mins}`
     
     // 优先使用MongoDB的_id或id作为唯一标识（关键修复：防止重复）
     const msgId = message._id || message.id || `${message.from_user_id || message.sender_id}_${message.timestamp}`

@@ -47,12 +47,17 @@ The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
 
 ## Recent Changes (December 2, 2025)
 
-### Chat List and Broadcasts Timezone Fix
--   **Issue**: Chat list (`/api/miniprogram/chat/list`) and broadcasts displayed UTC time instead of Beijing time (UTC+8)
--   **Backend Fixes**:
-    -   `MiniprogramChatListHandler.get`: Fixed `last_time` field - MongoDB UTC timestamps now correctly converted to UTC+8 Beijing time
-    -   `MiniprogramBroadcastsHandler.get`: Fixed relative time calculation ("刚刚", "x小时前") - upload_time now correctly treated as UTC and converted to UTC+8
--   **Result**: Chat list "最新消息时间" and broadcasts "上传时间" now display correct Beijing time
+### Unified Timezone Handling Architecture
+-   **Principle Established**: Backend APIs return raw UTC time from MongoDB, frontend performs all UTC→UTC+8 conversions
+-   **Backend Changes**:
+    -   `/api/miniprogram/chat/list`: Returns UTC timestamp string (no +8 conversion)
+    -   `/api/miniprogram/messages`: Returns UTC timestamp string and UTC milliseconds timestamp (no +8 conversion)
+-   **Frontend Changes (miniprogram/pages/chat/)**:
+    -   `list.js`: `formatTime()` function converts UTC string to UTC+8 Beijing time
+    -   `room.js`: `parseTimestamp()` converts UTC string to UTC+8 milliseconds timestamp
+    -   `room.js`: `addMessage()`, `loadChatHistory()`, `pollNewMessages()` all apply +8 hour conversion to `timestamp_ms`
+    -   `room.js`: `time` field calculated using `getUTCHours()`/`getUTCMinutes()` on converted timestamp
+-   **Result**: Consistent Beijing time display across chat list and chat room, eliminates double-conversion bugs (UTC+16)
 
 ### Message Long-Press Delete (Mini Program)
 -   **Feature**: Added long-press message deletion in chat room page, matching Web version functionality
