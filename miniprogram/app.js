@@ -221,16 +221,16 @@ App({
     });
   },
 
-  // 更新未读消息数量
+  // 更新未读订单数量（卖家待处理订单）
   updateUnreadCount: function(count) {
     this.globalData.unreadCount = count;
     
     // tabBar索引: 0=物品, 1=消息, 2=订单, 3=我的
-    // 未读消息徽章应该显示在"消息"tab上，即 index: 1
+    // 未读订单徽章应该显示在"订单"tab上，即 index: 2
     if (count > 0) {
       try {
         wx.setTabBarBadge({
-          index: 1,
+          index: 2,
           text: count > 99 ? '99+' : count.toString()
         });
       } catch (err) {
@@ -239,7 +239,7 @@ App({
     } else {
       try {
         wx.removeTabBarBadge({
-          index: 1
+          index: 2
         });
       } catch (err) {
         console.error('移除tabBar徽标失败:', err);

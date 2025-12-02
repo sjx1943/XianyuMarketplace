@@ -26,9 +26,13 @@ Page({
   onShow() {
     this.checkLoginAndLoad()
     
+    // tabBar索引: 0=物品, 1=消息, 2=订单, 3=我的
     if (this.getTabBar()) {
-      this.getTabBar().setData({ selected: 3 })
+      this.getTabBar().setData({ selected: 2 })
     }
+    
+    // 刷新未读订单数量
+    app.getUnreadCount()
   },
 
   onPullDownRefresh() {
@@ -66,33 +70,54 @@ Page({
     try {
       this.setData({ loading: true })
 
-      const data = await api.getOrderList()
+      // 根据当前tab请求对应类型的订单
+      const orderType = this.data.activeTab === 0 ? 'buying' : 'selling'
+      const data = await api.getOrderList(orderType)
 
       // 后端返回的数据可能是数组或对象
       const orderList = Array.isArray(data) ? data : (data.orders || [])
       
-      // 处理每个订单的图片URL
-      const processedOrders = orderList.map(order => ({
-        ...order,
-        product_image: getImageUrl(order.product_image)
-      }))
+      // 获取当前用户ID（确保类型一致）
+      const currentUserId = app.globalData.userInfo?.id || app.globalData.currentUserId
+      const currentUserIdNum = parseInt(currentUserId)
       
-      // 根据tab过滤：0=买家，1=卖家
-      const filteredOrders = processedOrders.filter(order => {
-        if (this.data.activeTab === 0) {
-          return order.buyer_id === app.globalData.userInfo?.id
-        } else {
-          return order.seller_id === app.globalData.userInfo?.id
+      // 处理每个订单的图片URL和状态显示
+      const processedOrders = orderList.map(order => {
+        // 处理图片URL
+        const productImage = order.product_image || ''
+        const imageUrl = getImageUrl(productImage)
+        
+        // 确定状态文本
+        let statusText = '未知'
+        switch (order.status) {
+          case 'pending': statusText = '待发货'; break
+          case 'shipped': statusText = '待收货'; break
+          case 'completed': statusText = '已完成'; break
+          case 'cancelled': statusText = '已取消'; break
+          default: statusText = order.status || '未知'
+        }
+        
+        // 确定用户身份和可执行操作
+        const isBuyer = parseInt(order.buyer_id) === currentUserIdNum
+        const isSeller = parseInt(order.seller_id) === currentUserIdNum
+        
+        return {
+          ...order,
+          product_image: imageUrl,
+          status_text: statusText,
+          can_cancel: order.status === 'pending' && isBuyer,
+          can_confirm: (order.status === 'pending' && isSeller) || (order.status === 'shipped' && isBuyer),
+          can_contact: true
         }
       })
 
       this.setData({
-        orderList: filteredOrders,
+        orderList: processedOrders,
         loading: false
       })
 
       // 更新未读订单数量
-      const unreadCount = filteredOrders.filter(o => o.unread).length
+      const unreadCount = processedOrders.filter(o => o.unread).length
       if (unreadCount > 0) {
         const tabs = this.data.tabs
         tabs[this.data.activeTab].badge = unreadCount
@@ -191,7 +216,7 @@ Page({
 
   goShopping() {
     wx.switchTab({
-      url: '/pages/index/index'
+      url: '/pages/product/list'
     })
   }
 })

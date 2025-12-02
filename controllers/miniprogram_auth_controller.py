@@ -1696,11 +1696,17 @@ class MiniprogramOrdersHandler(tornado.web.RequestHandler):
                 elif product:
                     seller = self.session.query(User).filter_by(id=product.user_id).first()
                 
+                # 处理商品图片URL - 返回完整路径
+                product_image = ''
+                if product and product.image:
+                    # 返回相对于/static/images/的路径，前端会拼接完整URL
+                    product_image = product.image
+                
                 orders_data.append({
                     'id': order.id,
                     'product_id': order.product_id,
                     'product_name': order.product_name or (product.name if product else '商品已删除'),
-                    'product_image': product.image if product else '',
+                    'product_image': product_image,
                     'price': float(product.price) if product else 0,
                     'quantity': order.quantity,
                     'status': order.status,
@@ -1711,7 +1717,8 @@ class MiniprogramOrdersHandler(tornado.web.RequestHandler):
                     'seller_name': seller.username if seller else '未知',
                     'seller_room': seller.room_number if seller else '',
                     'created_at': order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '',
-                    'is_buyer': order.user_id == user_id
+                    'is_buyer': order.user_id == user_id,
+                    'order_number': f'ORD{order.id:06d}'
                 })
             
             self.write(json.dumps({'success': True, 'orders': orders_data}))
@@ -1862,13 +1869,19 @@ class MiniprogramOrderDetailHandler(tornado.web.RequestHandler):
             elif product:
                 seller = self.session.query(User).filter_by(id=product.user_id).first()
             
+            # 处理商品图片URL
+            product_image = ''
+            if product and product.image:
+                product_image = product.image
+            
             self.write(json.dumps({
                 'success': True,
                 'order': {
                     'id': order.id,
+                    'order_number': f'ORD{order.id:06d}',
                     'product_id': order.product_id,
                     'product_name': order.product_name or (product.name if product else '商品已删除'),
-                    'product_image': product.image if product else '',
+                    'product_image': product_image,
                     'price': float(product.price) if product else 0,
                     'quantity': order.quantity,
                     'status': order.status,
