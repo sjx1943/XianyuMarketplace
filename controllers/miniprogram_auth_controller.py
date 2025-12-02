@@ -1514,20 +1514,17 @@ class MiniprogramBroadcastsHandler(tornado.web.RequestHandler):
             
             broadcasts = []
             for product, user in products:
-                # 相对时间计算
+                # 相对时间计算 - 使用内置datetime，UTC+8北京时间
                 import datetime
-                from pytz import timezone
                 
-                # 获取北京时间
-                beijing_tz = timezone('Asia/Shanghai')
+                # 获取北京时间（UTC+8）
+                beijing_tz = datetime.timezone(datetime.timedelta(hours=8))
                 now = datetime.datetime.now(beijing_tz)
                 upload_time = product.upload_time
                 
-                # 将upload_time转换为北京时区
+                # 如果upload_time没有时区信息，假设为UTC+8
                 if upload_time.tzinfo is None:
-                    upload_time = beijing_tz.localize(upload_time)
-                else:
-                    upload_time = upload_time.astimezone(beijing_tz)
+                    upload_time = upload_time.replace(tzinfo=beijing_tz)
                 
                 delta = now - upload_time
                 if delta.days > 0:
