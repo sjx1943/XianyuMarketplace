@@ -16,8 +16,25 @@ import datetime
 from sqlalchemy.orm import sessionmaker
 from models.user import User
 from base.base import engine
+from motor import motor_tornado
+from tornado.ioloop import IOLoop
 
 Session = sessionmaker(bind=engine)
+
+# MongoDB连接配置
+mongodb_uri = os.environ.get('MONGODB_URI')
+if mongodb_uri:
+    mongo_client = motor_tornado.MotorClient(mongodb_uri)
+    try:
+        mongo_database = mongo_client.get_default_database()
+    except Exception:
+        mongo_database = mongo_client['chat_db']
+else:
+    mongo_host = os.getenv('MONGO_HOST', 'localhost')
+    mongo_port = int(os.getenv('MONGO_PORT', '27017'))
+    mongo_db = os.getenv('MONGO_DB', 'chat_db')
+    mongo_client = motor_tornado.MotorClient(f'mongodb://{mongo_host}:{mongo_port}')
+    mongo_database = mongo_client[mongo_db]
 
 # 微信小程序配置（从环境变量获取）
 WX_MINIPROGRAM_APP_ID = os.environ.get('WX_MINIPROGRAM_APP_ID', '')
@@ -1803,6 +1820,37 @@ class MiniprogramOrdersHandler(tornado.web.RequestHandler):
             logging.error(f"创建订单异常: {e}")
             self.set_status(500)
             self.write(json.dumps({'success': False, 'error': str(e)}))
+    
+    async def _send_seller_notification(self, product, buyer, quantity, order_id):
+        """发送订单通知给卖家（异步）"""
+        try:
+            seller_id = product.user_id
+            china_tz = datetime.timezone(datetime.timedelta(hours=8))
+            timestamp = datetime.datetime.now(china_tz).strftime("%Y-%m-%d %H:%M:%S")
+            
+            # 构建系统通知消息
+            notification_data = {
+                "from_user_id": 0,
+                "from_username": "系统通知",
+                "to_user_id": seller_id,
+                "message": f"🔔 您有新订单！买家 {buyer.username} 购买了您的商品《{product.name}》，数量：{quantity}件。",
+                "product_id": product.id,
+                "product_name": product.name,
+                "timestamp": timestamp,
+                "status": "unread",
+                "type": "order_notification",
+                "order_id": order_id
+            }
+            
+            # 保存到MongoDB
+            try:
+                await mongo_database.chat_messages.insert_one(notification_data)
+                logging.info(f"订单通知已保存到数据库: 订单{order_id}, 卖家{seller_id}")
+            except Exception as db_error:
+                logging.error(f"保存通知到数据库失败: {str(db_error)}")
+                
+        except Exception as notif_error:
+            logging.error(f"发送卖家通知失败: {str(notif_error)}")
     
     def on_finish(self):
         self.session.close()
