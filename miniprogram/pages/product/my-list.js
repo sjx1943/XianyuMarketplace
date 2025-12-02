@@ -129,13 +129,6 @@ Page({
     })
   },
 
-  setProductPrimaryImage(e) {
-    const { id, name } = e.currentTarget.dataset
-    wx.navigateTo({
-      url: `/pages/product/detail?id=${id}&action=setPrimaryImage`
-    })
-  },
-
   goPublish() {
     wx.navigateTo({
       url: '/pages/product/publish'
