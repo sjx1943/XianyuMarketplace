@@ -627,10 +627,31 @@ class DeleteMessagesHandler(tornado.web.RequestHandler):
     def initialize(self, mongo):
         self.mongo = mongo
 
+    def check_xsrf_cookie(self):
+        """禁用XSRF检查 - 支持小程序Token认证"""
+        pass
+
+    def _get_user_id(self):
+        """从Cookie或Bearer Token中获取user_id"""
+        user_id_cookie = self.get_secure_cookie("user_id")
+        if user_id_cookie:
+            return int(user_id_cookie.decode("utf-8"))
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return int(token.split('_')[-1])
+                except:
+                    pass
+        
+        raise ValueError("未认证")
+
     @tornado.gen.coroutine
     def post(self):
         try:
-            user_id = int(self.get_secure_cookie("user_id").decode("utf-8"))
+            user_id = self._get_user_id()
             data = json.loads(self.request.body)
             message_ids = data.get("message_ids", [])
             friend_id = data.get("friend_id")
@@ -660,8 +681,7 @@ class DeleteMessagesHandler(tornado.web.RequestHandler):
                         {"from_user_id": user_id},
                         {"to_user_id": int(friend_id)}
                     ]
-
-         })
+                })
 
             # 删除消息
             result = yield self.mongo.chat_messages.delete_many(query)
@@ -670,7 +690,11 @@ class DeleteMessagesHandler(tornado.web.RequestHandler):
                 "status": "success",
                 "deleted_count": result.deleted_count
             })
+        except ValueError as e:
+            self.set_status(401)
+            self.write({"status": "error", "error": str(e)})
         except Exception as e:
+            logging.error(f"删除消息失败: {e}")
             self.write({"status": "error", "error": str(e)})
 
 # 获取未读消息数量
