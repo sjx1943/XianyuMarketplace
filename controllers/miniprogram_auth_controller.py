@@ -1510,14 +1510,8 @@ class MiniprogramChatListHandler(tornado.web.RequestHandler):
                     if "timestamp" in last_message:
                         ts = last_message["timestamp"]
                         if isinstance(ts, datetime.datetime):
-                            # MongoDB存储的是UTC时间，转换为北京时间（UTC+8）
-                            beijing_tz = datetime.timezone(datetime.timedelta(hours=8))
-                            if ts.tzinfo is None:
-                                # naive datetime，假设为UTC
-                                ts_utc = ts.replace(tzinfo=datetime.timezone.utc)
-                                ts_beijing = ts_utc.astimezone(beijing_tz)
-                            else:
-                                ts_beijing = ts.astimezone(beijing_tz)
+                            # MongoDB存储的是UTC时间，直接加8小时转换为北京时间（UTC+8）
+                            ts_beijing = ts + datetime.timedelta(hours=8)
                             last_message_time = ts_beijing.strftime("%Y-%m-%d %H:%M")
                         else:
                             last_message_time = str(ts)
