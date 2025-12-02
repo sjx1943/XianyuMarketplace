@@ -16,14 +16,21 @@ Page({
 
   onLoad(options) {
     const { tab } = options
-    if (tab) {
+    if (tab !== undefined) {
       this.setData({ activeTab: parseInt(tab) })
+      this.hasManualTabSet = true
     }
 
     this.checkLoginAndLoad()
   },
 
   onShow() {
+    // 检查是否有未读卖家订单，自动跳转到"我卖出的"标签
+    // 只在没有通过 onLoad 传入 tab 参数时才自动跳转
+    if (!this.hasManualTabSet && app.globalData.unreadCount > 0) {
+      this.setData({ activeTab: 1 })
+    }
+    
     this.checkLoginAndLoad()
     
     // tabBar索引: 0=物品, 1=消息, 2=订单, 3=我的
@@ -87,6 +94,7 @@ Page({
 
   switchTab(e) {
     const { index } = e.currentTarget.dataset
+    this.hasManualTabSet = true
     this.setData({
       activeTab: index
     })
