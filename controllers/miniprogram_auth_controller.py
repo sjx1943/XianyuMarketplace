@@ -1785,6 +1785,9 @@ class MiniprogramOrdersHandler(tornado.web.RequestHandler):
             
             self.session.commit()
             
+            buyer = self.session.query(User).filter_by(id=user_id).first()
+            IOLoop.current().spawn_callback(self._send_seller_notification, product, buyer, quantity, new_order.id)
+            
             self.write(json.dumps({
                 'success': True,
                 'message': '订单创建成功',
