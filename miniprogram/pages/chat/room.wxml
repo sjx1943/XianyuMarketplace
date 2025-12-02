@@ -18,7 +18,10 @@
       wx:for="{{messages}}" 
       wx:key="id"
       id="msg-{{item.id}}"
+      data-message-id="{{item._id || item.id}}"
+      data-index="{{index}}"
       class="message-item {{item.sender_id === currentUserId ? 'mine' : 'other'}}"
+      bindlongpress="onMessageLongPress"
     >
       <image 
         class="avatar {{item.sender_id !== currentUserId ? 'friend-avatar' : ''}}" 

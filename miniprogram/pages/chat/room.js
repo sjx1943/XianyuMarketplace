@@ -452,5 +452,58 @@ Page({
     } catch (error) {
       console.error('标记已读失败:', error)
     }
+  },
+
+  onMessageLongPress(e) {
+    const { messageId, index } = e.currentTarget.dataset
+    const message = this.data.messages[index]
+    
+    if (!message || !messageId) return
+    
+    wx.showActionSheet({
+      itemList: ['删除消息', '取消'],
+      success: (res) => {
+        if (res.tapIndex === 0) {
+          this.deleteMessage(messageId, index)
+        }
+      },
+      fail: () => {
+        // 用户取消，不处理
+      }
+    })
+  },
+
+  async deleteMessage(messageId, index) {
+    try {
+      wx.showLoading({ title: '删除中...' })
+      
+      const result = await api.deleteMessage(messageId, this.data.friendId)
+      
+      wx.hideLoading()
+      
+      if (result.status === 'success') {
+        const messages = this.data.messages
+        messages.splice(index, 1)
+        this.setData({ messages })
+        
+        wx.showToast({
+          title: '消息已删除',
+          icon: 'success',
+          duration: 1500
+        })
+      } else {
+        wx.showToast({
+          title: result.error || '删除失败',
+          icon: 'none'
+        })
+      }
+    } catch (error) {
+      wx.hideLoading()
+      console.error('删除消息失败:', error)
+      wx.showToast({
+        title: '删除失败',
+        icon: 'none'
+      })
+    }
   }
 })

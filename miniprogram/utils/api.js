@@ -396,12 +396,28 @@ class API {
     })
   }
 
-  // 删除消息
-  deleteMessages(friendId) {
+  // 删除消息（单个）
+  deleteMessage(messageId, friendId) {
     return this.request({
       url: '/api/delete_messages',
       method: 'POST',
-      data: { friend_id: friendId }
+      data: { 
+        message_ids: [messageId],
+        friend_id: friendId
+      },
+      loadingText: false
+    })
+  }
+
+  // 删除消息（多个）
+  deleteMessages(friendId, messageIds = []) {
+    return this.request({
+      url: '/api/delete_messages',
+      method: 'POST',
+      data: { 
+        message_ids: messageIds,
+        friend_id: friendId
+      }
     })
   }
 
