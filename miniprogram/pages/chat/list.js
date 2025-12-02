@@ -12,6 +12,9 @@ Page({
   },
 
   pollTimer: null,
+  touchStartX: 0,
+  touchEndX: 0,
+  slideDeleteVisibleId: null,
 
   onLoad() {
     this.checkLoginAndLoad()
@@ -180,7 +183,117 @@ Page({
     }
   },
 
+  onTouchStart(e) {
+    this.touchStartX = e.touches[0].clientX
+    // 点击删除按钮前，先隐藏其他打开的项目
+    if (this.slideDeleteVisibleId !== null && 
+        this.slideDeleteVisibleId !== (e.currentTarget.dataset.friendId)) {
+      const index = this.data.chatList.findIndex(chat => 
+        (chat.friend_id || chat.id) === this.slideDeleteVisibleId
+      )
+      if (index !== -1) {
+        const chatList = this.data.chatList
+        chatList[index].slideDeleteVisible = false
+        this.setData({ chatList })
+      }
+    }
+  },
+
+  onTouchEnd(e) {
+    this.touchEndX = e.changedTouches[0].clientX
+    const distance = this.touchStartX - this.touchEndX
+    
+    // 左滑超过80rpx（约40px）才触发
+    if (distance > 80) {
+      const friendId = e.currentTarget.dataset.friendId
+      const index = this.data.chatList.findIndex(chat => 
+        (chat.friend_id || chat.id) === friendId
+      )
+      
+      if (index !== -1) {
+        const chatList = this.data.chatList
+        chatList[index].slideDeleteVisible = true
+        this.setData({ chatList })
+        this.slideDeleteVisibleId = friendId
+      }
+    } else if (distance < -80) {
+      // 右滑隐藏删除按钮
+      const friendId = e.currentTarget.dataset.friendId
+      const index = this.data.chatList.findIndex(chat => 
+        (chat.friend_id || chat.id) === friendId
+      )
+      
+      if (index !== -1) {
+        const chatList = this.data.chatList
+        chatList[index].slideDeleteVisible = false
+        this.setData({ chatList })
+        this.slideDeleteVisibleId = null
+      }
+    }
+  },
+
+  deleteChatRecord(e) {
+    e.stopPropagation()
+    
+    const friendId = e.currentTarget.parentElement.dataset.friendId
+    const index = this.data.chatList.findIndex(chat => 
+      (chat.friend_id || chat.id) === friendId
+    )
+    
+    if (index === -1) return
+    
+    const friend = this.data.chatList[index]
+    wx.showModal({
+      title: '删除聊天记录',
+      content: `确定要删除与 ${friend.username || friend.name || '未知用户'} 的所有聊天记录吗？`,
+      success: (res) => {
+        if (res.confirm) {
+          this.clearChatHistory(friendId, index)
+        } else if (res.cancel) {
+          // 隐藏删除按钮
+          const chatList = this.data.chatList
+          chatList[index].slideDeleteVisible = false
+          this.setData({ chatList })
+          this.slideDeleteVisibleId = null
+        }
+      }
+    })
+  },
+
+  async clearChatHistory(friendId, index) {
+    try {
+      await api.request({
+        url: `/api/miniprogram/clear_chat/${friendId}`,
+        method: 'DELETE'
+      })
+      
+      wx.showToast({
+        title: '聊天记录已删除',
+        icon: 'success'
+      })
+      
+      // 从列表中移除
+      const chatList = this.data.chatList
+      chatList.splice(index, 1)
+      this.setData({ chatList })
+      this.slideDeleteVisibleId = null
+    } catch (error) {
+      console.error('删除聊天记录失败:', error)
+      wx.showToast({
+        title: '删除失败，请重试',
+        icon: 'none'
+      })
+    }
+  },
+
   openChat(e) {
+    // 如果删除按钮显示中，则不打开聊天
+    const friendId = e.currentTarget.parentElement.dataset.friendId
+    if (this.slideDeleteVisibleId === friendId) {
+      e.stopPropagation()
+      return
+    }
+    
     const { friend } = e.currentTarget.dataset
     const roomNumber = friend.room_number || '未设置'
     const friendName = friend.username || friend.name || ''

@@ -13,24 +13,36 @@
       <view 
         wx:for="{{chatList}}" 
         wx:key="id"
-        class="chat-item"
-        bindtap="openChat"
-        data-friend="{{item}}"
+        class="chat-item-wrapper"
+        data-friend-id="{{item.friend_id || item.id}}"
+        data-index="{{index}}"
+        bindtouchstart="onTouchStart"
+        bindtouchend="onTouchEnd"
       >
-        <image class="avatar" src="{{item.avatar}}"></image>
+        <!-- 删除按钮 -->
+        <view class="delete-btn" bindtap="deleteChatRecord">删除</view>
         
-        <view class="chat-content">
-          <view class="chat-header">
-            <view class="friend-name-section">
-              <text class="friend-name">{{item.username || item.name || '未知用户'}}</text>
-              <text class="room-number">{{item.room_number || '未设置'}}</text>
+        <!-- 聊天项目 -->
+        <view 
+          class="chat-item {{item.slideDeleteVisible ? 'slide-left' : ''}}"
+          bindtap="openChat"
+          data-friend="{{item}}"
+        >
+          <image class="avatar" src="{{item.avatar}}"></image>
+          
+          <view class="chat-content">
+            <view class="chat-header">
+              <view class="friend-name-section">
+                <text class="friend-name">{{item.username || item.name || '未知用户'}}</text>
+                <text class="room-number">{{item.room_number || '未设置'}}</text>
+              </view>
+              <text class="chat-time">{{item.last_time || item.last_message_time || ''}}</text>
             </view>
-            <text class="chat-time">{{item.last_time || item.last_message_time || ''}}</text>
-          </view>
-          <view class="chat-preview">
-            <text class="last-message">{{item.last_message || '暂无消息'}}</text>
-            <view class="unread-badge" wx:if="{{item.unread_count > 0}}">
-              {{item.unread_count > 99 ? '99+' : item.unread_count}}
+            <view class="chat-preview">
+              <text class="last-message">{{item.last_message || '暂无消息'}}</text>
+              <view class="unread-badge" wx:if="{{item.unread_count > 0}}">
+                {{item.unread_count > 99 ? '99+' : item.unread_count}}
+              </view>
             </view>
           </view>
         </view>
