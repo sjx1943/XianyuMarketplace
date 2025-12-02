@@ -82,10 +82,14 @@ Page({
       })
 
       if (data && data.messages) {
-        const messages = (data.messages || []).map(msg => ({
-          ...msg,
-          time: msg.time || new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-        }))
+        // 根据时间戳排序消息（按时间升序）
+        const messages = (data.messages || [])
+          .map(msg => ({
+            ...msg,
+            timestamp: msg.timestamp || new Date(msg.created_at).getTime() || Date.now(),
+            time: msg.time || new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+          }))
+          .sort((a, b) => a.timestamp - b.timestamp)
         
         const friendInfo = data.friend || {}
         const friendRoomNumber = friendInfo.room_number || this.data.friendRoomNumber || '未设置'
@@ -172,12 +176,24 @@ Page({
   },
 
   addMessage(message) {
-    const messages = this.data.messages
     const now = new Date()
+    message.timestamp = message.timestamp || Date.now()
     message.time = message.time || now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-    messages.push(message)
-    this.setData({ messages })
-    this.scrollToBottom()
+    
+    // 创建新消息数组并排序，确保UI更新
+    const updatedMessages = [
+      ...this.data.messages,
+      message
+    ].sort((a, b) => {
+      const timeA = a.timestamp || 0
+      const timeB = b.timestamp || 0
+      return timeA - timeB
+    })
+    
+    this.setData({ messages: updatedMessages }, () => {
+      console.log('消息已更新，总计:', updatedMessages.length, '条')
+      this.scrollToBottom()
+    })
   },
 
   onAvatarError(e) {
