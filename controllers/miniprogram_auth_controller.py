@@ -1107,35 +1107,38 @@ class MiniprogramMessagesHandler(tornado.web.RequestHandler):
             
             self.session.commit()
             
-            china_tz = datetime.timezone(datetime.timedelta(hours=8))
-            now = datetime.datetime.now(china_tz)
+            # 使用UTC时间（与其他接口统一）
+            now_utc = datetime.datetime.now(datetime.timezone.utc)
             
             message_doc = {
                 "from_user_id": user_id,
                 "from_username": user.username,
                 "to_user_id": friend_id,
                 "message": message,
-                "timestamp": now,
+                "timestamp": now_utc,
                 "status": "unread"
             }
             
             result = yield self.mongo.chat_messages.insert_one(message_doc)
             message_id = str(result.inserted_id)
-            timestamp_ms = int(now.timestamp() * 1000)
+            timestamp_ms = int(now_utc.timestamp() * 1000)
+            time_str = now_utc.strftime('%H:%M')
             
-            # 通过WebSocket推送给接收方
+            # 通过WebSocket推送给接收方（返回UTC时间，前端处理转换）
             from controllers.chat_controller import connections
             if friend_id in connections and connections[friend_id].ws_connection:
                 ws_message = {
                     'id': message_id,
+                    '_id': message_id,
                     'from_user_id': user_id,
                     'to_user_id': friend_id,
                     'sender_id': user_id,
                     'content': message,
                     'message': message,
                     'type': 'text',
-                    'time': now.strftime('%H:%M'),
-                    'timestamp': timestamp_ms,
+                    'time': time_str,
+                    'timestamp': now_utc.strftime('%Y-%m-%d %H:%M:%S'),
+                    'timestamp_ms': timestamp_ms,
                     'status': 'unread'
                 }
                 try:
@@ -1149,14 +1152,16 @@ class MiniprogramMessagesHandler(tornado.web.RequestHandler):
                 'message_id': message_id,
                 'data': {
                     'id': message_id,
+                    '_id': message_id,
                     'from_user_id': user_id,
                     'to_user_id': friend_id,
                     'sender_id': user_id,
                     'content': message,
                     'message': message,
                     'type': 'text',
-                    'time': now.strftime('%H:%M'),
-                    'timestamp': timestamp_ms
+                    'time': time_str,
+                    'timestamp': now_utc.strftime('%Y-%m-%d %H:%M:%S'),
+                    'timestamp_ms': timestamp_ms
                 }
             }))
             
