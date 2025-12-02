@@ -233,8 +233,6 @@ Page({
   },
 
   deleteChatRecord(e) {
-    e.stopPropagation()
-    
     const friendId = e.currentTarget.dataset.friendId
     const index = parseInt(e.currentTarget.dataset.index)
     
