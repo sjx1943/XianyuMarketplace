@@ -46,10 +46,11 @@
   position: relative;
   width: 100%;
   background: white;
+  z-index: 2;
 }
 
 .chat-item.slide-left {
-  transform: translateX(-100rpx);
+  transform: translateX(-140rpx);
 }
 
 .chat-item:active {
@@ -61,7 +62,7 @@
   right: 0;
   top: 0;
   bottom: 0;
-  width: 100rpx;
+  width: 140rpx;
   background-color: #ff4d4f;
   color: white;
   display: flex;
@@ -70,7 +71,6 @@
   font-size: 28rpx;
   font-weight: bold;
   z-index: 1;
-  cursor: pointer;
 }
 
 .avatar {

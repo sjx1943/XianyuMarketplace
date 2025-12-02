@@ -235,12 +235,10 @@ Page({
   deleteChatRecord(e) {
     e.stopPropagation()
     
-    const friendId = e.currentTarget.parentElement.dataset.friendId
-    const index = this.data.chatList.findIndex(chat => 
-      (chat.friend_id || chat.id) === friendId
-    )
+    const friendId = e.currentTarget.dataset.friendId
+    const index = parseInt(e.currentTarget.dataset.index)
     
-    if (index === -1) return
+    if (index < 0 || index >= this.data.chatList.length) return
     
     const friend = this.data.chatList[index]
     wx.showModal({
@@ -286,11 +284,18 @@ Page({
     }
   },
 
+  onTouchMove(e) {
+    // 防止页面滚动干扰滑动
+  },
+
   openChat(e) {
-    // 如果删除按钮显示中，则不打开聊天
-    const friendId = e.currentTarget.parentElement.dataset.friendId
-    if (this.slideDeleteVisibleId === friendId) {
-      e.stopPropagation()
+    // 如果删除按钮显示中，先隐藏删除按钮，不打开聊天
+    const index = parseInt(e.currentTarget.dataset.index)
+    if (index >= 0 && this.data.chatList[index] && this.data.chatList[index].slideDeleteVisible) {
+      const chatList = this.data.chatList
+      chatList[index].slideDeleteVisible = false
+      this.setData({ chatList })
+      this.slideDeleteVisibleId = null
       return
     }
     

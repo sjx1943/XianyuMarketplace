@@ -13,20 +13,19 @@
       <view 
         wx:for="{{chatList}}" 
         wx:key="id"
-        class="chat-item-wrapper"
+        class="chat-item-wrapper {{item.slideDeleteVisible ? 'show-delete' : ''}}"
         data-friend-id="{{item.friend_id || item.id}}"
         data-index="{{index}}"
         bindtouchstart="onTouchStart"
+        bindtouchmove="onTouchMove"
         bindtouchend="onTouchEnd"
       >
-        <!-- 删除按钮 -->
-        <view class="delete-btn" bindtap="deleteChatRecord">删除</view>
-        
         <!-- 聊天项目 -->
         <view 
           class="chat-item {{item.slideDeleteVisible ? 'slide-left' : ''}}"
           bindtap="openChat"
           data-friend="{{item}}"
+          data-index="{{index}}"
         >
           <image class="avatar" src="{{item.avatar}}"></image>
           
@@ -46,6 +45,14 @@
             </view>
           </view>
         </view>
+        
+        <!-- 删除按钮（放在后面，只有左滑后才显示） -->
+        <view 
+          class="delete-btn" 
+          bindtap="deleteChatRecord"
+          data-friend-id="{{item.friend_id || item.id}}"
+          data-index="{{index}}"
+        >删除</view>
       </view>
     </view>
   </view>
