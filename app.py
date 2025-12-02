@@ -204,7 +204,7 @@ def make_app():
         (r"/api/search", SearchHandler),
         (r"/api/send_message", SendMessageAPIHandler, dict(mongo=mongo)),
         (r"/chat_room", ChatHandler, dict(mongo=mongo)),
-        (r"/ws/chat_room", ChatWebSocketHandler, dict(mongo=mongo)),
+        (r"/ws/chat_room/(\d+)", ChatWebSocketHandler, dict(mongo=mongo)),
         (r"/initiate_chat", InitiateChatHandler, dict(mongo=mongo)),
         (r"/api/add_friend", FriendProfileHandler, dict(mongo=mongo)),
         (r"/api/delete_friend", DeleteFriendHandler,dict(mongo=mongo)),
