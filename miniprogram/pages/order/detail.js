@@ -196,6 +196,13 @@ Page({
     })
   },
 
+  contactBuyer() {
+    const buyerId = this.data.order.user_id || this.data.order.buyer_id
+    wx.navigateTo({
+      url: `/pages/chat/room?friendId=${buyerId}`
+    })
+  },
+
   goToProduct() {
     const productId = this.data.order.product_id
     wx.navigateTo({
