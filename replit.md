@@ -45,6 +45,24 @@ The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
 -   **WeChat Open Platform OAuth**: For web WeChat login (`WECHAT_APP_ID`, `WECHAT_APP_SECRET`, `WECHAT_REDIRECT_URI`).
 -   **WeChat Mini Program**: Requires separate registration and AppID/AppSecret from WeChat Mini Program platform (`WX_MINIPROGRAM_APP_ID`, `WX_MINIPROGRAM_APP_SECRET`).
 
+## Recent Changes (December 2, 2025)
+
+### Chat Message Timestamp and Deduplication Fix
+-   **Root Cause**: WebSocket and REST API returned inconsistent message formats - WebSocket lacked `_id` field and used different timestamp formats, causing Set-based deduplication to fail
+-   **Backend Fixes**:
+    -   `ChatWebSocketHandler.on_message`: Added `_id`, `id`, `timestamp_ms`, `time` fields to pushed messages
+    -   `ChatWebSocketHandler.send_stored_messages`: Fixed timezone handling - MongoDB returns UTC naive datetime, now properly converts to UTC+8
+    -   `MessageAPIHandler.get`: Added `timestamp_ms` field and fixed timezone processing
+    -   `SendMessageAPIHandler.post`: Added complete message format with `timestamp_ms` to WebSocket push
+    -   `MiniprogramMessagesHandler`: Added `_id` and `timestamp_ms` fields for consistency
+-   **Frontend Fixes (room.js)**:
+    -   `addMessage`: Prioritizes `_id` for deduplication, uses `timestamp_ms` for sorting
+    -   `pollNewMessages`: Updated to use `_id` and `timestamp_ms` (consistent with addMessage)
+    -   `loadChatHistory`: Updated to use `_id` and `timestamp_ms` (consistent with WebSocket)
+-   **Web Frontend Fix (chat.js)**: String timestamps "YYYY-MM-DD HH:MM:SS" parsed as UTC+8
+-   **Unified Message Format**: All endpoints now return `_id`, `id`, `timestamp` (string), `timestamp_ms` (milliseconds), `time` (HH:MM)
+-   **Note**: Legacy data with non-standard timestamp formats may still return `timestamp_ms=0`. Consider running a data migration script for production if issues persist.
+
 ## Recent Changes (December 1, 2025)
 
 ### Dynamic Tags Feature
