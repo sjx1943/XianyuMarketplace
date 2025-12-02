@@ -26,8 +26,11 @@ Page({
 
   onShow() {
     this.setData({ page: 1, products: [], hasMore: true })
-    this.loadActiveTags()
-    this.loadProducts()
+    // 并行加载标签和商品，但仅在真正需要时加载
+    Promise.all([
+      this.loadActiveTags().catch(err => console.error('加载标签失败:', err)),
+      this.loadProducts()
+    ]).catch(err => console.error('加载失败:', err))
     
     // 只在用户已登录时才启动定时器
     const app = getApp()
@@ -53,7 +56,7 @@ Page({
   },
 
   loadActiveTags() {
-    api.getActiveTags().then(res => {
+    return api.getActiveTags().then(res => {
       if (res.success && res.tags) {
         const categories = ['全部', ...res.tags]
         this.setData({ categories: categories })
@@ -82,6 +85,11 @@ Page({
     
     this.setData({ loading: true })
     
+    // 添加 5 秒超时，防止 API 卡住
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('加载超时')), 5000)
+    )
+    
     const params = {
       page: this.data.page,
       page_size: this.data.pageSize
@@ -95,7 +103,10 @@ Page({
       params.keyword = this.data.searchKeyword
     }
 
-    return api.getProducts(params).then(res => {
+    return Promise.race([
+      api.getProducts(params),
+      timeoutPromise
+    ]).then(res => {
       const rawProducts = res.products || res.data || []
       // 处理每个商品的图片URL为完整路径
       const newProducts = rawProducts.map(item => ({
