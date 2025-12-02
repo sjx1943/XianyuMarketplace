@@ -50,13 +50,40 @@ Page({
     }
   },
 
+  formatTime(timeStr) {
+    if (!timeStr) return ''
+    
+    try {
+      // 支持格式: "2025-12-02 03:32" (UTC) -> 转换为UTC+8北京时间
+      if (typeof timeStr === 'string' && timeStr.includes('-')) {
+        const date = new Date(timeStr.replace(' ', 'T') + 'Z')
+        if (isNaN(date.getTime())) return timeStr
+        
+        // 转换为北京时间（UTC+8）
+        const beijingDate = new Date(date.getTime() + 8 * 60 * 60 * 1000)
+        const year = beijingDate.getUTCFullYear()
+        const month = String(beijingDate.getUTCMonth() + 1).padStart(2, '0')
+        const day = String(beijingDate.getUTCDate()).padStart(2, '0')
+        const hours = String(beijingDate.getUTCHours()).padStart(2, '0')
+        const mins = String(beijingDate.getUTCMinutes()).padStart(2, '0')
+        
+        return `${year}-${month}-${day} ${hours}:${mins}`
+      }
+    } catch (e) {
+      console.warn('时间格式转换失败:', timeStr, e)
+    }
+    
+    return timeStr
+  },
+
   async loadChatListSilent() {
     try {
       const data = await api.getChatList()
       const rawChatList = Array.isArray(data) ? data : (data.conversations || data.chats || [])
       const chatList = rawChatList.map(chat => ({
         ...chat,
-        avatar: chat.avatar ? getImageUrl(chat.avatar) : getDefaultAvatarUrl()
+        avatar: chat.avatar ? getImageUrl(chat.avatar) : getDefaultAvatarUrl(),
+        last_time: this.formatTime(chat.last_time || chat.last_message_time)
       }))
 
       this.setData({ chatList: chatList })
@@ -108,7 +135,8 @@ Page({
       const rawChatList = Array.isArray(data) ? data : (data.conversations || data.chats || [])
       const chatList = rawChatList.map(chat => ({
         ...chat,
-        avatar: chat.avatar ? getImageUrl(chat.avatar) : getDefaultAvatarUrl()
+        avatar: chat.avatar ? getImageUrl(chat.avatar) : getDefaultAvatarUrl(),
+        last_time: this.formatTime(chat.last_time || chat.last_message_time)
       }))
 
       this.setData({
