@@ -1,4 +1,4 @@
-<!--聊天室页面-->
+<!--聊天室页面 - 只显示与特定卖家的聊天消息-->
 <view class="page">
   <!-- 消息列表 -->
   <scroll-view 
@@ -7,27 +7,13 @@
     scroll-into-view="{{scrollToView}}"
     scroll-with-animation="{{true}}"
   >
-    <!-- 系统广播区块 -->
-    <view class="broadcast-section" wx:if="{{broadcasts.length > 0}}">
-      <view class="broadcast-title">📢 系统广播</view>
-      <view 
-        wx:for="{{broadcasts}}" 
-        wx:key="product_id"
-        class="broadcast-item"
-        bindtap="onBroadcastTap"
-        data-product-id="{{item.product_id}}"
-      >
-        <view class="broadcast-text">
-          <text class="broadcast-user">{{item.room_number}}</text>
-          <text class="broadcast-time-text">于 </text>
-          <text class="broadcast-time">{{item.time}}</text>
-          <text class="broadcast-time-text"> 上传了 </text>
-          <text class="broadcast-product">{{item.product_name}}</text>
-        </view>
-      </view>
-      <view class="broadcast-divider"></view>
+    <!-- 加载中 -->
+    <view class="loading-messages" wx:if="{{loading}}">
+      <view class="loading-spinner"></view>
+      <text>加载中...</text>
     </view>
 
+    <!-- 聊天消息 -->
     <view 
       wx:for="{{messages}}" 
       wx:key="id"
@@ -35,10 +21,10 @@
       class="message-item {{item.sender_id === currentUserId ? 'mine' : 'other'}}"
     >
       <image 
-        class="avatar {{!item.sender_id === currentUserId ? 'friend-avatar' : ''}}" 
+        class="avatar {{item.sender_id !== currentUserId ? 'friend-avatar' : ''}}" 
         src="{{item.sender_id === currentUserId ? myAvatar : friendAvatar}}"
         mode="aspectFill"
-        onerror="onAvatarError"
+        binderror="onAvatarError"
       ></image>
       
       <view class="message-content">
@@ -46,7 +32,6 @@
         <view class="message-bubble" wx:if="{{item.type === 'text' || !item.type}}">
           <text>{{item.content}}</text>
         </view>
-        
         
         <!-- 商品卡片 -->
         <view 

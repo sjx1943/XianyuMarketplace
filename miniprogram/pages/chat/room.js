@@ -1,4 +1,4 @@
-// pages/chat/room.js
+// pages/chat/room.js - 聊天室页面（只显示与特定卖家的聊天）
 const api = require('../../utils/api.js')
 const { getImageUrl, getDefaultAvatarUrl } = require('../../utils/config.js')
 const app = getApp()
@@ -8,8 +8,9 @@ Page({
     friendId: null,
     productId: null,
     orderId: null,
+    friendRoomNumber: '',
+    friendName: '',
     messages: [],
-    broadcasts: [],
     inputText: '',
     scrollToView: '',
     currentUserId: null,
@@ -20,10 +21,11 @@ Page({
   },
 
   onLoad(options) {
-    // 处理参数：驼峰或蛇形都支持
     const friendId = options.friendId || options.friend_id
     const productId = options.productId || options.product_id
     const orderId = options.orderId || options.order_id
+    const roomNumber = options.roomNumber ? decodeURIComponent(options.roomNumber) : ''
+    const friendName = options.friendName ? decodeURIComponent(options.friendName) : ''
     
     if (!friendId) {
       wx.showToast({
@@ -46,42 +48,26 @@ Page({
       friendId: parseInt(friendId),
       productId: productId ? parseInt(productId) : null,
       orderId: orderId ? parseInt(orderId) : null,
+      friendRoomNumber: roomNumber,
+      friendName: friendName,
       currentUserId: userInfo.id,
       myAvatar: userInfo.wechat_avatar ? getImageUrl(userInfo.wechat_avatar) : getDefaultAvatarUrl()
     })
 
-    this.loadBroadcasts()
+    if (roomNumber) {
+      wx.setNavigationBarTitle({
+        title: roomNumber
+      })
+    }
+
     this.loadChatHistory()
     this.connectWebSocket()
-    
-    // 标记消息为已读
     this.markAsRead()
   },
 
   onUnload() {
-    // 不关闭WebSocket - 保持连接持久化，支持实时消息接收
-    // 只在app.onHide时关闭，确保应用级别的连接管理
   },
 
-  // 加载系统广播
-  async loadBroadcasts() {
-    try {
-      const data = await api.request({
-        url: '/api/miniprogram/broadcasts',
-        method: 'GET'
-      })
-
-      if (data && data.broadcasts) {
-        this.setData({
-          broadcasts: data.broadcasts || []
-        })
-      }
-    } catch (error) {
-      console.error('加载广播失败:', error)
-    }
-  },
-
-  // 加载聊天记录
   async loadChatHistory() {
     try {
       this.setData({ loading: true })
@@ -96,20 +82,28 @@ Page({
       })
 
       if (data && data.messages) {
-        // 处理消息，确保头像URL正确
         const messages = (data.messages || []).map(msg => ({
           ...msg,
-          // 如果时间为空，使用当前时间
           time: msg.time || new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
         }))
         
+        const friendInfo = data.friend || {}
+        const friendRoomNumber = friendInfo.room_number || this.data.friendRoomNumber || '未设置'
+        
         this.setData({
           messages: messages,
-          friendAvatar: data.friend?.avatar ? getImageUrl(data.friend.avatar) : getDefaultAvatarUrl(),
+          friendAvatar: friendInfo.avatar ? getImageUrl(friendInfo.avatar) : getDefaultAvatarUrl(),
+          friendRoomNumber: friendRoomNumber,
+          friendName: friendInfo.username || this.data.friendName || '',
           loading: false
         })
 
-        // 滚动到底部
+        if (friendRoomNumber && friendRoomNumber !== '未设置') {
+          wx.setNavigationBarTitle({
+            title: friendRoomNumber
+          })
+        }
+
         this.scrollToBottom()
       } else {
         this.setData({ loading: false })
@@ -120,7 +114,6 @@ Page({
     }
   },
 
-  // 连接WebSocket - 修复版
   connectWebSocket() {
     const config = require('../../utils/config.js')
     const token = wx.getStorageSync('token')
@@ -131,7 +124,6 @@ Page({
       return
     }
     
-    // 后端路由：/ws/chat_room/{friendId}?token=xxx
     const socketUrl = `${config.WS_BASE}/chat_room/${friendId}?token=${encodeURIComponent(token)}`
     console.log('WebSocket连接地址:', socketUrl)
     
@@ -142,7 +134,6 @@ Page({
       },
       fail: (err) => {
         console.error('WebSocket连接失败:', err)
-        // 不显示Toast，因为可能是平台限制（如微信开发者工具）
         console.log('WebSocket连接可能受平台限制，聊天功能将使用HTTP轮询')
       }
     })
@@ -156,7 +147,6 @@ Page({
       try {
         const message = JSON.parse(res.data)
         
-        // 只接收来自当前好友的消息
         if (message.sender_id === this.data.friendId) {
           this.addMessage(message)
           this.markAsRead()
@@ -177,15 +167,12 @@ Page({
     })
   },
 
-  // 关闭WebSocket
   closeWebSocket() {
     wx.closeSocket()
   },
 
-  // 添加消息到列表
   addMessage(message) {
     const messages = this.data.messages
-    // 确保消息有时间戳
     const now = new Date()
     message.time = message.time || now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
     messages.push(message)
@@ -193,19 +180,16 @@ Page({
     this.scrollToBottom()
   },
 
-  // 头像加载失败处理
   onAvatarError(e) {
     console.warn('头像加载失败:', e)
   },
 
-  // 输入变化
   onInputChange(e) {
     this.setData({
       inputText: e.detail.value
     })
   },
 
-  // 发送消息
   async sendMessage() {
     const content = this.data.inputText.trim()
     
@@ -221,7 +205,6 @@ Page({
       })
 
       if (data.success) {
-        // 添加消息到列表
         this.addMessage({
           id: data.message_id,
           sender_id: this.data.currentUserId,
@@ -230,12 +213,10 @@ Page({
           time: '刚刚'
         })
 
-        // 清空输入框
         this.setData({
           inputText: ''
         })
 
-        // 通过WebSocket发送
         if (this.data.socketConnected) {
           wx.sendSocketMessage({
             data: JSON.stringify({
@@ -260,8 +241,6 @@ Page({
     }
   },
 
-
-  // 查看商品
   viewProduct(e) {
     const { id } = e.currentTarget.dataset
     wx.navigateTo({
@@ -269,19 +248,16 @@ Page({
     })
   },
 
-  // 滚动到底部
   scrollToBottom() {
     this.setData({
       scrollToView: 'bottom-anchor'
     })
   },
 
-  // 标记为已读
   async markAsRead() {
     try {
       await api.markMessagesRead(this.data.friendId)
       
-      // 更新全局未读数
       const unreadData = await api.getUnreadCount()
       if (unreadData.success) {
         app.updateUnreadCount(unreadData.count || 0)
@@ -289,13 +265,5 @@ Page({
     } catch (error) {
       console.error('标记已读失败:', error)
     }
-  },
-
-  // 点击广播进入商品详情
-  onBroadcastTap(e) {
-    const { productId } = e.currentTarget.dataset
-    wx.navigateTo({
-      url: `/pages/product/detail?id=${productId}`
-    })
   }
 })

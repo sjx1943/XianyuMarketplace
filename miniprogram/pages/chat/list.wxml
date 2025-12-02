@@ -1,46 +1,81 @@
 <!--聊天列表页-->
 <view class="page">
-  <view class="chat-list" wx:if="{{chatList.length > 0}}">
-    <view 
-      wx:for="{{chatList}}" 
-      wx:key="id"
-      class="chat-item"
-      bindtap="openChat"
-      data-friend="{{item}}"
-    >
-      <image class="avatar" src="{{item.avatar}}"></image>
-      
-      <view class="chat-content">
-        <view class="chat-header">
-          <view class="friend-name-section">
-            <text class="friend-name">{{item.name}}</text>
-            <text class="room-number">{{item.room_number || '未设置'}}</text>
+  <!-- 加载状态 -->
+  <view class="loading" wx:if="{{loading && broadcastLoading}}">
+    <view class="loading-spinner"></view>
+    <text>加载中...</text>
+  </view>
+
+  <!-- 好友聊天列表 -->
+  <view class="section" wx:if="{{chatList.length > 0}}">
+    <view class="section-title">💬 聊天记录</view>
+    <view class="chat-list">
+      <view 
+        wx:for="{{chatList}}" 
+        wx:key="id"
+        class="chat-item"
+        bindtap="openChat"
+        data-friend="{{item}}"
+      >
+        <image class="avatar" src="{{item.avatar}}"></image>
+        
+        <view class="chat-content">
+          <view class="chat-header">
+            <view class="friend-name-section">
+              <text class="friend-name">{{item.username || item.name || '未知用户'}}</text>
+              <text class="room-number">{{item.room_number || '未设置'}}</text>
+            </view>
+            <text class="chat-time">{{item.last_time || item.last_message_time || ''}}</text>
           </view>
-          <text class="chat-time">{{item.last_message_time}}</text>
-        </view>
-        <view class="chat-preview">
-          <text class="last-message">{{item.last_message || '暂无消息'}}</text>
-          <view class="unread-badge" wx:if="{{item.unread_count > 0}}">
-            {{item.unread_count > 99 ? '99+' : item.unread_count}}
+          <view class="chat-preview">
+            <text class="last-message">{{item.last_message || '暂无消息'}}</text>
+            <view class="unread-badge" wx:if="{{item.unread_count > 0}}">
+              {{item.unread_count > 99 ? '99+' : item.unread_count}}
+            </view>
           </view>
         </view>
       </view>
     </view>
   </view>
 
-  <!-- 空状态 -->
-  <view class="empty-state" wx:if="{{!loading && chatList.length === 0}}">
+  <!-- 系统广播区块 -->
+  <view class="section broadcast-section" wx:if="{{broadcasts.length > 0}}">
+    <view class="section-title">📢 系统广播</view>
+    <view class="broadcast-list">
+      <view 
+        wx:for="{{broadcasts}}" 
+        wx:key="product_id"
+        class="broadcast-item"
+        bindtap="onBroadcastTap"
+        data-product-id="{{item.product_id}}"
+      >
+        <view class="broadcast-text">
+          <text class="broadcast-user">{{item.room_number}}</text>
+          <text class="broadcast-time-text">于 </text>
+          <text class="broadcast-time">{{item.time}}</text>
+          <text class="broadcast-time-text"> 上传了 </text>
+          <text class="broadcast-product">{{item.product_name}}</text>
+        </view>
+        <view class="broadcast-arrow">›</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态：没有聊天记录也没有广播 -->
+  <view class="empty-state" wx:if="{{!loading && !broadcastLoading && chatList.length === 0 && broadcasts.length === 0}}">
     <text class="empty-icon">💬</text>
-    <text class="empty-text">暂无聊天记录</text>
+    <text class="empty-text">暂无消息</text>
     <text class="empty-hint">浏览商品并联系卖家开始聊天</text>
     <button class="btn btn-primary" bindtap="goToProductList">
       去逛逛
     </button>
   </view>
 
-  <!-- 加载状态 -->
-  <view class="loading" wx:if="{{loading}}">
-    <view class="loading-spinner"></view>
-    <text>加载中...</text>
+  <!-- 只有广播没有聊天记录的提示 -->
+  <view class="no-chat-hint" wx:if="{{!loading && chatList.length === 0 && broadcasts.length > 0}}">
+    <view class="hint-box">
+      <text class="hint-icon">💡</text>
+      <text class="hint-text">暂无聊天记录，点击商品联系卖家开始聊天</text>
+    </view>
   </view>
 </view>

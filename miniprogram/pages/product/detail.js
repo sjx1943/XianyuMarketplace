@@ -270,8 +270,10 @@ Page({
     }
 
     const { product } = this.data
+    const roomNumber = encodeURIComponent(product.seller_room || '未设置')
+    const friendName = encodeURIComponent(product.seller_name || '')
     wx.navigateTo({
-      url: `/pages/chat/room?friendId=${product.seller_id}&productId=${product.id}`
+      url: `/pages/chat/room?friendId=${product.seller_id}&productId=${product.id}&roomNumber=${roomNumber}&friendName=${friendName}`
     })
   },
 

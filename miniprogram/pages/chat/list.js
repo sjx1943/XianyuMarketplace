@@ -6,7 +6,9 @@ const app = getApp()
 Page({
   data: {
     chatList: [],
-    loading: true
+    broadcasts: [],
+    loading: true,
+    broadcastLoading: false
   },
 
   onLoad() {
@@ -16,16 +18,18 @@ Page({
   onShow() {
     this.checkLoginAndLoad()
     
-    // 设置tabBar选中状态
     if (this.getTabBar()) {
       this.getTabBar().setData({
-        selected: 2
+        selected: 1
       })
     }
   },
 
   onPullDownRefresh() {
-    this.loadChatList().then(() => {
+    Promise.all([
+      this.loadChatList(),
+      this.loadBroadcasts()
+    ]).then(() => {
       wx.stopPullDownRefresh()
     })
   },
@@ -45,6 +49,7 @@ Page({
     }
 
     this.loadChatList()
+    this.loadBroadcasts()
   },
 
   async loadChatList() {
@@ -53,9 +58,7 @@ Page({
 
       const data = await api.getChatList()
 
-      // 后端返回的数据格式可能是数组或对象
       const rawChatList = Array.isArray(data) ? data : (data.conversations || data.chats || [])
-      // 处理每个聊天的头像URL
       const chatList = rawChatList.map(chat => ({
         ...chat,
         avatar: chat.avatar ? getImageUrl(chat.avatar) : getDefaultAvatarUrl()
@@ -66,7 +69,6 @@ Page({
         loading: false
       })
 
-      // 更新未读消息数
       if (chatList.length > 0) {
         const unreadCount = chatList.reduce((sum, chat) => sum + (chat.unread_count || 0), 0)
         if (app.updateUnreadCount) {
@@ -79,10 +81,42 @@ Page({
     }
   },
 
+  async loadBroadcasts() {
+    try {
+      this.setData({ broadcastLoading: true })
+
+      const data = await api.request({
+        url: '/api/miniprogram/broadcasts',
+        method: 'GET'
+      })
+
+      if (data && data.broadcasts) {
+        this.setData({
+          broadcasts: data.broadcasts || [],
+          broadcastLoading: false
+        })
+      } else {
+        this.setData({ broadcastLoading: false })
+      }
+    } catch (error) {
+      console.error('加载广播失败:', error)
+      this.setData({ broadcastLoading: false })
+    }
+  },
+
   openChat(e) {
     const { friend } = e.currentTarget.dataset
+    const roomNumber = friend.room_number || '未设置'
+    const friendName = friend.username || friend.name || ''
     wx.navigateTo({
-      url: `/pages/chat/room?friendId=${friend.id}`
+      url: `/pages/chat/room?friendId=${friend.friend_id || friend.id}&roomNumber=${encodeURIComponent(roomNumber)}&friendName=${encodeURIComponent(friendName)}`
+    })
+  },
+
+  onBroadcastTap(e) {
+    const { productId } = e.currentTarget.dataset
+    wx.navigateTo({
+      url: `/pages/product/detail?id=${productId}`
     })
   },
 
