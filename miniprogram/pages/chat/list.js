@@ -92,11 +92,10 @@ Page({
 
       this.setData({ chatList: chatList })
 
-      if (chatList.length > 0) {
-        const unreadCount = chatList.reduce((sum, chat) => sum + (chat.unread_count || 0), 0)
-        if (app.updateUnreadCount) {
-          app.updateUnreadCount(unreadCount)
-        }
+      // 更新消息tab的未读徽章
+      const unreadCount = chatList.reduce((sum, chat) => sum + (chat.unread_count || 0), 0)
+      if (app.updateUnreadChatCount) {
+        app.updateUnreadChatCount(unreadCount)
       }
     } catch (error) {
       console.error('静默刷新聊天列表失败:', error)
@@ -148,11 +147,10 @@ Page({
         loading: false
       })
 
-      if (chatList.length > 0) {
-        const unreadCount = chatList.reduce((sum, chat) => sum + (chat.unread_count || 0), 0)
-        if (app.updateUnreadCount) {
-          app.updateUnreadCount(unreadCount)
-        }
+      // 更新消息tab的未读徽章
+      const unreadCount = chatList.reduce((sum, chat) => sum + (chat.unread_count || 0), 0)
+      if (app.updateUnreadChatCount) {
+        app.updateUnreadChatCount(unreadCount)
       }
     } catch (error) {
       console.error('加载聊天列表失败:', error)

@@ -67,9 +67,10 @@ Page({
     this.messageIdSet = new Set()
     this.lastMessageTimestamp = 0
     this.hasSentInitialMessage = false
-    this.loadChatHistory().then(() => {
+    this.loadChatHistory().then((historyCount) => {
       // 加载完历史消息后，检查是否需要发送初始消息
-      this.checkAndSendInitialMessage()
+      // 传入历史消息数量，避免setData异步问题
+      this.checkAndSendInitialMessage(historyCount)
     })
     this.connectWebSocket()
     this.startPolling()
@@ -77,25 +78,27 @@ Page({
   },
   
   // 检查并发送关于商品的初始消息
-  async checkAndSendInitialMessage() {
+  // historyCount: loadChatHistory返回的历史消息数量
+  async checkAndSendInitialMessage(historyCount) {
     const { productId, friendId } = this.data
     
     // 如果没有商品ID或已处理过，不发送初始消息
     if (!productId || this.hasSentInitialMessage) return
     
-    // 使用本地存储记录已发送初始消息的商品-卖家组合，防止重复发送
-    const sentKey = `initial_msg_${friendId}_${productId}`
-    const alreadySent = wx.getStorageSync(sentKey)
-    if (alreadySent) {
-      console.log('已向该卖家发送过关于此商品的初始消息')
+    // 核心逻辑：只在首次与该卖家聊天时发送初始消息
+    // 如果有任何历史消息记录，则不发送
+    if (historyCount > 0) {
+      console.log('与该卖家已有聊天记录，不发送初始消息')
       this.hasSentInitialMessage = true
       return
     }
     
-    // 检查当前加载的消息记录（loadChatHistory已完成）
-    const currentMessages = this.data.messages || []
-    if (currentMessages.length > 0) {
-      console.log('已有聊天记录，不发送初始消息')
+    // 使用本地存储记录已发送初始消息的卖家，防止重复发送
+    // 注意：这里只用friendId，不用productId，确保每个卖家只发一次
+    const sentKey = `initial_msg_sent_${friendId}`
+    const alreadySent = wx.getStorageSync(sentKey)
+    if (alreadySent) {
+      console.log('已向该卖家发送过初始消息')
       this.hasSentInitialMessage = true
       return
     }
@@ -124,7 +127,7 @@ Page({
       })
       
       if (data.success) {
-        // 记录已发送，防止重复
+        // 记录已向该卖家发送过初始消息，防止以后再次发送
         wx.setStorageSync(sentKey, Date.now())
         
         const messageData = data.data || {}
@@ -319,12 +322,17 @@ Page({
         }
 
         this.scrollToBottom()
+        
+        // 返回历史消息数量
+        return messages.length
       } else {
         this.setData({ loading: false })
+        return 0
       }
     } catch (error) {
       console.error('加载聊天记录失败:', error)
       this.setData({ loading: false })
+      return 0
     }
   },
 
@@ -572,10 +580,8 @@ Page({
     try {
       await api.markMessagesRead(this.data.friendId)
       
-      const unreadData = await api.getUnreadCount()
-      if (unreadData.success) {
-        app.updateUnreadCount(unreadData.count || 0)
-      }
+      // 标记已读后，刷新消息未读计数
+      app.getUnreadChatCount()
     } catch (error) {
       console.error('标记已读失败:', error)
     }
