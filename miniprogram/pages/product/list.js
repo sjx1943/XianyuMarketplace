@@ -32,7 +32,10 @@ Page({
     // 只在用户已登录时才启动定时器
     const app = getApp()
     if (app.globalData.isLogin) {
-      // 每30秒刷新一次未读订单计数
+      // 立即刷新一次未读计数（订单+聊天）
+      app.getUnreadCount()
+      
+      // 每30秒刷新一次未读计数
       if (!this.unreadCountInterval) {
         this.unreadCountInterval = setInterval(() => {
           app.getUnreadCount()

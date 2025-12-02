@@ -66,10 +66,88 @@ Page({
 
     this.messageIdSet = new Set()
     this.lastMessageTimestamp = 0
-    this.loadChatHistory()
+    this.hasSentInitialMessage = false
+    this.loadChatHistory().then(() => {
+      // 加载完历史消息后，检查是否需要发送初始消息
+      this.checkAndSendInitialMessage()
+    })
     this.connectWebSocket()
     this.startPolling()
     this.markAsRead()
+  },
+  
+  // 检查并发送关于商品的初始消息
+  async checkAndSendInitialMessage() {
+    const { productId, friendId } = this.data
+    
+    // 如果没有商品ID或已处理过，不发送初始消息
+    if (!productId || this.hasSentInitialMessage) return
+    
+    // 使用本地存储记录已发送初始消息的商品-卖家组合，防止重复发送
+    const sentKey = `initial_msg_${friendId}_${productId}`
+    const alreadySent = wx.getStorageSync(sentKey)
+    if (alreadySent) {
+      console.log('已向该卖家发送过关于此商品的初始消息')
+      this.hasSentInitialMessage = true
+      return
+    }
+    
+    // 检查当前加载的消息记录（loadChatHistory已完成）
+    const currentMessages = this.data.messages || []
+    if (currentMessages.length > 0) {
+      console.log('已有聊天记录，不发送初始消息')
+      this.hasSentInitialMessage = true
+      return
+    }
+    
+    try {
+      // 获取商品详情
+      const productData = await api.getProductDetail(productId)
+      const product = productData.product || productData
+      
+      if (!product || !product.name) {
+        console.log('商品信息不完整，不发送初始消息')
+        return
+      }
+      
+      // 构建初始消息
+      const initialMessage = `我对【${product.name}】感兴趣，想了解更多信息～`
+      
+      // 在发送前标记已处理，防止重复发送
+      this.hasSentInitialMessage = true
+      
+      // 发送初始消息
+      const data = await api.sendMessage({
+        friend_id: friendId,
+        message: initialMessage,
+        type: 'text'
+      })
+      
+      if (data.success) {
+        // 记录已发送，防止重复
+        wx.setStorageSync(sentKey, Date.now())
+        
+        const messageData = data.data || {}
+        this.addMessage({
+          id: data.message_id || messageData.id,
+          sender_id: this.data.currentUserId,
+          from_user_id: this.data.currentUserId,
+          content: initialMessage,
+          message: initialMessage,
+          type: 'text',
+          time: messageData.time || '刚刚',
+          timestamp: messageData.timestamp || Date.now()
+        })
+        console.log('初始消息发送成功')
+      } else {
+        // 发送失败，重置标记，允许重试
+        this.hasSentInitialMessage = false
+      }
+    } catch (error) {
+      console.error('发送初始消息失败:', error)
+      // 发送失败，重置标记，允许重试
+      this.hasSentInitialMessage = false
+    }
   },
 
   onUnload() {

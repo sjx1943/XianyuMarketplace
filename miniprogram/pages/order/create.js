@@ -134,9 +134,17 @@ Page({
   },
 
   contactSeller() {
-    if (this.data.product && this.data.product.user_id) {
+    const { product } = this.data
+    if (product && product.user_id) {
+      const roomNumber = encodeURIComponent(product.seller_room || product.room_number || '未设置')
+      const friendName = encodeURIComponent(product.seller_name || product.username || '')
       wx.navigateTo({
-        url: `/pages/chat/room?userId=${this.data.product.user_id}`
+        url: `/pages/chat/room?friendId=${product.user_id}&productId=${product.id}&roomNumber=${roomNumber}&friendName=${friendName}`
+      })
+    } else {
+      wx.showToast({
+        title: '无法联系卖家',
+        icon: 'none'
       })
     }
   }

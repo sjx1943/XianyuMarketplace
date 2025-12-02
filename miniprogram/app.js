@@ -9,6 +9,7 @@ App({
     isLogin: false,
     currentUserId: null,
     unreadCount: 0,
+    unreadChatCount: 0,
     networkConnected: true,
     networkType: 'unknown',
     retryCount: 0,
@@ -196,11 +197,12 @@ App({
     }, 1500);
   },
 
-  // 获取未读消息数量
+  // 获取未读消息数量（订单+聊天）
   getUnreadCount: function() {
     var self = this;
     if (!self.globalData.isLogin) return;
     
+    // 获取未读订单数量
     wx.request({
       url: self.globalData.apiBase + '/api/miniprogram/unread_count',
       method: 'GET',
@@ -216,7 +218,52 @@ App({
         }
       },
       fail: function(err) {
-        console.error('获取未读消息数量失败:', err);
+        console.error('获取未读订单数量失败:', err);
+      }
+    });
+    
+    // 获取未读聊天消息数量
+    self.getUnreadChatCount();
+  },
+  
+  // 获取未读聊天消息数量
+  getUnreadChatCount: function() {
+    var self = this;
+    if (!self.globalData.isLogin) return;
+    
+    wx.request({
+      url: self.globalData.apiBase + '/api/miniprogram/chat/list',
+      method: 'GET',
+      header: {
+        'Authorization': 'Bearer ' + wx.getStorageSync('token'),
+        'Content-Type': 'application/json'
+      },
+      timeout: self.globalData.requestTimeout,
+      success: function(res) {
+        if (res.statusCode === 200 && res.data) {
+          // API直接返回数组格式 [{id, friend_id, unread_count, ...}, ...]
+          // 可能是字符串（需要解析）或已解析的数组
+          var chatList = [];
+          try {
+            if (typeof res.data === 'string') {
+              chatList = JSON.parse(res.data);
+            } else if (Array.isArray(res.data)) {
+              chatList = res.data;
+            }
+          } catch (e) {
+            console.error('解析聊天列表失败:', e);
+            chatList = [];
+          }
+          
+          var totalUnread = 0;
+          for (var i = 0; i < chatList.length; i++) {
+            totalUnread += (chatList[i].unread_count || 0);
+          }
+          self.updateUnreadChatCount(totalUnread);
+        }
+      },
+      fail: function(err) {
+        console.error('获取未读聊天消息失败:', err);
       }
     });
   },
@@ -243,6 +290,32 @@ App({
         });
       } catch (err) {
         console.error('移除tabBar徽标失败:', err);
+      }
+    }
+  },
+  
+  // 更新未读聊天消息数量
+  updateUnreadChatCount: function(count) {
+    this.globalData.unreadChatCount = count;
+    
+    // tabBar索引: 0=物品, 1=消息, 2=订单, 3=我的
+    // 未读聊天徽章显示在"消息"tab上，即 index: 1
+    if (count > 0) {
+      try {
+        wx.setTabBarBadge({
+          index: 1,
+          text: count > 99 ? '99+' : count.toString()
+        });
+      } catch (err) {
+        console.error('设置聊天tabBar徽标失败:', err);
+      }
+    } else {
+      try {
+        wx.removeTabBarBadge({
+          index: 1
+        });
+      } catch (err) {
+        console.error('移除聊天tabBar徽标失败:', err);
       }
     }
   },

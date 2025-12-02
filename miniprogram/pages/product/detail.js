@@ -138,9 +138,25 @@ Page({
   // 预览图片
   previewImage(e) {
     const { url } = e.currentTarget.dataset
+    const { getImageUrl } = require('../../utils/config.js')
+    
+    // 确保所有图片URL都是完整的服务器URL
+    const images = (this.data.product.images || []).map(imgUrl => {
+      if (!imgUrl) return ''
+      if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
+        return imgUrl
+      }
+      return getImageUrl(imgUrl)
+    }).filter(Boolean)
+    
+    // 当前预览的图片也要确保是完整URL
+    const currentUrl = (url && (url.startsWith('http://') || url.startsWith('https://'))) 
+      ? url 
+      : getImageUrl(url)
+    
     wx.previewImage({
-      current: url,
-      urls: this.data.product.images
+      current: currentUrl,
+      urls: images
     })
   },
 
