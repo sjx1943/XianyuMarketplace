@@ -1378,10 +1378,10 @@ class MiniprogramChatListHandler(tornado.web.RequestHandler):
                     pass
         return None
     
-    @tornado.gen.coroutine
-    def get(self):
+    async def get(self):
         """获取聊天会话列表"""
         from models.friendship import Friendship
+        from models.blacklist import Blacklist
         
         user_id_str = self._get_user_id()
         if not user_id_str:
@@ -1392,6 +1392,32 @@ class MiniprogramChatListHandler(tornado.web.RequestHandler):
         user_id = int(user_id_str)
         
         try:
+            # 第一步：从MongoDB查询给当前用户发过消息的用户ID
+            message_senders = set()
+            async for message in self.mongo.chat_messages.find({"to_user_id": user_id}):
+                message_senders.add(message.get("from_user_id"))
+            
+            # 第二步：将这些用户添加为好友（如果还不是好友）
+            existing_friendships = self.session.query(Friendship).filter_by(user_id=user_id).all()
+            existing_friend_ids = {friendship.friend_id for friendship in existing_friendships}
+            
+            for sender_id in message_senders:
+                if sender_id != user_id and sender_id not in existing_friend_ids:
+                    try:
+                        new_friendship = Friendship(user_id=user_id, friend_id=sender_id)
+                        self.session.add(new_friendship)
+                        self.session.flush()
+                    except Exception as e:
+                        self.session.rollback()
+                        logging.error(f"添加好友关系失败: {e}")
+            
+            try:
+                self.session.commit()
+            except Exception as e:
+                self.session.rollback()
+                logging.error(f"提交好友关系失败: {e}")
+            
+            # 第三步：查询更新后的好友列表
             friendships = self.session.query(Friendship).filter_by(user_id=user_id).all()
             
             conversations = []
@@ -1400,7 +1426,12 @@ class MiniprogramChatListHandler(tornado.web.RequestHandler):
                 if not friend:
                     continue
                 
-                last_message = yield self.mongo.chat_messages.find_one(
+                # 检查是否被屏蔽
+                is_blocked = self.session.query(Blacklist).filter_by(blocker_id=user_id, blocked_id=friend.id).first() is not None
+                if is_blocked:
+                    continue
+                
+                last_message = await self.mongo.chat_messages.find_one(
                     {
                         "$or": [
                             {"from_user_id": user_id, "to_user_id": friendship.friend_id},
@@ -1410,7 +1441,7 @@ class MiniprogramChatListHandler(tornado.web.RequestHandler):
                     sort=[("timestamp", -1)]
                 )
                 
-                unread_count = yield self.mongo.chat_messages.count_documents({
+                unread_count = await self.mongo.chat_messages.count_documents({
                     "from_user_id": friendship.friend_id,
                     "to_user_id": user_id,
                     "status": "unread"
@@ -1427,10 +1458,13 @@ class MiniprogramChatListHandler(tornado.web.RequestHandler):
                         else:
                             last_message_time = str(ts)
                 
+                # 优先显示房间号，如果没有则显示用户名
+                display_name = friend.room_number if friend.room_number else friend.username
+                
                 conversations.append({
                     "id": friendship.friend_id,
                     "friend_id": friendship.friend_id,
-                    "username": friend.username,
+                    "username": display_name,
                     "room_number": friend.room_number or "未设置",
                     "avatar": friend.wechat_avatar or "",
                     "last_message": last_message_content[:50] if last_message_content else "暂无消息",
@@ -1440,11 +1474,15 @@ class MiniprogramChatListHandler(tornado.web.RequestHandler):
             
             conversations.sort(key=lambda x: x.get("last_time", ""), reverse=True)
             
+            self.set_header("Content-Type", "application/json")
             self.write(json.dumps(conversations))
             
         except Exception as e:
             logging.error(f"获取聊天列表异常: {e}")
-            self.write(json.dumps([]))
+            import traceback
+            traceback.print_exc()
+            self.set_status(500)
+            self.write(json.dumps({'success': False, 'error': str(e)}))
     
     def on_finish(self):
         self.session.close()
