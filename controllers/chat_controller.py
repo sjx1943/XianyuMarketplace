@@ -26,19 +26,43 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
         self.mongo = mongo
         self.session = None  # 先设为None，在open时创建
 
-    def open(self):
+    def open(self, friend_id):
         try:
             # 在连接打开时创建Session
             self.session = Session()
             
-            user_id = self.get_argument("user_id", None)
-            if user_id is None or not user_id.isdigit():
-                logging.warning("WebSocket connection opened with invalid user_id, connection closed.")
+            # 从route参数获取friend_id
+            if not friend_id or not friend_id.isdigit():
+                logging.warning("WebSocket connection opened with invalid friend_id, connection closed.")
                 self.close()
                 return
-            self.user_id = int(user_id)  # Ensure user_id is an integer
+            
+            self.friend_id = int(friend_id)
+            
+            # 从query参数获取token并提取user_id
+            token = self.get_argument("token", None)
+            if not token:
+                logging.warning("WebSocket connection opened without token, connection closed.")
+                self.close()
+                return
+            
+            # token格式: session_key_user_id，提取user_id（最后一个_后面的部分）
+            if '_' in token:
+                try:
+                    self.user_id = int(token.split('_')[-1])
+                except (ValueError, IndexError):
+                    logging.warning("WebSocket connection opened with invalid token format, connection closed.")
+                    self.close()
+                    return
+            else:
+                logging.warning("WebSocket connection opened with invalid token format, connection closed.")
+                self.close()
+                return
+            
+            # 在connections字典中存储此连接（使用user_id作为key）
             connections[self.user_id] = self
-            logging.warning(f"WebSocket connection established, user_id: {self.user_id}")
+            logging.warning(f"WebSocket connection established, user_id: {self.user_id}, friend_id: {self.friend_id}")
+            # 异步发送存储的消息
             self.send_stored_messages()
         except Exception as e:
             logging.error(f"Error in WebSocket open: {e}")
