@@ -45,10 +45,6 @@
         <text class="meta-icon">🕐</text>
         <text class="meta-text">{{product.created_at}}</text>
       </view>
-      <view class="meta-item">
-        <text class="meta-icon">👁</text>
-        <text class="meta-text">{{product.views || 0}}次浏览</text>
-      </view>
     </view>
 
     <view class="product-tags">

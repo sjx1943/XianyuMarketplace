@@ -46,6 +46,9 @@
       </view>
       
       <view class="product-actions">
+        <button class="action-btn primary-btn" bindtap="setProductPrimaryImage" data-id="{{item.id}}" data-name="{{item.name}}">
+          ⭐ 主图
+        </button>
         <button class="action-btn edit-btn" bindtap="editProduct" data-id="{{item.id}}">
           ✏️ 编辑
         </button>
