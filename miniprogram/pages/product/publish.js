@@ -8,6 +8,7 @@ Page({
     form: {
       name: '',
       price: '',
+      quantity: '1',
       category: '',
       condition: '九成新',
       description: '',
@@ -140,6 +141,14 @@ Page({
       return false
     }
 
+    if (!form.quantity || parseInt(form.quantity) <= 0) {
+      wx.showToast({
+        title: '请输入正确的商品数量',
+        icon: 'none'
+      })
+      return false
+    }
+
     if (!form.category) {
       wx.showToast({
         title: '请选择商品分类',
@@ -198,7 +207,7 @@ Page({
           name: form.name,
           description: form.description || '',
           price: String(form.price),
-          quantity: '1',
+          quantity: String(form.quantity),
           tag: form.category,
           condition: form.condition
         } : {

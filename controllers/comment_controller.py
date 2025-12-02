@@ -32,6 +32,28 @@ class CommentHandler(tornado.web.RequestHandler):
     def initialize(self):
         self.session = Session()
 
+    def _get_user_id(self):
+        """获取用户ID，支持cookie和token两种认证方式"""
+        # 首先尝试cookie认证
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return int(user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id)
+        
+        # 然后尝试token认证（小程序使用）
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return int(token.split('_')[-1])
+                except:
+                    pass
+        return None
+
+    def get_xsrf_token(self):
+        """禁用XSRF检查，因为小程序无法提供XSRF token"""
+        return None
+
     def get_current_user(self):
         user_id = self.get_secure_cookie("user_id")
         if user_id:
@@ -70,14 +92,27 @@ class CommentHandler(tornado.web.RequestHandler):
     def post(self):
         """发布评价 - 只有完成交易的买家才能评价"""
         try:
-            user = self.get_current_user()
-            if not user:
+            # 支持token认证和cookie认证
+            user_id = self._get_user_id()
+            if not user_id:
                 self.write(json.dumps({'success': False, 'error': '请先登录'}))
                 return
+            
+            user = self.session.query(User).filter_by(id=user_id).first()
+            if not user:
+                self.write(json.dumps({'success': False, 'error': '用户不存在'}))
+                return
 
-            product_id = int(self.get_argument("product_id"))
-            content = self.get_argument("content")
-            rating = float(self.get_argument("rating", 5.0))
+            # 支持JSON和表单两种请求格式
+            try:
+                data = json.loads(self.request.body) if self.request.body else {}
+            except:
+                data = {}
+            
+            # 优先从JSON获取，其次从表单获取
+            product_id = int(data.get('product_id') or self.get_argument("product_id", "0"))
+            content = data.get('content') or self.get_argument("content", "")
+            rating = float(data.get('rating') or self.get_argument("rating", "5.0"))
 
             from models.blacklist import Blacklist
 

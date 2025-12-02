@@ -57,6 +57,22 @@
       </view>
     </view>
 
+    <!-- 商品数量 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="required">*</text>
+        <text class="section-title">商品数量</text>
+      </view>
+      <input 
+        class="input" 
+        type="digit"
+        placeholder="请输入商品数量" 
+        value="{{form.quantity}}"
+        bindinput="onInputChange"
+        data-field="quantity"
+      />
+    </view>
+
     <!-- 商品分类 -->
     <view class="section">
       <view class="section-header">
