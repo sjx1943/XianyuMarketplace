@@ -33,18 +33,31 @@ Page({
     
     // 刷新未读订单数量
     app.getUnreadCount()
+  },
+
+  // 加载完成后检查并自动跳转
+  checkAndAutoSwitchTab() {
+    const currentUserId = parseInt(app.globalData.userInfo?.id || app.globalData.currentUserId)
     
-    // 检查是否需要自动跳转到"我卖出的"标签
-    // 如果没有待售订单但有待发货订单，则自动跳转
-    const queryTab = wx.getWindowInfo().pageRoute
-    if (queryTab && this.data.orderList.length > 0) {
-      const buyingOrders = this.data.orderList.filter(o => parseInt(o.buyer_id) === parseInt(app.globalData.userInfo?.id || app.globalData.currentUserId))
-      const sellingOrders = this.data.orderList.filter(o => parseInt(o.seller_id) === parseInt(app.globalData.userInfo?.id || app.globalData.currentUserId))
-      
-      // 如果当前是"我买到的"但只有卖出的订单，自动切换到"我卖出的"
-      if (this.data.activeTab === 0 && buyingOrders.length === 0 && sellingOrders.length > 0) {
-        this.setData({ activeTab: 1 })
-        this.loadOrders()
+    if (!currentUserId || this.data.orderList.length === 0) {
+      return
+    }
+
+    // 统计各类订单
+    const buyingOrders = this.data.orderList.filter(o => parseInt(o.buyer_id) === currentUserId)
+    const sellingOrders = this.data.orderList.filter(o => parseInt(o.seller_id) === currentUserId)
+    const pendingSellingOrders = sellingOrders.filter(o => o.status === 'pending')
+
+    // 自动跳转逻辑：
+    // 1. 如果买家没有订单但卖家有待发货订单 -> 自动跳转到"我卖出的"
+    // 2. 但保留用户主动切换的选择
+    if (this.data.activeTab === 0) {
+      if (buyingOrders.length === 0 && pendingSellingOrders.length > 0) {
+        // 只在第一次进入时自动跳转
+        if (!this.hasAutoSwitched) {
+          this.hasAutoSwitched = true
+          this.setData({ activeTab: 1 })
+        }
       }
     }
   },
@@ -129,6 +142,9 @@ Page({
         orderList: processedOrders,
         loading: false
       })
+
+      // 加载完成后检查是否需要自动切换标签
+      this.checkAndAutoSwitchTab()
 
       // 更新未读订单数量
       const unreadCount = processedOrders.filter(o => o.unread).length

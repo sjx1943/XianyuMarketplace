@@ -7,12 +7,21 @@ Page({
     loading: true,
     isBuyer: false,
     isSeller: false,
-    currentUserId: null
+    currentUserId: null,
+    countdownText: '',
+    countdownTimer: null
   },
 
   onLoad(options) {
     if (options.id) {
       this.loadOrderDetail(options.id)
+    }
+  },
+
+  onUnload() {
+    // 清除定时器
+    if (this.data.countdownTimer) {
+      clearInterval(this.data.countdownTimer)
     }
   },
 
@@ -41,6 +50,11 @@ Page({
         isSeller: isSeller,
         loading: false
       })
+      
+      // 如果订单是shipped状态且当前用户是买家，启动倒计时
+      if (order.status === 'shipped' && isBuyer && order.shipped_at) {
+        this.startAutoConfirmCountdown(orderId, order.shipped_at)
+      }
     }).catch(err => {
       console.error('加载订单详情失败:', err)
       this.setData({ loading: false })
@@ -48,6 +62,53 @@ Page({
         title: '加载失败',
         icon: 'none'
       })
+    })
+  },
+
+  startAutoConfirmCountdown(orderId, shippedAtStr) {
+    // 清除旧的定时器
+    if (this.data.countdownTimer) {
+      clearInterval(this.data.countdownTimer)
+    }
+
+    const updateCountdown = () => {
+      const shippedAt = new Date(shippedAtStr)
+      const now = new Date()
+      const deadline = new Date(shippedAt.getTime() + 24 * 60 * 60 * 1000)
+      const remainingMs = deadline.getTime() - now.getTime()
+
+      if (remainingMs <= 0) {
+        // 倒计时结束，自动确认收货
+        clearInterval(this.data.countdownTimer)
+        this.autoConfirmOrder(orderId)
+      } else {
+        // 计算剩余时间
+        const hours = Math.floor(remainingMs / (60 * 60 * 1000))
+        const minutes = Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000))
+        const seconds = Math.floor((remainingMs % (60 * 1000)) / 1000)
+        const countdownText = `自动确认倒计时: ${hours}h${minutes}m${seconds}s`
+        this.setData({ countdownText })
+      }
+    }
+
+    // 立即更新一次
+    updateCountdown()
+
+    // 每秒更新一次
+    const timer = setInterval(updateCountdown, 1000)
+    this.setData({ countdownTimer: timer })
+  },
+
+  autoConfirmOrder(orderId) {
+    console.log('倒计时结束，自动确认收货')
+    api.confirmOrder(orderId).then(() => {
+      wx.showToast({
+        title: '已自动确认收货',
+        icon: 'success'
+      })
+      this.loadOrderDetail(orderId)
+    }).catch(err => {
+      console.error('自动确认收货失败:', err)
     })
   },
 
@@ -63,6 +124,10 @@ Page({
               title: '已确认收货',
               icon: 'success'
             })
+            // 清除定时器
+            if (this.data.countdownTimer) {
+              clearInterval(this.data.countdownTimer)
+            }
             this.loadOrderDetail(orderId)
           }).catch(err => {
             wx.showToast({
