@@ -2,11 +2,14 @@
 const api = require('../../utils/api.js')
 const app = getApp()
 
+// API 请求超时时间（毫秒）
+const API_TIMEOUT = 5000
+
 Page({
   data: {
     product: {},
     productId: null,
-    loading: true,
+    loading: false,  // 初始值改为 false
     isOwner: false,
     currentUserId: null,
     imageDetails: [],
@@ -28,9 +31,15 @@ Page({
     
     if (id) {
       this.setData({ productId: id })
-      this.loadProductDetail(id)
-      this.checkCanReview(id)
-      this.loadComments(id)
+      
+      // 优先加载商品详情，评论和评价权限可以稍后并行加载
+      this.loadProductDetail(id).then(() => {
+        // 商品加载完成后，并行加载评论和检查评价权限
+        Promise.all([
+          this.checkCanReview(id),
+          this.loadComments(id)
+        ]).catch(err => console.error('加载辅助数据失败:', err))
+      })
       
       // 如果从订单详情页跳转来评价，自动打开评价弹框
       if (showReview === '1') {
@@ -38,7 +47,7 @@ Page({
           if (this.data.canReview) {
             this.setData({ showReviewModal: true })
           }
-        }, 500)
+        }, 800)  // 延长等待时间确保数据加载完成
       }
     } else {
       wx.showToast({
@@ -73,7 +82,15 @@ Page({
       console.log('loadProductDetail - 开始加载商品:', id)
       wx.showLoading({ title: '加载中...' })
       
-      const data = await api.getProductDetail(id)
+      // 添加超时机制
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('请求超时')), API_TIMEOUT)
+      )
+      
+      const data = await Promise.race([
+        api.getProductDetail(id),
+        timeoutPromise
+      ])
       console.log('loadProductDetail - API返回数据:', data)
       
       // 后端返回 {success: true, product: {...}} 格式
@@ -126,10 +143,18 @@ Page({
       }
     } catch (error) {
       console.error('加载商品详情失败:', error)
-      wx.showToast({
-        title: '加载失败',
-        icon: 'none'
-      })
+      // 超时提示
+      if (error.message === '请求超时') {
+        wx.showToast({
+          title: '加载超时，请重试',
+          icon: 'none'
+        })
+      } else {
+        wx.showToast({
+          title: '加载失败',
+          icon: 'none'
+        })
+      }
     } finally {
       wx.hideLoading()
     }
@@ -398,7 +423,15 @@ Page({
   // 检查用户是否可以评价此商品
   async checkCanReview(productId) {
     try {
-      const res = await api.canReview(productId)
+      // 添加超时机制
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('请求超时')), API_TIMEOUT)
+      )
+      
+      const res = await Promise.race([
+        api.canReview(productId),
+        timeoutPromise
+      ])
       this.setData({ canReview: res.can_review === true })
     } catch (err) {
       console.error('检查评价权限失败:', err)
@@ -409,7 +442,15 @@ Page({
   // 加载商品评论
   async loadComments(productId) {
     try {
-      const res = await api.getComments(productId)
+      // 添加超时机制
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('请求超时')), API_TIMEOUT)
+      )
+      
+      const res = await Promise.race([
+        api.getComments(productId),
+        timeoutPromise
+      ])
       if (res.success && res.comments) {
         this.setData({ comments: res.comments })
       }

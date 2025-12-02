@@ -3,10 +3,13 @@ const api = require('../../utils/api.js')
 const { getImageUrl } = require('../../utils/config.js')
 const app = getApp()
 
+// API 请求超时时间（毫秒）
+const API_TIMEOUT = 5000
+
 Page({
   data: {
     products: [],
-    loading: true,
+    loading: false,  // 初始值改为 false
     currentTab: 'all',
     tabs: [
       { key: 'all', name: '全部' },
@@ -20,6 +23,11 @@ Page({
     }
   },
 
+  // 防止重复加载
+  isLoading: false,
+  lastLoadTime: 0,
+  cachedAllProducts: null,
+
   onLoad(options) {
     const { type } = options
     if (type === 'selling') {
@@ -32,20 +40,39 @@ Page({
   },
 
   onShow() {
-    this.loadMyProducts()
+    // 智能加载：距离上次加载超过 2 秒才重新加载
+    const now = Date.now()
+    if (now - this.lastLoadTime > 2000) {
+      this.loadMyProducts()
+    }
   },
 
   onPullDownRefresh() {
+    // 下拉刷新时强制重新加载
+    this.cachedAllProducts = null
     this.loadMyProducts().finally(() => {
       wx.stopPullDownRefresh()
     })
   },
 
   async loadMyProducts() {
+    // 防止重复加载
+    if (this.isLoading) return Promise.resolve()
+    this.isLoading = true
+    this.lastLoadTime = Date.now()
+    
     try {
       this.setData({ loading: true })
       
-      const data = await api.getMyProducts(this.data.currentTab)
+      // 创建带超时的 API 请求辅助函数
+      const fetchWithTimeout = (promise) => {
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('请求超时')), API_TIMEOUT)
+        )
+        return Promise.race([promise, timeoutPromise])
+      }
+      
+      const data = await fetchWithTimeout(api.getMyProducts(this.data.currentTab))
       
       if (data && data.success && data.products) {
         const products = data.products.map(p => ({
@@ -54,8 +81,14 @@ Page({
           priceText: `¥${p.price}`
         }))
         
-        const allData = await api.getMyProducts('all')
-        const allProducts = allData.success ? allData.products : []
+        // 使用缓存避免重复请求全部商品
+        let allProducts = this.cachedAllProducts
+        if (!allProducts) {
+          const allData = await fetchWithTimeout(api.getMyProducts('all'))
+          allProducts = allData.success ? allData.products : []
+          this.cachedAllProducts = allProducts
+        }
+        
         const sellingCount = allProducts.filter(p => p.status === '在售').length
         const soldCount = allProducts.filter(p => p.status === '已售完').length
         
@@ -74,10 +107,20 @@ Page({
     } catch (error) {
       console.error('加载我的商品失败:', error)
       this.setData({ loading: false })
-      wx.showToast({
-        title: '加载失败',
-        icon: 'none'
-      })
+      // 超时提示
+      if (error.message === '请求超时') {
+        wx.showToast({
+          title: '加载超时，请下拉刷新',
+          icon: 'none'
+        })
+      } else {
+        wx.showToast({
+          title: '加载失败',
+          icon: 'none'
+        })
+      }
+    } finally {
+      this.isLoading = false
     }
   },
 

@@ -3,6 +3,9 @@ const api = require('../../utils/api.js')
 const { getImageUrl } = require('../../utils/config.js')
 const app = getApp()
 
+// API 请求超时时间（毫秒）
+const API_TIMEOUT = 5000
+
 Page({
   data: {
     activeTab: 0,
@@ -11,8 +14,12 @@ Page({
       { name: '我卖出的', badge: 0 }
     ],
     orderList: [],
-    loading: true
+    loading: false  // 初始值改为 false，避免页面打开时显示加载中
   },
+
+  // 防止重复加载的标记
+  isLoading: false,
+  lastLoadTime: 0,
 
   onLoad(options) {
     const { tab } = options
@@ -31,7 +38,11 @@ Page({
       this.setData({ activeTab: 1 })
     }
     
-    this.checkLoginAndLoad()
+    // 智能加载：距离上次加载超过 2 秒才重新加载
+    const now = Date.now()
+    if (now - this.lastLoadTime > 2000) {
+      this.checkLoginAndLoad()
+    }
     
     // tabBar索引: 0=物品, 1=消息, 2=订单, 3=我的
     if (this.getTabBar()) {
@@ -102,12 +113,26 @@ Page({
   },
 
   async loadOrders() {
+    // 防止重复加载
+    if (this.isLoading) return
+    this.isLoading = true
+    this.lastLoadTime = Date.now()
+    
     try {
       this.setData({ loading: true })
 
       // 根据当前tab请求对应类型的订单
       const orderType = this.data.activeTab === 0 ? 'buying' : 'selling'
-      const data = await api.getOrderList(orderType)
+      
+      // 添加超时机制
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('请求超时')), API_TIMEOUT)
+      )
+      
+      const data = await Promise.race([
+        api.getOrderList(orderType),
+        timeoutPromise
+      ])
 
       // 后端返回的数据可能是数组或对象
       const orderList = Array.isArray(data) ? data : (data.orders || [])
@@ -168,6 +193,15 @@ Page({
     } catch (error) {
       console.error('加载订单失败:', error)
       this.setData({ loading: false })
+      // 超时或错误时提示用户
+      if (error.message === '请求超时') {
+        wx.showToast({
+          title: '加载超时，请下拉刷新',
+          icon: 'none'
+        })
+      }
+    } finally {
+      this.isLoading = false
     }
   },
 

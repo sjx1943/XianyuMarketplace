@@ -1,10 +1,13 @@
 const api = require('../../utils/api.js')
 const app = getApp()
 
+// API 请求超时时间（毫秒）
+const API_TIMEOUT = 5000
+
 Page({
   data: {
     order: null,
-    loading: true,
+    loading: false,  // 初始值改为 false
     isBuyer: false,
     isSeller: false,
     currentUserId: null,
@@ -33,7 +36,15 @@ Page({
     const currentUserId = userInfo?.id
     this.setData({ currentUserId })
     
-    api.getOrderDetail(orderId).then(res => {
+    // 添加超时机制
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('请求超时')), API_TIMEOUT)
+    )
+    
+    Promise.race([
+      api.getOrderDetail(orderId),
+      timeoutPromise
+    ]).then(res => {
       const order = res.order || res
       const { getImageUrl } = require('../../utils/config.js')
       const productImage = order.product_image || order.image
@@ -58,10 +69,18 @@ Page({
     }).catch(err => {
       console.error('加载订单详情失败:', err)
       this.setData({ loading: false })
-      wx.showToast({
-        title: '加载失败',
-        icon: 'none'
-      })
+      // 超时提示
+      if (err.message === '请求超时') {
+        wx.showToast({
+          title: '加载超时，请重试',
+          icon: 'none'
+        })
+      } else {
+        wx.showToast({
+          title: '加载失败',
+          icon: 'none'
+        })
+      }
     })
   },
 

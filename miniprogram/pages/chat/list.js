@@ -3,11 +3,16 @@ const api = require('../../utils/api.js')
 const { getImageUrl, getDefaultAvatarUrl } = require('../../utils/config.js')
 const app = getApp()
 
+// API 请求超时时间（毫秒）
+const API_TIMEOUT = 5000
+// 轮询间隔（毫秒）- 从 10 秒改为 20 秒减少请求频率
+const POLL_INTERVAL = 20000
+
 Page({
   data: {
     chatList: [],
     broadcasts: [],
-    loading: true,
+    loading: false,  // 初始值改为 false，避免页面打开时显示加载中
     broadcastLoading: false
   },
 
@@ -15,13 +20,21 @@ Page({
   touchStartX: 0,
   touchEndX: 0,
   slideDeleteVisibleId: null,
+  // 防止重复加载
+  isLoading: false,
+  isSilentLoading: false,  // 单独的静默加载标记
+  lastLoadTime: 0,
 
   onLoad() {
     this.checkLoginAndLoad()
   },
 
   onShow() {
-    this.checkLoginAndLoad()
+    // 智能加载：距离上次加载超过 2 秒才重新加载
+    const now = Date.now()
+    if (now - this.lastLoadTime > 2000) {
+      this.checkLoginAndLoad()
+    }
     this.startPolling()
     
     if (this.getTabBar()) {
@@ -43,7 +56,7 @@ Page({
     this.stopPolling()
     this.pollTimer = setInterval(() => {
       this.loadChatListSilent()
-    }, 10000)
+    }, POLL_INTERVAL)
   },
 
   stopPolling() {
@@ -81,8 +94,21 @@ Page({
   },
 
   async loadChatListSilent() {
+    // 防止与正在进行的加载冲突（包括静默加载和正常加载）
+    if (this.isLoading || this.isSilentLoading) return
+    this.isSilentLoading = true
+    
     try {
-      const data = await api.getChatList()
+      // 添加超时机制
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('请求超时')), API_TIMEOUT)
+      )
+      
+      const data = await Promise.race([
+        api.getChatList(),
+        timeoutPromise
+      ])
+      
       const rawChatList = Array.isArray(data) ? data : (data.conversations || data.chats || [])
       const chatList = rawChatList.map(chat => ({
         ...chat,
@@ -99,6 +125,8 @@ Page({
       }
     } catch (error) {
       console.error('静默刷新聊天列表失败:', error)
+    } finally {
+      this.isSilentLoading = false
     }
   },
 
@@ -125,15 +153,31 @@ Page({
       return
     }
 
-    this.loadChatList()
-    this.loadBroadcasts()
+    // 并行加载聊天列表和广播，但使用 Promise.all 优化
+    Promise.all([
+      this.loadChatList(),
+      this.loadBroadcasts()
+    ]).catch(err => console.error('加载数据失败:', err))
   },
 
   async loadChatList() {
+    // 防止重复加载
+    if (this.isLoading) return
+    this.isLoading = true
+    this.lastLoadTime = Date.now()
+    
     try {
       this.setData({ loading: true })
 
-      const data = await api.getChatList()
+      // 添加超时机制
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('请求超时')), API_TIMEOUT)
+      )
+      
+      const data = await Promise.race([
+        api.getChatList(),
+        timeoutPromise
+      ])
 
       const rawChatList = Array.isArray(data) ? data : (data.conversations || data.chats || [])
       const chatList = rawChatList.map(chat => ({
@@ -155,6 +199,15 @@ Page({
     } catch (error) {
       console.error('加载聊天列表失败:', error)
       this.setData({ loading: false })
+      // 超时提示
+      if (error.message === '请求超时') {
+        wx.showToast({
+          title: '加载超时，请下拉刷新',
+          icon: 'none'
+        })
+      }
+    } finally {
+      this.isLoading = false
     }
   },
 
@@ -162,10 +215,18 @@ Page({
     try {
       this.setData({ broadcastLoading: true })
 
-      const data = await api.request({
-        url: '/api/miniprogram/broadcasts',
-        method: 'GET'
-      })
+      // 添加超时机制
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('请求超时')), API_TIMEOUT)
+      )
+      
+      const data = await Promise.race([
+        api.request({
+          url: '/api/miniprogram/broadcasts',
+          method: 'GET'
+        }),
+        timeoutPromise
+      ])
 
       if (data && data.broadcasts) {
         this.setData({
