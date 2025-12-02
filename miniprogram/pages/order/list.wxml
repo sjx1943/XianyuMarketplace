@@ -47,6 +47,14 @@
         <text class="order-time">{{item.created_at}}</text>
         <view class="action-buttons">
           <button 
+            wx:if="{{item.can_delete}}"
+            class="btn-delete"
+            catchtap="deleteOrder"
+            data-order="{{item}}"
+          >
+            删除
+          </button>
+          <button 
             wx:if="{{item.can_cancel}}"
             class="btn-cancel"
             catchtap="cancelOrder"

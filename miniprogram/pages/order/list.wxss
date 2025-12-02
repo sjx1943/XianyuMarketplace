@@ -182,7 +182,8 @@
 
 .btn-cancel,
 .btn-confirm,
-.btn-contact {
+.btn-contact,
+.btn-delete {
   padding: 12rpx 30rpx;
   border-radius: 30rpx;
   font-size: 24rpx;
@@ -192,7 +193,8 @@
 
 .btn-cancel::after,
 .btn-confirm::after,
-.btn-contact::after {
+.btn-contact::after,
+.btn-delete::after {
   border: none;
 }
 
@@ -209,4 +211,9 @@
 .btn-contact {
   border: 1rpx solid #ff6b35;
   color: #ff6b35;
+}
+
+.btn-delete {
+  border: 1rpx solid #ff4d4f;
+  color: #ff4d4f;
 }

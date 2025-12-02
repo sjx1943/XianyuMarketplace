@@ -2130,6 +2130,78 @@ class MiniprogramOrderCancelHandler(tornado.web.RequestHandler):
         self.session.close()
 
 
+class MiniprogramOrderDeleteHandler(tornado.web.RequestHandler):
+    """小程序删除订单（已完成或已取消的订单）"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def _get_user_id(self):
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    def delete(self, order_id):
+        """删除订单"""
+        from models.order import Order
+        
+        user_id_str = self._get_user_id()
+        if not user_id_str:
+            self.set_status(401)
+            self.write(json.dumps({'success': False, 'error': '请先登录'}))
+            return
+        
+        user_id = int(user_id_str)
+        
+        try:
+            order = self.session.query(Order).filter_by(id=order_id).first()
+            
+            if not order:
+                self.set_status(404)
+                self.write(json.dumps({'success': False, 'error': '订单不存在'}))
+                return
+            
+            is_buyer = order.user_id == user_id
+            is_seller = order.seller_id == user_id
+            
+            if not is_buyer and not is_seller:
+                self.set_status(403)
+                self.write(json.dumps({'success': False, 'error': '无权删除此订单'}))
+                return
+            
+            if order.status not in ['completed', 'cancelled']:
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '只能删除已完成或已取消的订单'}))
+                return
+            
+            self.session.delete(order)
+            self.session.commit()
+            
+            self.write(json.dumps({'success': True, 'message': '订单删除成功'}))
+            
+        except Exception as e:
+            self.session.rollback()
+            logging.error(f"删除订单异常: {e}")
+            self.set_status(500)
+            self.write(json.dumps({'success': False, 'error': str(e)}))
+    
+    def on_finish(self):
+        self.session.close()
+
+
 class MiniprogramOrderShipHandler(tornado.web.RequestHandler):
     """小程序卖家发货"""
     

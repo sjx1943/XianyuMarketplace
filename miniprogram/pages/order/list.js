@@ -136,13 +136,17 @@ Page({
         const isBuyer = parseInt(order.buyer_id) === currentUserIdNum
         const isSeller = parseInt(order.seller_id) === currentUserIdNum
         
+        // 只有已完成或已取消的订单才能删除
+        const canDelete = (order.status === 'completed' || order.status === 'cancelled') && (isBuyer || isSeller)
+        
         return {
           ...order,
           product_image: imageUrl,
           status_text: statusText,
           can_cancel: order.status === 'pending' && isBuyer,
           can_confirm: (order.status === 'pending' && isSeller) || (order.status === 'shipped' && isBuyer),
-          can_contact: true
+          can_contact: true,
+          can_delete: canDelete
         }
       })
 
@@ -270,6 +274,51 @@ Page({
     wx.navigateTo({
       url: `/pages/chat/room?friendId=${userId}&orderId=${order.id}`
     })
+  },
+
+  async deleteOrder(e) {
+    const { order } = e.currentTarget.dataset
+    
+    if (order.status !== 'completed' && order.status !== 'cancelled') {
+      wx.showToast({
+        title: '只能删除已完成或已取消的订单',
+        icon: 'none'
+      })
+      return
+    }
+
+    const result = await wx.showModal({
+      title: '确认删除',
+      content: '确定要删除这个订单吗？删除后将无法恢复。'
+    })
+
+    if (!result.confirm) return
+
+    try {
+      const data = await api.request({
+        url: `/api/miniprogram/order/${order.id}/delete`,
+        method: 'DELETE'
+      })
+
+      if (data.success) {
+        wx.showToast({
+          title: '订单已删除',
+          icon: 'success'
+        })
+        this.loadOrders()
+      } else {
+        wx.showToast({
+          title: data.error || '删除失败',
+          icon: 'none'
+        })
+      }
+    } catch (error) {
+      console.error('删除订单失败:', error)
+      wx.showToast({
+        title: '操作失败',
+        icon: 'none'
+      })
+    }
   },
 
   goShopping() {
