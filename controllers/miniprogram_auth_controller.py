@@ -1570,19 +1570,19 @@ class MiniprogramBroadcastsHandler(tornado.web.RequestHandler):
             
             broadcasts = []
             for product, user in products:
-                # 相对时间计算 - 使用内置datetime，UTC+8北京时间
                 import datetime
                 
-                # 获取北京时间（UTC+8）
                 beijing_tz = datetime.timezone(datetime.timedelta(hours=8))
                 now = datetime.datetime.now(beijing_tz)
                 upload_time = product.upload_time
                 
-                # 如果upload_time没有时区信息，假设为UTC+8
                 if upload_time.tzinfo is None:
-                    upload_time = upload_time.replace(tzinfo=beijing_tz)
+                    upload_time_utc = upload_time.replace(tzinfo=datetime.timezone.utc)
+                    upload_time_beijing = upload_time_utc.astimezone(beijing_tz)
+                else:
+                    upload_time_beijing = upload_time.astimezone(beijing_tz)
                 
-                delta = now - upload_time
+                delta = now - upload_time_beijing
                 if delta.days > 0:
                     time_str = f'{delta.days}天前'
                 elif delta.seconds > 3600:
@@ -1599,7 +1599,7 @@ class MiniprogramBroadcastsHandler(tornado.web.RequestHandler):
                     'product_id': product.id,
                     'product_name': product.name,
                     'time': time_str,
-                    'upload_time': product.upload_time.strftime('%Y-%m-%d %H:%M:%S') if product.upload_time else ''
+                    'upload_time': upload_time_beijing.strftime('%Y-%m-%d %H:%M:%S') if product.upload_time else ''
                 })
             
             self.write(json.dumps({
