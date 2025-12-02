@@ -23,11 +23,20 @@ Session = sessionmaker(bind=engine)
 executor = ThreadPoolExecutor(max_workers=10)
 
 # MongoDB连接配置（用于存储通知）
-mongo_host = os.getenv('MONGO_HOST', 'localhost')
-mongo_port = int(os.getenv('MONGO_PORT', '27017'))
-mongo_db = os.getenv('MONGO_DB', 'marketplace_chat')
-mongo_client = motor_tornado.MotorClient(f'mongodb://{mongo_host}:{mongo_port}')
-mongo_database = mongo_client[mongo_db]
+# 优先使用MONGODB_URI环境变量（MongoDB Atlas），否则使用本地配置
+mongodb_uri = os.environ.get('MONGODB_URI')
+if mongodb_uri:
+    mongo_client = motor_tornado.MotorClient(mongodb_uri)
+    try:
+        mongo_database = mongo_client.get_default_database()
+    except Exception:
+        mongo_database = mongo_client['chat_db']
+else:
+    mongo_host = os.getenv('MONGO_HOST', 'localhost')
+    mongo_port = int(os.getenv('MONGO_PORT', '27017'))
+    mongo_db = os.getenv('MONGO_DB', 'marketplace_chat')
+    mongo_client = motor_tornado.MotorClient(f'mongodb://{mongo_host}:{mongo_port}')
+    mongo_database = mongo_client[mongo_db]
 
 
 class OrderHandler(tornado.web.RequestHandler):
