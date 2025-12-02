@@ -12,6 +12,7 @@ Page({
     form: {
       name: '',
       price: '',
+      quantity: '1',
       category: '',
       condition: '九成新',
       description: ''
@@ -69,6 +70,7 @@ Page({
           form: {
             name: product.name || '',
             price: product.price || '',
+            quantity: product.quantity ? String(product.quantity) : '1',
             category: product.tag || '',
             condition: product.condition || '九成新',
             description: product.description || ''
