@@ -85,20 +85,13 @@ Page({
     // 如果没有商品ID或已处理过，不发送初始消息
     if (!productId || this.hasSentInitialMessage) return
     
-    // 核心逻辑：只在首次与该卖家聊天时发送初始消息
-    // 如果有任何历史消息记录，则不发送
-    if (historyCount > 0) {
-      console.log('与该卖家已有聊天记录，不发送初始消息')
-      this.hasSentInitialMessage = true
-      return
-    }
-    
-    // 使用本地存储记录已发送初始消息的卖家，防止重复发送
-    // 注意：这里只用friendId，不用productId，确保每个卖家只发一次
-    const sentKey = `initial_msg_sent_${friendId}`
+    // 使用本地存储记录已发送初始消息的商品，防止重复发送
+    // 注意：使用productId_friendId组合作为key，确保每个商品只发一次初始消息
+    // 即使与该卖家有其他商品的聊天记录，也能为新商品发送初始消息
+    const sentKey = `initial_msg_sent_${productId}_${friendId}`
     const alreadySent = wx.getStorageSync(sentKey)
     if (alreadySent) {
-      console.log('已向该卖家发送过初始消息')
+      console.log(`已向该卖家发送过【商品${productId}】的初始消息`)
       this.hasSentInitialMessage = true
       return
     }
