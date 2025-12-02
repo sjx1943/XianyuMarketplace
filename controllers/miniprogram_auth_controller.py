@@ -1275,9 +1275,10 @@ class MiniprogramProductsListHandler(tornado.web.RequestHandler):
                 Product.quantity > 0
             )
             
-            # 按标签过滤
+            # 按标签过滤（支持逗号分隔的多标签模糊匹配）
             if tag and tag != '全部':
-                query = query.filter(Product.tag == tag)
+                # 使用LIKE进行模糊匹配，支持"书籍"匹配"书籍,家电"
+                query = query.filter(Product.tag.ilike(f'%{tag}%'))
             
             # 按卖家ID过滤
             if user_id:
@@ -1358,21 +1359,27 @@ class MiniprogramActiveTagsHandler(tornado.web.RequestHandler):
         self.session = Session()
     
     def get(self):
-        """获取所有在售商品中实际使用的标签（去重）"""
+        """获取所有在售商品中实际使用的标签（去重）- 支持逗号分隔多标签"""
         from models.product import Product
-        from sqlalchemy import distinct
         
         try:
-            # 查询所有在售且有库存的商品的标签（去重）
-            tags_query = self.session.query(distinct(Product.tag)).filter(
+            # 查询所有在售且有库存的商品的标签
+            tags_query = self.session.query(Product.tag).filter(
                 Product.status == '在售',
                 Product.quantity > 0,
                 Product.tag.isnot(None),
                 Product.tag != ''
             ).all()
             
-            # 提取标签列表
-            active_tags = [tag[0] for tag in tags_query if tag[0]]
+            # 分割逗号分隔的标签并去重
+            tag_set = set()
+            for tag_row in tags_query:
+                if tag_row[0]:
+                    # 分割逗号分隔的标签（如"书籍,家电"）
+                    tags = [t.strip() for t in tag_row[0].split(',')]
+                    tag_set.update(tags)
+            
+            active_tags = list(tag_set)
             
             # 按固定顺序排序（保持与预设标签相同的顺序）
             preset_order = ['数码产品', '家用电器', '服装鞋包', '图书音像', '运动户外', '美妆个护', '家居用品', '其他']
