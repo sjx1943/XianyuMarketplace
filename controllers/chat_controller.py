@@ -75,18 +75,16 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
     def send_stored_messages(self):
         try:
             user_id = self.user_id
-            product_id = self.get_argument("product_id", None)
-            if not user_id:
+            friend_id = self.friend_id
+            if not user_id or not friend_id:
                 return
 
-            # 检查是否有选中的好友
-            if not hasattr(self, 'selected_friend_id') or not self.selected_friend_id:
-                return
-
-            # 构建查询条件
-            query = {"to_user_id": user_id, "status": "unread"}
-            if product_id:
-                query["product_id"] = int(product_id)
+            # 构建查询条件 - 查询来自friend_id的未读消息
+            query = {
+                "to_user_id": user_id,
+                "from_user_id": friend_id,
+                "status": "unread"
+            }
 
             messages = yield self.mongo.chat_messages.find(query).to_list(length=None)
             logging.info(f"Found {len(messages)} unread messages for user_id: {user_id}")
@@ -148,17 +146,17 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
     def on_message(self, message):
         try:
             data = json.loads(message)
-            target_user_id = int(data.get("target_user_id"))
-            from_user_id = int(self.get_secure_cookie("user_id").decode("utf-8"))
+            # 消息发送目标是friend_id（来自路由参数）
+            target_user_id = self.friend_id
+            from_user_id = self.user_id
             message_content = data.get("message")
             product_id = int(data.get("product_id", 0))  # 默认值为0
             product_name = data.get("product_name", "")  # 默认值为空字符串
 
-            if not all([target_user_id, message_content]):
-                self.write_message(json.dumps({"error": "缺少必要参数"}))
+            if not message_content:
+                self.write_message(json.dumps({"error": "缺少消息内容"}))
                 return
 
-            # 定向检查拉黑状态 - 使用handler的session，不要remove
             # 获取发送者信息，优先使用房间号
             from_user = self.session.query(User).filter_by(id=from_user_id).first()
             if from_user and from_user.room_number:
@@ -202,15 +200,17 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
                 connections[target_user_id].write_message(json.dumps(message_data))
 
             # 发送成功的响应
-            self.write_message(json.dumps({"status": "Message sent successfully"}))
+            self.write_message(json.dumps({"status": "success", "message": "消息已发送"}))
 
             # 也发回给发送者 - 显示为"我(房间号)"格式
             if from_user_id in connections and from_user_id != target_user_id:
                 sender_data = message_data.copy()
                 sender_data["status"] = "read"  # 发送者看到的消息默认为已读
                 sender_data["from_username"] = f'我({from_display_name})'
+                sender_data["isSelf"] = True
                 connections[from_user_id].write_message(json.dumps(sender_data))
         except Exception as e:
+            logging.error(f"WebSocket on_message error: {e}")
             self.write_message(json.dumps({"error": str(e)}))
     
     def on_close(self):
