@@ -8,9 +8,9 @@ const config = {
   
   // API域名配置
   api: {
-    // 生产环境 - ⚠️ 必须修改为您的实际域名
+    // 生产环境 - VPS服务器 (RackNerd)
     production: {
-      host: 'https://okashii.top',  // ← 修改为您的 Replit 域名
+      host: 'https://happepls.pics:8543',  // VPS生产环境，端口8543
       apiBase: '',  // 后端路由不需要 /api 前缀
       wsBase: '/ws'
     },

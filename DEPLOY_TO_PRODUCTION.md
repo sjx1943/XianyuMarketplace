@@ -686,3 +686,210 @@ Replit开发 → Git提交 → GitHub推送 → Actions自动测试 → VPS自�
 
 您现在已经拥有完全自动化的持续部署流程！
 
+---
+
+## 🖥️ RackNerd VPS 部署指南 (happepls.pics)
+
+### 架构概览
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    RackNerd VPS                              │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │              Nginx (宿主机)                              ││
+│  │   端口 8543 (HTTPS) → 反代到 127.0.0.1:8100            ││
+│  └─────────────────────────────────────────────────────────┘│
+│                              ↓                               │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │            Docker Network: secondhand-network           ││
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ││
+│  │  │   Tornado    │  │  PostgreSQL  │  │    Redis     │  ││
+│  │  │   App:8000   │  │   :5432      │  │    :6379     │  ││
+│  │  │ (→8100外部) │  │  (→5433外部) │  │  (→6380外部) │  ││
+│  │  └──────────────┘  └──────────────┘  └──────────────┘  ││
+│  └─────────────────────────────────────────────────────────┘│
+│                              ↓                               │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │                 MongoDB Atlas (云服务)                   ││
+│  │      mongodb+srv://...mongodb.net/chat_db              ││
+│  └─────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 端口规划 (避免冲突)
+
+| 服务 | 内部端口 | 外部端口 | 说明 |
+|------|---------|---------|------|
+| Tornado 应用 | 8000 | 8100 | 仅本地访问 |
+| PostgreSQL | 5432 | 5433 | 仅本地访问 |
+| Redis | 6379 | 6380 | 仅本地访问 |
+| Nginx HTTPS | - | 8543 | 公网访问 |
+| ~~已占用~~ | - | 8000 | Jitsi Meet |
+| ~~已占用~~ | - | 8443 | Jitsi HTTPS |
+| ~~已占用~~ | - | 9000/9080 | ASR服务 |
+
+### 首次部署步骤
+
+#### 第1步：上传代码到VPS
+
+```bash
+# 方法A: 使用同步脚本 (在Replit Shell中执行)
+cd /home/runner/secondhand-platform
+bash deploy/sync-to-vps.sh
+
+# 方法B: 手动rsync
+rsync -avz --exclude='.git' --exclude='__pycache__' \
+    ./ root@happepls.pics:/opt/secondhand-platform/
+```
+
+#### 第2步：配置环境变量
+
+```bash
+# SSH登录VPS
+ssh root@happepls.pics
+
+# 进入项目目录
+cd /opt/secondhand-platform
+
+# 从模板创建环境配置
+cp deploy/.env.prod.template .env.prod
+chmod 600 .env.prod
+
+# 编辑配置，填入实际值
+nano .env.prod
+```
+
+**需要填入的关键配置:**
+- `PGPASSWORD`: PostgreSQL密码 (建议16位以上随机字符)
+- `SECRET_KEY`: 应用密钥 (32位随机字符串)
+- `SESSION_SECRET`: 会话密钥 (32位随机字符串)
+- `MONGODB_URI`: 从Replit Secrets复制MongoDB Atlas连接串
+- `WX_MINIPROGRAM_APP_SECRET`: 从Replit Secrets复制
+- `ALIYUN_*`: 阿里云SMS配置，从Replit Secrets复制
+
+#### 第3步：迁移数据库数据
+
+```bash
+# 在Replit Shell中导出数据
+cd /home/runner/secondhand-platform
+bash deploy/migrate-replit-to-vps.sh
+
+# 下载生成的 backup_replit_XXXXXX.sql 文件
+
+# 上传到VPS
+scp backup_replit_*.sql root@happepls.pics:/opt/secondhand-platform/
+
+# 在VPS上导入数据 (启动容器后)
+docker exec -i secondhand-postgres psql -U secondhand_user -d secondhand_db < backup_replit_*.sql
+```
+
+#### 第4步：配置Nginx HTTPS
+
+```bash
+# 复制Nginx配置
+cp deploy/nginx_secondhand_8543.conf /etc/nginx/conf.d/secondhand_8543.conf
+
+# 测试配置
+nginx -t
+
+# 重载Nginx
+systemctl reload nginx
+```
+
+#### 第5步：启动Docker服务
+
+```bash
+cd /opt/secondhand-platform
+
+# 首次部署，使用一键脚本
+sudo bash deploy/vps-deploy.sh --init
+
+# 或手动启动
+docker compose -f deploy/docker-compose-vps.yml up -d --build
+```
+
+#### 第6步：验证部署
+
+```bash
+# 检查容器状态
+docker compose -f deploy/docker-compose-vps.yml ps
+
+# 检查应用日志
+docker compose -f deploy/docker-compose-vps.yml logs -f app
+
+# 测试健康检查
+curl http://127.0.0.1:8100/health
+curl -k https://happepls.pics:8543/health
+```
+
+### 配置微信小程序后台
+
+1. 登录 [微信公众平台](https://mp.weixin.qq.com/)
+2. 进入 **开发管理 → 开发设置 → 服务器域名**
+3. 添加以下域名:
+
+| 类型 | 域名 |
+|------|------|
+| request合法域名 | `https://happepls.pics:8543` |
+| socket合法域名 | `wss://happepls.pics:8543` |
+| uploadFile合法域名 | `https://happepls.pics:8543` |
+| downloadFile合法域名 | `https://happepls.pics:8543` |
+
+### 日常更新流程
+
+```bash
+# 方法A: 使用同步脚本 (在Replit Shell中)
+bash deploy/sync-to-vps.sh --restart
+
+# 方法B: SSH到VPS手动更新
+ssh root@happepls.pics
+cd /opt/secondhand-platform
+sudo bash deploy/vps-deploy.sh --update
+```
+
+### 常用运维命令
+
+```bash
+# 查看服务状态
+sudo bash deploy/vps-deploy.sh --status
+
+# 查看应用日志
+sudo bash deploy/vps-deploy.sh --logs
+
+# 重启应用
+sudo bash deploy/vps-deploy.sh --restart
+
+# 备份数据库
+sudo bash deploy/vps-deploy.sh --backup
+
+# 停止所有服务
+sudo bash deploy/vps-deploy.sh --stop
+```
+
+### 部署文件清单
+
+```
+deploy/
+├── docker-compose-vps.yml      # VPS专用Docker Compose配置
+├── nginx_secondhand_8543.conf  # Nginx HTTPS反代配置
+├── .env.prod.template          # 生产环境变量模板
+├── vps-deploy.sh               # VPS一键部署脚本
+├── sync-to-vps.sh              # Replit→VPS代码同步脚本
+├── migrate-replit-to-vps.sh    # 数据库迁移脚本
+└── init-db.sql                 # 数据库初始化SQL
+```
+
+### 切换小程序环境
+
+编辑 `miniprogram/utils/config.js`:
+
+```javascript
+// 开发模式 (使用Replit)
+const isDev = true
+
+// 生产模式 (使用VPS)
+const isDev = false
+```
+
+生产环境API地址: `https://happepls.pics:8543`
+

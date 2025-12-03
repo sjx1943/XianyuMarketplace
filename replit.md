@@ -10,8 +10,10 @@ I prefer iterative development with clear, concise explanations for each step. P
 The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
 
 ### Development and Production Environment Separation
--   **Development (Replit)**: Used for coding, testing, and iteration, leveraging Replit's PostgreSQL and MongoDB.
--   **Production (VPS)**: Utilizes a RackNerd VPS, Containerd + Docker Compose, and self-deployed PostgreSQL + MongoDB for stable online service.
+-   **Development (Replit)**: Used for coding, testing, and iteration, leveraging Replit's PostgreSQL and MongoDB Atlas.
+-   **Production (VPS)**: Utilizes a RackNerd VPS (happepls.pics), Docker Compose, self-deployed PostgreSQL + Redis, and MongoDB Atlas (cloud) for stable online service.
+    - VPS端口规划: 应用8100, Nginx HTTPS 8543, PostgreSQL 5433, Redis 6380
+    - 避免与现有Jitsi(8000/8443)和ASR(9000/9080)服务冲突
 
 ### Core Technology Stack
 -   **Backend**: Python 3.11 + Tornado 6.4.2

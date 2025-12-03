@@ -1,0 +1,168 @@
+# ==========================================
+# VPS生产环境专用 Docker Compose 配置
+# ==========================================
+# 适用于 RackNerd VPS (happepls.pics 域名)
+# 端口规划:
+#   - 8100: Tornado应用 (内部)
+#   - 5433: PostgreSQL (内部，避免与其他服务冲突)
+#   - 6380: Redis (内部)
+# Nginx反代端口 8543 在宿主机单独配置
+# MongoDB: 使用 MongoDB Atlas 云服务
+# ==========================================
+
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库 (自部署)
+  postgres:
+    image: postgres:15-alpine
+    container_name: secondhand-postgres
+    environment:
+      POSTGRES_DB: ${PGDATABASE:-secondhand_db}
+      POSTGRES_USER: ${PGUSER:-secondhand_user}
+      POSTGRES_PASSWORD: ${PGPASSWORD}
+      PGTZ: 'Asia/Shanghai'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "127.0.0.1:5433:5432"  # 仅本地访问，避免与其他服务冲突
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-secondhand_user} -d ${PGDATABASE:-secondhand_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - secondhand-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  # Redis 缓存 (可选)
+  redis:
+    image: redis:7-alpine
+    container_name: secondhand-redis
+    ports:
+      - "127.0.0.1:6380:6379"  # 仅本地访问
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - secondhand-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Tornado 应用
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile.prod
+      args:
+        - PYTHON_VERSION=3.11
+    container_name: secondhand-app
+    env_file:
+      - ../.env.prod
+    environment:
+      # 数据库配置 (覆盖.env.prod，使用Docker内部网络)
+      DATABASE_URL: postgresql://${PGUSER:-secondhand_user}:${PGPASSWORD}@postgres:5432/${PGDATABASE:-secondhand_db}
+      PGHOST: postgres
+      PGPORT: 5432
+      
+      # MongoDB Atlas (保持使用.env.prod中的MONGODB_URI)
+      # MONGODB_URI 从 .env.prod 读取
+      
+      # Redis (Docker内部网络)
+      REDIS_URL: redis://redis:6379/0
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      
+      # 应用配置
+      DEBUG: "False"
+      PORT: 8000
+      ENVIRONMENT: production
+      TZ: Asia/Shanghai
+    
+    ports:
+      - "127.0.0.1:8100:8000"  # 仅本地访问，Nginx反代到8543
+    
+    volumes:
+      - app_uploads:/app/mystatics/images  # 用户上传的图片（持久化存储）
+      - app_logs:/app/logs                  # 应用日志
+    
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    restart: unless-stopped
+    networks:
+      - secondhand-network
+    
+    command: >
+      sh -c "
+        echo '========================================' &&
+        echo '🚀 翠友雅集S 生产环境启动中...' &&
+        echo '========================================' &&
+        echo '⏳ 等待数据库就绪...' &&
+        sleep 5 &&
+        echo '📦 检查数据库表...' &&
+        python -c \"
+from models.database import engine
+from sqlalchemy import inspect
+inspector = inspect(engine)
+tables = inspector.get_table_names()
+if not tables:
+    print('首次启动，创建数据库表...')
+    import init_db
+else:
+    print(f'数据库已有 {len(tables)} 个表，跳过初始化')
+\" &&
+        echo '✅ 数据库检查完成' &&
+        echo '🌐 启动Tornado应用 (端口8000)...' &&
+        python app.py --port=8000
+      "
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+
+volumes:
+  postgres_data:
+    driver: local
+    name: secondhand_postgres_data
+  redis_data:
+    driver: local
+    name: secondhand_redis_data
+  app_uploads:
+    driver: local
+    name: secondhand_app_uploads
+  app_logs:
+    driver: local
+    name: secondhand_app_logs
+
+networks:
+  secondhand-network:
+    driver: bridge
+    name: secondhand-network
