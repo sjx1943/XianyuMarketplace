@@ -13,6 +13,7 @@ set -e
 VPS_HOST="happepls.pics"
 VPS_USER="root"
 VPS_APP_DIR="/opt/secondhand-platform"
+SSH_PORT="4222"  # RackNerd VPS使用特殊SSH端口
 SSH_KEY=""  # 可选: 指定SSH密钥路径，如 ~/.ssh/id_rsa
 
 # 颜色输出
@@ -34,6 +35,10 @@ while [[ $# -gt 0 ]]; do
             VPS_HOST="$2"
             shift 2
             ;;
+        --port)
+            SSH_PORT="$2"
+            shift 2
+            ;;
         --key)
             SSH_KEY="$2"
             shift 2
@@ -45,10 +50,10 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# SSH选项
-SSH_OPTS=""
+# SSH选项 (包含端口和密钥)
+SSH_OPTS="-p $SSH_PORT"
 if [ -n "$SSH_KEY" ]; then
-    SSH_OPTS="-i $SSH_KEY"
+    SSH_OPTS="$SSH_OPTS -i $SSH_KEY"
 fi
 
 echo -e "${GREEN}========================================${NC}"

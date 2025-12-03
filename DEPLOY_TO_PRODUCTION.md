@@ -734,19 +734,26 @@ Replit开发 → Git提交 → GitHub推送 → Actions自动测试 → VPS自�
 
 ```bash
 # 方法A: 使用同步脚本 (在Replit Shell中执行)
+# 脚本已配置默认SSH端口4222
 cd /home/runner/secondhand-platform
 bash deploy/sync-to-vps.sh
 
-# 方法B: 手动rsync
-rsync -avz --exclude='.git' --exclude='__pycache__' \
+# 或指定自定义端口
+bash deploy/sync-to-vps.sh --port 4222
+
+# 方法B: 手动rsync (注意SSH端口4222)
+rsync -avz -e "ssh -p 4222" --exclude='.git' --exclude='__pycache__' \
     ./ root@happepls.pics:/opt/secondhand-platform/
 ```
 
 #### 第2步：配置环境变量
 
 ```bash
-# SSH登录VPS
-ssh root@happepls.pics
+# SSH登录VPS (使用端口4222)
+ssh -p 4222 root@happepls.pics
+
+# 如果已在~/.ssh/config中配置:
+ssh rack-centos
 
 # 进入项目目录
 cd /opt/secondhand-platform
