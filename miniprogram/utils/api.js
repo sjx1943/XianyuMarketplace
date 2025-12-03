@@ -447,6 +447,35 @@ class API {
       method: 'GET'
     })
   }
+
+  // ========== 手机号绑定相关API ==========
+  
+  // 发送手机号绑定验证码
+  sendPhoneBindCode(phone) {
+    return this.request({
+      url: '/api/miniprogram/phone/send_code',
+      method: 'POST',
+      data: { phone: phone }
+    })
+  }
+
+  // 验证并绑定手机号
+  bindPhone(phone, code) {
+    return this.request({
+      url: '/api/miniprogram/phone/bind',
+      method: 'POST',
+      data: { phone: phone, code: code }
+    })
+  }
+
+  // 解绑手机号
+  unbindPhone() {
+    return this.request({
+      url: '/api/miniprogram/phone/unbind',
+      method: 'POST',
+      data: {}
+    })
+  }
 }
 
 module.exports = new API()

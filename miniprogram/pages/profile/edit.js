@@ -6,16 +6,32 @@ Page({
     userInfo: null,
     username: '',
     phone: '',
+    phoneDisplay: '',
     roomNumber: '',
     avatar: '',
     defaultAvatar: getDefaultAvatarUrl(),
     loading: true,
     saving: false,
-    avatarChanged: false
+    avatarChanged: false,
+    
+    newPhone: '',
+    verifyCode: '',
+    showCodeInput: false,
+    countdown: 0,
+    sendingCode: false,
+    binding: false
   },
+
+  countdownTimer: null,
 
   onLoad() {
     this.loadUserInfo()
+  },
+
+  onUnload() {
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer)
+    }
   },
 
   loadUserInfo() {
@@ -24,10 +40,13 @@ Page({
     api.getUserInfo().then(res => {
       const userInfo = res.user || res
       const avatarUrl = userInfo.wechat_avatar ? getImageUrl(userInfo.wechat_avatar) : getDefaultAvatarUrl()
+      const phone = userInfo.phone || ''
+      
       this.setData({
         userInfo: userInfo,
         username: userInfo.username || '',
-        phone: userInfo.phone || '',
+        phone: phone,
+        phoneDisplay: phone ? this.maskPhone(phone) : '',
         roomNumber: userInfo.room_number || '',
         avatar: avatarUrl,
         loading: false
@@ -38,6 +57,11 @@ Page({
     })
   },
 
+  maskPhone(phone) {
+    if (!phone || phone.length !== 11) return phone
+    return phone.substring(0, 3) + '****' + phone.substring(7)
+  },
+
   chooseAvatar() {
     wx.chooseImage({
       count: 1,
@@ -45,12 +69,11 @@ Page({
       sourceType: ['album', 'camera'],
       success: (res) => {
         const filePath = res.tempFilePaths[0]
-        console.log('📸 选择头像成功:', filePath)
+        console.log('选择头像成功:', filePath)
         this.setData({
           avatar: filePath,
           avatarChanged: true
         })
-        console.log('✅ avatarChanged已设置为true, 当前avatar:', filePath)
         wx.showToast({
           title: '已选择头像',
           icon: 'success'
@@ -74,34 +97,171 @@ Page({
     this.setData({ username: e.detail.value })
   },
 
-  onPhoneInput(e) {
-    this.setData({ phone: e.detail.value })
-  },
-
   onRoomNumberInput(e) {
     this.setData({ roomNumber: e.detail.value })
   },
 
-  saveProfile() {
-    const { username, phone, roomNumber, avatar, avatarChanged, defaultAvatar } = this.data
+  onNewPhoneInput(e) {
+    this.setData({ newPhone: e.detail.value })
+  },
+
+  onCodeInput(e) {
+    this.setData({ verifyCode: e.detail.value })
+  },
+
+  onStartBind() {
+    const { newPhone } = this.data
+    if (!newPhone || newPhone.length !== 11) {
+      wx.showToast({ title: '请输入正确的手机号', icon: 'none' })
+      return
+    }
     
-    console.log('💾 保存资料 - 调试信息:')
-    console.log('  avatarChanged:', avatarChanged)
-    console.log('  avatar:', avatar)
-    console.log('  defaultAvatar:', defaultAvatar)
-    console.log('  avatar是否以wxfile://开头:', avatar ? avatar.startsWith('wxfile://') : 'avatar为空')
+    this.setData({ showCodeInput: true })
+    this.onSendCode()
+  },
+
+  async onSendCode() {
+    const { newPhone, countdown, sendingCode } = this.data
+    
+    if (countdown > 0 || sendingCode) return
+    
+    if (!newPhone || newPhone.length !== 11) {
+      wx.showToast({ title: '请输入正确的手机号', icon: 'none' })
+      return
+    }
+
+    this.setData({ sendingCode: true })
+    
+    try {
+      const res = await api.sendPhoneBindCode(newPhone)
+      
+      if (res.success) {
+        wx.showToast({ title: '验证码已发送', icon: 'success' })
+        
+        if (res.dev_code) {
+          console.log('开发模式验证码:', res.dev_code)
+        }
+        
+        this.startCountdown()
+      } else {
+        wx.showToast({ title: res.error || '发送失败', icon: 'none' })
+      }
+    } catch (err) {
+      console.error('发送验证码失败:', err)
+      wx.showToast({ title: '发送失败，请重试', icon: 'none' })
+    } finally {
+      this.setData({ sendingCode: false })
+    }
+  },
+
+  startCountdown() {
+    this.setData({ countdown: 60 })
+    
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer)
+    }
+    
+    this.countdownTimer = setInterval(() => {
+      const { countdown } = this.data
+      if (countdown <= 1) {
+        clearInterval(this.countdownTimer)
+        this.countdownTimer = null
+        this.setData({ countdown: 0 })
+      } else {
+        this.setData({ countdown: countdown - 1 })
+      }
+    }, 1000)
+  },
+
+  async onBindPhone() {
+    const { newPhone, verifyCode, binding } = this.data
+    
+    if (binding) return
+    
+    if (!newPhone || newPhone.length !== 11) {
+      wx.showToast({ title: '请输入正确的手机号', icon: 'none' })
+      return
+    }
+    
+    if (!verifyCode || verifyCode.length !== 6) {
+      wx.showToast({ title: '请输入6位验证码', icon: 'none' })
+      return
+    }
+
+    this.setData({ binding: true })
+    
+    try {
+      const res = await api.bindPhone(newPhone, verifyCode)
+      
+      if (res.success) {
+        wx.showToast({ title: '绑定成功', icon: 'success' })
+        
+        const userInfo = wx.getStorageSync('userInfo') || {}
+        userInfo.phone = newPhone
+        wx.setStorageSync('userInfo', userInfo)
+        
+        this.setData({
+          phone: newPhone,
+          phoneDisplay: this.maskPhone(newPhone),
+          newPhone: '',
+          verifyCode: '',
+          showCodeInput: false,
+          countdown: 0
+        })
+        
+        if (this.countdownTimer) {
+          clearInterval(this.countdownTimer)
+          this.countdownTimer = null
+        }
+      } else {
+        wx.showToast({ title: res.error || '绑定失败', icon: 'none' })
+      }
+    } catch (err) {
+      console.error('绑定手机号失败:', err)
+      wx.showToast({ title: '绑定失败，请重试', icon: 'none' })
+    } finally {
+      this.setData({ binding: false })
+    }
+  },
+
+  onUnbindPhone() {
+    wx.showModal({
+      title: '确认解绑',
+      content: '解绑后将无法使用该手机号在网页端登录，确定要解绑吗？',
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            const result = await api.unbindPhone()
+            
+            if (result.success) {
+              wx.showToast({ title: '已解绑', icon: 'success' })
+              
+              const userInfo = wx.getStorageSync('userInfo') || {}
+              userInfo.phone = ''
+              wx.setStorageSync('userInfo', userInfo)
+              
+              this.setData({
+                phone: '',
+                phoneDisplay: ''
+              })
+            } else {
+              wx.showToast({ title: result.error || '解绑失败', icon: 'none' })
+            }
+          } catch (err) {
+            console.error('解绑手机号失败:', err)
+            wx.showToast({ title: '解绑失败，请重试', icon: 'none' })
+          }
+        }
+      }
+    })
+  },
+
+  saveProfile() {
+    const { username, roomNumber, avatar, avatarChanged, defaultAvatar } = this.data
     
     if (!username.trim()) {
       wx.showToast({
         title: '请输入用户名',
-        icon: 'none'
-      })
-      return
-    }
-
-    if (phone && !/^1[3-9]\d{9}$/.test(phone)) {
-      wx.showToast({
-        title: '请输入正确的手机号',
         icon: 'none'
       })
       return
@@ -120,39 +280,24 @@ Page({
 
     this.setData({ saving: true })
 
-    // 如果头像有变化，需要处理
     if (avatarChanged && avatar) {
-      console.log('🔍 头像已变化，检查处理方式...')
-      // 检查是否是本地临时文件（wxfile:// 或 http://tmp/ 等本地路径格式）
       const isLocalFile = avatar.startsWith('wxfile://') || avatar.startsWith('http://tmp/') || avatar.startsWith('/tmp/')
       
       if (isLocalFile) {
-        // 新选择的图片 - 需要上传
-        console.log('📤 触发上传新头像流程，路径:', avatar)
-        this.uploadAvatarAndSave(username, phone, roomNumber)
+        this.uploadAvatarAndSave(username, roomNumber)
       } else if (avatar === defaultAvatar) {
-        // 选择的是默认头像 - 直接保存，不上传
-        console.log('🎨 使用默认头像，直接保存')
-        this.saveProfileData(username, phone, roomNumber, defaultAvatar)
+        this.saveProfileData(username, roomNumber, defaultAvatar)
       } else {
-        // 其他情况（已有头像或网络URL） - 不更改头像
-        console.log('⚠️ 其他情况，不改变头像')
-        this.saveProfileData(username, phone, roomNumber, null)
+        this.saveProfileData(username, roomNumber, null)
       }
     } else {
-      // 未改变头像 - 仅保存其他信息
-      console.log('📝 头像未改变，仅保存其他信息')
-      this.saveProfileData(username, phone, roomNumber, null)
+      this.saveProfileData(username, roomNumber, null)
     }
   },
 
-  uploadAvatarAndSave(username, phone, roomNumber) {
+  uploadAvatarAndSave(username, roomNumber) {
     const { avatar } = this.data
     const token = wx.getStorageSync('token') || ''
-
-    console.log('🚀 开始上传头像...')
-    console.log('  文件路径:', avatar)
-    console.log('  API地址:', api.baseURL + '/api/miniprogram/user/upload-avatar')
 
     wx.uploadFile({
       url: api.baseURL + '/api/miniprogram/user/upload-avatar',
@@ -162,16 +307,12 @@ Page({
         'Authorization': 'Bearer ' + token
       },
       success: (res) => {
-        console.log('✅ 上传成功，响应:', res)
         if (res.statusCode === 200) {
           try {
             const data = JSON.parse(res.data)
-            console.log('📦 解析后的数据:', data)
             if (data.success) {
-              console.log('🎉 头像上传成功，avatar_url:', data.avatar_url)
-              this.saveProfileData(username, phone, roomNumber, data.avatar_url)
+              this.saveProfileData(username, roomNumber, data.avatar_url)
             } else {
-              console.error('❌ 头像上传失败:', data.error)
               wx.showToast({
                 title: data.error || '头像上传失败',
                 icon: 'none'
@@ -179,7 +320,6 @@ Page({
               this.setData({ saving: false })
             }
           } catch (e) {
-            console.error('❌ 解析响应数据失败:', e)
             wx.showToast({
               title: '头像上传失败',
               icon: 'none'
@@ -187,7 +327,6 @@ Page({
             this.setData({ saving: false })
           }
         } else {
-          console.error('❌ 上传失败，状态码:', res.statusCode)
           wx.showToast({
             title: '头像上传失败',
             icon: 'none'
@@ -196,7 +335,7 @@ Page({
         }
       },
       fail: (err) => {
-        console.error('❌ 上传请求失败:', err)
+        console.error('上传请求失败:', err)
         wx.showToast({
           title: '网络错误，请重试',
           icon: 'none'
@@ -206,21 +345,15 @@ Page({
     })
   },
 
-  saveProfileData(username, phone, roomNumber, avatarUrl) {
-    // 保存原始值，用于失败时回滚
+  saveProfileData(username, roomNumber, avatarUrl) {
     const originalData = {
       username: this.data.userInfo?.username || '',
-      phone: this.data.userInfo?.phone || '',
       roomNumber: this.data.userInfo?.room_number || '',
       avatar: this.data.userInfo?.wechat_avatar || this.data.defaultAvatar
     }
 
     const updateData = {
       username: username.trim()
-    }
-    
-    if (phone) {
-      updateData.phone = phone
     }
     
     if (roomNumber) {
@@ -231,18 +364,13 @@ Page({
       updateData.wechat_avatar = avatarUrl
     }
 
-    console.log('💾 调用updateUserInfo，数据:', updateData)
-    console.log('📝 原始数据用于回滚:', originalData)
-
     api.updateUserInfo(updateData).then(() => {
       const userInfo = wx.getStorageSync('userInfo') || {}
       userInfo.username = username.trim()
-      if (phone) userInfo.phone = phone
       if (roomNumber) userInfo.room_number = roomNumber
       if (avatarUrl) userInfo.wechat_avatar = avatarUrl
       wx.setStorageSync('userInfo', userInfo)
       
-      console.log('✅ 保存成功，userInfo已更新')
       wx.showToast({
         title: '保存成功',
         icon: 'success'
@@ -252,16 +380,13 @@ Page({
         wx.navigateBack()
       }, 1500)
     }).catch(err => {
-      console.error('❌ 保存失败:', err)
-      // 恢复原始值，确保前端数据与数据库一致
+      console.error('保存失败:', err)
       this.setData({
         username: originalData.username,
-        phone: originalData.phone,
         roomNumber: originalData.roomNumber,
         avatar: originalData.avatar,
         saving: false
       })
-      console.log('🔄 已恢复原始数据:', originalData)
       wx.showToast({
         title: err.message || '保存失败',
         icon: 'none'

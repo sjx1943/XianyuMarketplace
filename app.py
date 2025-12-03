@@ -40,7 +40,10 @@ from controllers.miniprogram_auth_controller import (
     MiniprogramProductDeleteImageHandler,
     MiniprogramAvatarUploadHandler,
     MiniprogramProductStatsHandler,
-    MiniprogramActiveTagsHandler
+    MiniprogramActiveTagsHandler,
+    MiniprogramPhoneBindSendCodeHandler,
+    MiniprogramPhoneBindVerifyHandler,
+    MiniprogramPhoneUnbindHandler
 )
 from controllers.miniprogram_set_image_handler import MiniprogramProductSetImagePrimaryHandler
 from controllers.product_controller import ProductUploadHandler, HomePageHandler, ProductDetailHandler, ProductListHandler, ElseHomePageHandler, UpdateProductStatusHandler, DeleteProductHandler, PhysicalDeleteProductHandler, AdminDashboardHandler, ProductEditHandler
@@ -172,6 +175,12 @@ def make_app():
         (r"/api/miniprogram/product/(\d+)/image/(\d+)/primary", MiniprogramProductSetImagePrimaryHandler),
         (r"/api/miniprogram/product_stats", MiniprogramProductStatsHandler),
         (r"/api/miniprogram/active_tags", MiniprogramActiveTagsHandler),
+        
+        # 小程序手机号绑定API
+        (r"/api/miniprogram/phone/send_code", MiniprogramPhoneBindSendCodeHandler),
+        (r"/api/miniprogram/phone/bind", MiniprogramPhoneBindVerifyHandler),
+        (r"/api/miniprogram/phone/unbind", MiniprogramPhoneUnbindHandler),
+        
         # 管理员路由
         (r"/admin/login", AdminLoginHandler),
         (r"/admin/dashboard", NewAdminDashboardHandler),

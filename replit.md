@@ -29,7 +29,7 @@ The platform is built on Python 3.11 with the Tornado 6.4.2 web framework.
 -   Responsive chat interface.
 
 ### Technical Implementations & Feature Specifications
--   **Authentication**: Supports username/room number + password, phone + SMS, and WeChat OAuth (web and mini program).
+-   **Authentication**: Supports username/room number + password, phone + SMS, and WeChat OAuth (web and mini program). Mini-program users can bind their phone number to enable web login via phone+SMS.
 -   **Session Management**: Per-handler session pattern to prevent cross-request pollution.
 -   **Chat System**: Real-time messaging with unread notifications, search, and a draggable, responsive sidebar. Features long-press delete for messages and unified timestamp handling (UTC+8 Beijing time displayed on frontend).
 -   **Product Management**: Comprehensive listing with instant image preview, multi-tag selection, optimized multi-field search, and product condition selection. Includes dynamic tag filtering, allowing only tags with active products to be displayed.

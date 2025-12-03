@@ -2804,3 +2804,263 @@ class MiniprogramUnreadCountHandler(tornado.web.RequestHandler):
     
     def on_finish(self):
         self.session.close()
+
+
+class MiniprogramPhoneBindSendCodeHandler(tornado.web.RequestHandler):
+    """小程序绑定手机号 - 发送验证码"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def _get_user_id(self):
+        """从Cookie或Authorization头获取用户ID"""
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    def post(self):
+        """发送手机号绑定验证码"""
+        from utils.sms_service import create_verification_code
+        
+        try:
+            user_id = self._get_user_id()
+            if not user_id:
+                self.set_status(401)
+                self.write(json.dumps({'success': False, 'error': '请先登录'}))
+                return
+            
+            data = json.loads(self.request.body)
+            phone = data.get('phone', '').strip()
+            
+            if not phone:
+                self.write(json.dumps({'success': False, 'error': '请输入手机号'}))
+                return
+            
+            if len(phone) != 11 or not phone.isdigit():
+                self.write(json.dumps({'success': False, 'error': '请输入有效的11位手机号'}))
+                return
+            
+            # 检查手机号是否已被其他用户绑定
+            existing_user = self.session.query(User).filter(
+                User.phone == phone,
+                User.id != int(user_id)
+            ).first()
+            
+            if existing_user:
+                self.write(json.dumps({
+                    'success': False, 
+                    'error': '该手机号已被其他账号绑定，如有疑问请联系管理员'
+                }))
+                return
+            
+            # 发送验证码
+            code = create_verification_code(self.session, phone)
+            
+            if code:
+                self.write(json.dumps({
+                    'success': True,
+                    'message': '验证码已发送',
+                    'dev_code': code  # 开发模式返回验证码，生产环境可移除
+                }))
+            else:
+                self.write(json.dumps({'success': False, 'error': '发送验证码失败，请稍后重试'}))
+                
+        except Exception as e:
+            logging.error(f"发送绑定验证码异常: {e}")
+            self.write(json.dumps({'success': False, 'error': '系统错误，请稍后重试'}))
+    
+    def on_finish(self):
+        self.session.close()
+
+
+class MiniprogramPhoneBindVerifyHandler(tornado.web.RequestHandler):
+    """小程序绑定手机号 - 验证并绑定"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def _get_user_id(self):
+        """从Cookie或Authorization头获取用户ID"""
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    def post(self):
+        """验证手机号并绑定到当前用户
+        
+        使用事务确保验证码验证和绑定操作的原子性：
+        - 验证码标记used和手机号绑定在同一事务中
+        - 任一步骤失败都会回滚整个事务
+        """
+        from models.verification_code import VerificationCode
+        
+        try:
+            user_id = self._get_user_id()
+            if not user_id:
+                self.set_status(401)
+                self.write(json.dumps({'success': False, 'error': '请先登录'}))
+                return
+            
+            data = json.loads(self.request.body)
+            phone = data.get('phone', '').strip()
+            code = data.get('code', '').strip()
+            
+            if not phone or not code:
+                self.write(json.dumps({'success': False, 'error': '请输入手机号和验证码'}))
+                return
+            
+            # 再次检查手机号是否已被其他用户绑定
+            existing_user = self.session.query(User).filter(
+                User.phone == phone,
+                User.id != int(user_id)
+            ).first()
+            
+            if existing_user:
+                self.write(json.dumps({
+                    'success': False, 
+                    'error': '该手机号已被其他账号绑定'
+                }))
+                return
+            
+            # 在同一事务中验证验证码并绑定手机号
+            now = datetime.datetime.now(datetime.timezone.utc)
+            
+            verification = self.session.query(VerificationCode).filter(
+                VerificationCode.phone == phone,
+                VerificationCode.code == code,
+                VerificationCode.is_used == 0,
+                VerificationCode.expires_at > now
+            ).order_by(VerificationCode.created_at.desc()).first()
+            
+            if not verification:
+                self.write(json.dumps({'success': False, 'error': '验证码错误或已过期'}))
+                return
+            
+            # 获取用户
+            user = self.session.query(User).filter_by(id=int(user_id)).first()
+            if not user:
+                self.write(json.dumps({'success': False, 'error': '用户不存在'}))
+                return
+            
+            # 在同一事务中：标记验证码已用 + 绑定手机号
+            verification.is_used = 1
+            user.phone = phone
+            self.session.commit()
+            
+            logging.info(f"用户 {user.username} (ID:{user_id}) 成功绑定手机号: {phone}")
+            
+            self.write(json.dumps({
+                'success': True,
+                'message': '手机号绑定成功',
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'phone': user.phone,
+                    'room_number': user.room_number,
+                    'wechat_nickname': user.wechat_nickname,
+                    'wechat_avatar': user.wechat_avatar
+                }
+            }))
+            
+        except Exception as e:
+            self.session.rollback()
+            logging.error(f"绑定手机号异常: {e}")
+            self.write(json.dumps({'success': False, 'error': '绑定失败，请稍后重试'}))
+    
+    def on_finish(self):
+        self.session.close()
+
+
+class MiniprogramPhoneUnbindHandler(tornado.web.RequestHandler):
+    """小程序解绑手机号"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def _get_user_id(self):
+        """从Cookie或Authorization头获取用户ID"""
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    def post(self):
+        """解绑当前用户的手机号"""
+        try:
+            user_id = self._get_user_id()
+            if not user_id:
+                self.set_status(401)
+                self.write(json.dumps({'success': False, 'error': '请先登录'}))
+                return
+            
+            user = self.session.query(User).filter_by(id=int(user_id)).first()
+            if not user:
+                self.write(json.dumps({'success': False, 'error': '用户不存在'}))
+                return
+            
+            if not user.phone:
+                self.write(json.dumps({'success': False, 'error': '当前账号未绑定手机号'}))
+                return
+            
+            old_phone = user.phone
+            user.phone = None
+            self.session.commit()
+            
+            logging.info(f"用户 {user.username} (ID:{user_id}) 解绑手机号: {old_phone}")
+            
+            self.write(json.dumps({
+                'success': True,
+                'message': '手机号已解绑',
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'phone': user.phone,
+                    'room_number': user.room_number
+                }
+            }))
+            
+        except Exception as e:
+            self.session.rollback()
+            logging.error(f"解绑手机号异常: {e}")
+            self.write(json.dumps({'success': False, 'error': '解绑失败，请稍后重试'}))
+    
+    def on_finish(self):
+        self.session.close()
