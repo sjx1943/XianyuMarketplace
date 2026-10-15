@@ -53,7 +53,13 @@ function loadProducts(tag = 'all') {
                 const link = document.createElement('a');
                 link.href = `/product/detail/${encodeURIComponent(product.id)}`;
                 const img = document.createElement('img');
-                img.src = `/static/images/${encodeURIComponent(product.image)}`;
+                // 智能处理图片URL：完整URL直接使用，本地文件名添加前缀
+                let imageSrc = product.image || '/static/images/placeholder.png';
+                if (imageSrc.includes('://') || imageSrc.startsWith('/')) {
+                    img.src = imageSrc;
+                } else {
+                    img.src = `/static/images/${encodeURIComponent(imageSrc)}`;
+                }
                 img.alt = product.name;
                 link.appendChild(img);
                 productInfo.appendChild(link);

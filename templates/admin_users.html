@@ -61,6 +61,9 @@
                                 <button class="btn-toggle" data-user-id="{{ user.id }}" data-action="toggle_active">
                                     {{ '禁用' if user.is_active else '启用' }}
                                 </button>
+                                <button class="btn-delete" data-user-id="{{ user.id }}" data-action="delete" style="margin-left: 5px; background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                                    删除
+                                </button>
                             </td>
                         </tr>
                         {% end %}
@@ -102,12 +105,13 @@
             }
         });
 
-        document.querySelectorAll('.btn-toggle').forEach(btn => {
+        document.querySelectorAll('.btn-toggle, .btn-delete').forEach(btn => {
             btn.addEventListener('click', async function() {
                 const userId = this.dataset.userId;
                 const action = this.dataset.action;
                 
-                if (!confirm('确定要执行此操作吗？')) return;
+                const confirmMsg = action === 'delete' ? '确定要删除此用户吗？此操作不可恢复！' : '确定要执行此操作吗？';
+                if (!confirm(confirmMsg)) return;
                 
                 try {
                     const xsrfToken = getCookie('_xsrf');

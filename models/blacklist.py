@@ -3,13 +3,13 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from sqlalchemy import Column, Integer, ForeignKey, UniqueConstraint, Sequence
+from sqlalchemy import Column, Integer, ForeignKey, UniqueConstraint
 from base.base import Base
 
 class Blacklist(Base):
     __tablename__ = 'xu_blacklist'
 
-    id = Column(Integer, Sequence('blacklist_id_seq'), primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     
     # The user who is performing the block action
     blocker_id = Column(Integer, ForeignKey('xu_user.id'), nullable=False, index=True)

@@ -18,6 +18,7 @@ from models.user import User
 from base.base import engine
 from motor import motor_tornado
 from tornado.ioloop import IOLoop
+from utils.wechat_cloud_storage import convert_cloud_url, convert_image_url, convert_images_batch
 
 Session = sessionmaker(bind=engine)
 
@@ -42,6 +43,40 @@ WX_MINIPROGRAM_APP_SECRET = os.environ.get('WX_MINIPROGRAM_APP_SECRET', '')
 
 # 微信小程序登录API
 WX_LOGIN_URL = 'https://api.weixin.qq.com/sns/jscode2session'
+
+# 默认头像URL
+DEFAULT_AVATAR = '/static/images/default-avatar.png'
+
+
+def convert_avatar_url(avatar_url):
+    """
+    转换头像URL：如果是云存储格式(cloud://)，转换为临时HTTPS URL
+    
+    参数:
+        avatar_url: 原始头像URL
+    
+    返回:
+        str: 可访问的头像URL
+        - 云托管环境：转换为临时HTTPS URL
+        - 非云托管环境：保留原始cloud://格式（小程序可直接加载）
+    """
+    if not avatar_url:
+        return DEFAULT_AVATAR
+    
+    # 如果是云存储格式，尝试转换
+    if isinstance(avatar_url, str) and avatar_url.startswith('cloud://'):
+        try:
+            from utils.wechat_cloud_storage import get_is_cloud_run, convert_cloud_url
+            # 非云托管环境，保留原始cloud://格式
+            if not get_is_cloud_run():
+                return avatar_url
+            converted = convert_cloud_url(avatar_url, DEFAULT_AVATAR)
+            return converted if converted else DEFAULT_AVATAR
+        except Exception as e:
+            logging.warning(f"转换云存储头像URL失败: {e}")
+            return avatar_url  # 返回原始URL而不是默认值
+    
+    return avatar_url
 
 
 class MiniprogramLoginHandler(tornado.web.RequestHandler):
@@ -121,7 +156,7 @@ class MiniprogramLoginHandler(tornado.web.RequestHandler):
                     'room_number': user.room_number,
                     'wechat_openid': user.wechat_openid,
                     'wechat_nickname': user.wechat_nickname,
-                    'wechat_avatar': user.wechat_avatar
+                    'wechat_avatar': convert_avatar_url(user.wechat_avatar)
                 },
                 'session_key': session_key
             }))
@@ -273,7 +308,8 @@ class MiniprogramUserInfoHandler(tornado.web.RequestHandler):
                     'email': user.email,
                     'wechat_openid': user.wechat_openid,
                     'wechat_nickname': user.wechat_nickname,
-                    'wechat_avatar': user.wechat_avatar,
+                    'wechat_avatar': convert_avatar_url(user.wechat_avatar),
+                    'avatar_security_status': getattr(user, 'avatar_security_status', 'approved') or 'approved',
                     'is_admin': user.is_admin
                 }
             }))
@@ -468,7 +504,7 @@ class MiniprogramUpdateProfileHandler(tornado.web.RequestHandler):
                         'phone': user.phone,
                         'room_number': user.room_number,
                         'wechat_nickname': user.wechat_nickname,
-                        'wechat_avatar': user.wechat_avatar
+                        'wechat_avatar': convert_avatar_url(user.wechat_avatar)
                     }
                 }))
             else:
@@ -519,25 +555,61 @@ class MiniprogramUnreadCountHandler(tornado.web.RequestHandler):
             user_id = self._get_user_id()
             
             if not user_id:
-                self.write(json.dumps({'count': 0, 'unread_count': 0}))
+                self.write(json.dumps({
+                    'success': True,
+                    'message_unread_count': 0,
+                    'order_unread_count': 0,
+                    'count': 0
+                }))
                 return
             
             from models.order import Order
             
-            pending_orders = self.session.query(Order).filter_by(
+            # 获取待处理订单数量（卖家的pending订单）
+            order_unread_count = self.session.query(Order).filter_by(
                 seller_id=int(user_id),
                 status='pending'
             ).count()
             
+            # 获取未读消息数量（从MongoDB）
+            try:
+                import asyncio
+                from utils.mongo_manager import mongo_db
+                
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                
+                async def get_message_count():
+                    try:
+                        collection = mongo_db.chat_messages
+                        count = await collection.count_documents({
+                            "to_user_id": int(user_id),
+                            "status": "unread"
+                        })
+                        return count
+                    except:
+                        return 0
+                
+                message_unread_count = loop.run_until_complete(get_message_count())
+                loop.close()
+            except:
+                message_unread_count = 0
+            
             self.write(json.dumps({
                 'success': True,
-                'count': pending_orders,
-                'unread_count': pending_orders
+                'message_unread_count': message_unread_count,
+                'order_unread_count': order_unread_count,
+                'count': order_unread_count  # 保持向后兼容
             }))
             
         except Exception as e:
             logging.error(f"获取未读数量异常: {e}")
-            self.write(json.dumps({'count': 0, 'unread_count': 0}))
+            self.write(json.dumps({
+                'success': True,
+                'message_unread_count': 0,
+                'order_unread_count': 0,
+                'count': 0
+            }))
     
     def on_finish(self):
         self.session.close()
@@ -568,12 +640,63 @@ class MiniprogramProductUploadHandler(tornado.web.RequestHandler):
                     pass
         return None
     
+    def _upload_image_to_storage(self, image_body, orig_filename, upload_path):
+        """上传图片到存储（腾讯云托管或本地）
+        
+        优先使用腾讯云托管对象存储（云环境），开发环境使用本地存储
+        
+        Returns:
+            dict: {
+                'filename': str,  # 原图文件名/key或cloud://fileID
+                'thumb_filename': str,  # 缩略图文件名/key
+                'medium_filename': str,  # 中等图文件名/key
+                'is_cloud': bool  # 是否使用腾讯云托管
+            }
+        """
+        import re
+        import uuid
+        from utils.wechat_cloud_storage import upload_file_to_cloud, get_is_cloud_run
+        from utils.image_utils import generate_thumbnail, generate_medium_image
+        
+        # 优先尝试上传到腾讯云托管（云环境）
+        if get_is_cloud_run():
+            cloud_result = upload_file_to_cloud(image_body, orig_filename, 'products')
+            if cloud_result['success']:
+                return {
+                    'filename': cloud_result['file_id'],
+                    'thumb_filename': '',  # 云环境不需要手动生成缩略图
+                    'medium_filename': '',  # 云环境不需要手动生成中等图
+                    'is_cloud': True
+                }
+            else:
+                logging.warning(f"腾讯云上传失败，回退到本地存储: {cloud_result.get('message')}")
+        
+        # 开发环境或云上传失败时，使用本地存储
+        normalized_filename = re.sub(r'[^\w\-\.]', '_', orig_filename)
+        unique_id = uuid.uuid4().hex[:8]
+        filename = f"{unique_id}_{normalized_filename}"
+        filepath = os.path.join(upload_path, filename)
+        
+        with open(filepath, "wb") as f:
+            f.write(image_body)
+        
+        thumb_filename = generate_thumbnail(image_body, filename, upload_path)
+        medium_filename = generate_medium_image(image_body, filename, upload_path)
+        
+        return {
+            'filename': filename,
+            'thumb_filename': thumb_filename,
+            'medium_filename': medium_filename,
+            'is_cloud': False
+        }
+    
     def post(self):
         """发布商品（支持图片上传）
         
         支持两种模式：
         1. 首次上传：包含商品信息和图片，创建新商品
         2. 追加上传：只包含product_id和图片，追加图片到已有商品
+        
         """
         import os
         from models.product import Product, ProductImage
@@ -611,20 +734,18 @@ class MiniprogramProductUploadHandler(tornado.web.RequestHandler):
                     return
                 
                 if images:
-                    import re
-                    existing_images = self.session.query(ProductImage).filter_by(product_id=product.id).count()
                     for i, image in enumerate(images):
-                        idx = existing_images + i
-                        # 规范化文件名：移除空格和特殊字符
+                        image_body = image["body"]
                         orig_filename = image['filename']
-                        normalized_filename = re.sub(r'[^\w\-\.]', '_', orig_filename)
-                        filename = f"{product.id}_{idx}_{normalized_filename}"
-                        filepath = os.path.join(upload_path, filename)
                         
-                        with open(filepath, "wb") as f:
-                            f.write(image["body"])
+                        storage_result = self._upload_image_to_storage(image_body, orig_filename, upload_path)
                         
-                        product_image = ProductImage(filename=filename, product_id=product.id)
+                        product_image = ProductImage(
+                            filename=storage_result['filename'], 
+                            product_id=product.id, 
+                            thumb_filename=storage_result['thumb_filename'], 
+                            medium_filename=storage_result['medium_filename']
+                        )
                         self.session.add(product_image)
                     
                     self.session.commit()
@@ -669,21 +790,21 @@ class MiniprogramProductUploadHandler(tornado.web.RequestHandler):
             self.session.flush()
             
             image_filenames = []
-            import re
             
             for i, image in enumerate(images):
-                # 规范化文件名：移除空格和特殊字符
+                image_body = image["body"]
                 orig_filename = image['filename']
-                normalized_filename = re.sub(r'[^\w\-\.]', '_', orig_filename)
-                filename = f"{new_product.id}_{i}_{normalized_filename}"
-                filepath = os.path.join(upload_path, filename)
                 
-                with open(filepath, "wb") as f:
-                    f.write(image["body"])
+                storage_result = self._upload_image_to_storage(image_body, orig_filename, upload_path)
                 
-                product_image = ProductImage(filename=filename, product_id=new_product.id)
+                product_image = ProductImage(
+                    filename=storage_result['filename'], 
+                    product_id=new_product.id, 
+                    thumb_filename=storage_result['thumb_filename'], 
+                    medium_filename=storage_result['medium_filename']
+                )
                 self.session.add(product_image)
-                image_filenames.append(filename)
+                image_filenames.append(storage_result['filename'])
             
             if image_filenames:
                 new_product.image = image_filenames[0]
@@ -711,6 +832,258 @@ class MiniprogramProductUploadHandler(tornado.web.RequestHandler):
             logging.error(f"商品发布异常: {e}")
             self.set_status(500)
             self.write(json.dumps({'success': False, 'error': f'发布失败: {str(e)}'}))
+    
+    def on_finish(self):
+        self.session.close()
+
+
+class MiniprogramProductCreateHandler(tornado.web.RequestHandler):
+    """小程序商品创建接口（支持云存储 fileID）
+    
+    用于接收小程序端直接上传到微信云托管的图片 fileID
+    """
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def _get_user_id(self):
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    def post(self):
+        """创建商品（接收云存储 fileID）
+        
+        请求体 JSON:
+        {
+            "name": "商品名称",
+            "description": "描述",
+            "price": "100",
+            "quantity": "1",
+            "tag": "分类",
+            "condition": "九成新",
+            "image_urls": ["cloud://xxx/xxx.jpg", ...],  # 云存储 fileID 列表
+            "image_temp_urls": ["https://...", ...]  # 临时访问 URL（可选）
+        }
+        """
+        from models.product import Product, ProductImage
+        
+        user_id = self._get_user_id()
+        
+        if not user_id:
+            self.set_status(401)
+            self.write(json.dumps({'success': False, 'error': '请先登录'}))
+            return
+        
+        try:
+            data = json.loads(self.request.body.decode('utf-8'))
+            
+            name = data.get('name', '').strip()
+            description = data.get('description', '')
+            price_str = data.get('price', '0')
+            quantity_str = data.get('quantity', '1')
+            tag = data.get('tag', '其他')
+            condition = data.get('condition', '九成新')
+            image_urls = data.get('image_urls', [])
+            image_temp_urls = data.get('image_temp_urls', [])
+            
+            if not name:
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '商品名称不能为空'}))
+                return
+            
+            if not image_urls:
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '请至少上传一张图片'}))
+                return
+            
+            price = float(price_str) if price_str and price_str.strip() else None
+            quantity = int(quantity_str) if quantity_str and quantity_str.strip() else 1
+            
+            if quantity < 1:
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '商品数量至少为1'}))
+                return
+            
+            if len(description) > 5000:
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '商品描述过长，最多5000字符'}))
+                return
+            
+            new_product = Product(
+                name=name,
+                description=description,
+                price=price,
+                user_id=int(user_id),
+                tag=tag,
+                image=image_urls[0] if image_urls else "",
+                quantity=quantity,
+                status="在售",
+                condition=condition
+            )
+            self.session.add(new_product)
+            self.session.flush()
+            
+            for i, url in enumerate(image_urls):
+                product_image = ProductImage(
+                    filename=url,
+                    product_id=new_product.id,
+                    thumb_filename=url,
+                    medium_filename=url
+                )
+                self.session.add(product_image)
+            
+            self.session.commit()
+            
+            logging.info(f"商品创建成功（云存储）: id={new_product.id}, images={len(image_urls)}")
+            
+            self.write(json.dumps({
+                'success': True,
+                'message': '商品发布成功',
+                'product_id': new_product.id,
+                'product': {
+                    'id': new_product.id,
+                    'name': new_product.name,
+                    'price': float(new_product.price),
+                    'image': new_product.image
+                }
+            }))
+            
+        except ValueError as e:
+            self.session.rollback()
+            self.set_status(400)
+            self.write(json.dumps({'success': False, 'error': '价格或数量格式不正确'}))
+        except json.JSONDecodeError:
+            self.set_status(400)
+            self.write(json.dumps({'success': False, 'error': '请求格式错误'}))
+        except Exception as e:
+            self.session.rollback()
+            logging.error(f"商品创建异常（云存储）: {e}")
+            self.set_status(500)
+            self.write(json.dumps({'success': False, 'error': f'创建失败: {str(e)}'}))
+    
+    def on_finish(self):
+        self.session.close()
+
+
+class MiniprogramProductAddCloudImagesHandler(tornado.web.RequestHandler):
+    """小程序为现有商品添加云存储图片接口
+    
+    用于编辑商品时，接收小程序端直接上传到微信云托管的图片 fileID
+    """
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def _get_user_id(self):
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    return token.split('_')[-1]
+                except:
+                    pass
+        return None
+    
+    def post(self):
+        """为现有商品添加云存储图片
+        
+        请求体 JSON:
+        {
+            "product_id": 123,
+            "image_urls": ["cloud://xxx/xxx.jpg", ...]  # 云存储 fileID 列表
+        }
+        """
+        from models.product import Product, ProductImage
+        
+        user_id = self._get_user_id()
+        
+        if not user_id:
+            self.set_status(401)
+            self.write(json.dumps({'success': False, 'error': '请先登录'}))
+            return
+        
+        try:
+            data = json.loads(self.request.body.decode('utf-8'))
+            
+            product_id = data.get('product_id')
+            image_urls = data.get('image_urls', [])
+            
+            if not product_id:
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '商品ID不能为空'}))
+                return
+            
+            if not image_urls:
+                self.set_status(400)
+                self.write(json.dumps({'success': False, 'error': '请至少上传一张图片'}))
+                return
+            
+            product = self.session.query(Product).filter_by(id=int(product_id)).first()
+            if not product:
+                self.set_status(404)
+                self.write(json.dumps({'success': False, 'error': '商品不存在'}))
+                return
+            
+            if product.user_id != int(user_id):
+                self.set_status(403)
+                self.write(json.dumps({'success': False, 'error': '无权操作该商品'}))
+                return
+            
+            added_count = 0
+            for url in image_urls:
+                if url and isinstance(url, str):
+                    product_image = ProductImage(
+                        filename=url,
+                        product_id=product.id,
+                        thumb_filename=url,
+                        medium_filename=url
+                    )
+                    self.session.add(product_image)
+                    added_count += 1
+                    
+                    if not product.image:
+                        product.image = url
+            
+            self.session.commit()
+            
+            logging.info(f"商品图片添加成功（云存储）: product_id={product_id}, added={added_count}")
+            
+            self.write(json.dumps({
+                'success': True,
+                'message': f'成功添加 {added_count} 张图片',
+                'added_count': added_count
+            }))
+            
+        except json.JSONDecodeError:
+            self.set_status(400)
+            self.write(json.dumps({'success': False, 'error': '请求格式错误'}))
+        except Exception as e:
+            self.session.rollback()
+            logging.error(f"添加商品图片异常（云存储）: {e}")
+            self.set_status(500)
+            self.write(json.dumps({'success': False, 'error': f'添加失败: {str(e)}'}))
     
     def on_finish(self):
         self.session.close()
@@ -772,15 +1145,15 @@ class MiniprogramProductDetailHandler(tornado.web.RequestHandler):
                 'status': product.status,
                 'condition': product.condition or '九成新',
                 'tag': product.tag,
-                'image': main_image,
-                'images': [{'id': img.id, 'filename': img.filename} for img in images],
+                'image': main_image or '',
+                'images': [{'id': img.id, 'filename': img.medium_filename or img.filename, 'original_filename': img.filename} for img in images],
                 'upload_time': product.upload_time.strftime('%Y-%m-%d %H:%M') if product.upload_time else '',
                 'seller_id': product.user_id,
                 'seller': {
                     'id': seller.id,
                     'username': seller.username,
                     'room_number': seller.room_number or '未设置',
-                    'avatar': seller.wechat_avatar or ''
+                    'avatar': convert_avatar_url(seller.wechat_avatar)
                 } if seller else None,
                 'comments': [{
                     'id': c.id,
@@ -854,14 +1227,49 @@ class MiniprogramProductDeleteHandler(tornado.web.RequestHandler):
             # 删除所有关联的图片文件（自动清理）
             images = self.session.query(ProductImage).filter_by(product_id=product_id).all()
             upload_path = 'mystatics/images'
+            
+            # 收集云存储文件ID
+            cloud_file_ids = []
+            logging.info(f"[Product Delete] 开始删除商品 {product_id}，找到 {len(images)} 个图片")
+            
             for image in images:
                 try:
-                    image_path = os.path.join(upload_path, image.filename)
-                    if os.path.exists(image_path):
-                        os.remove(image_path)
-                        logging.info(f"已删除商品图片文件: {image_path}")
+                    logging.info(f"[Product Delete] 处理图片: {image.filename}")
+                    # 检查是否是云存储文件（cloud://开头）
+                    if image.filename and image.filename.startswith('cloud://'):
+                        cloud_file_ids.append(image.filename)
+                        logging.info(f"[Product Delete] ✓ 云存储文件: {image.filename}")
+                    else:
+                        # 本地文件：删除文件系统中的文件
+                        image_path = os.path.join(upload_path, image.filename)
+                        if os.path.exists(image_path):
+                            os.remove(image_path)
+                            logging.info(f"已删除商品图片文件: {image_path}")
+                        
+                        # 删除缩略图和中等尺寸图（如果存在）
+                        for prefix in ['thumb_', 'medium_']:
+                            if image.filename:
+                                thumb_path = os.path.join(upload_path, f"{prefix}{image.filename}")
+                                if os.path.exists(thumb_path):
+                                    os.remove(thumb_path)
+                                    logging.info(f"已删除图片文件: {thumb_path}")
                 except Exception as e:
                     logging.warning(f"删除商品图片文件失败: {e}")
+            
+            # 批量删除云存储文件
+            logging.info(f"[Product Delete] 收集到 {len(cloud_file_ids)} 个云存储文件")
+            if cloud_file_ids:
+                try:
+                    from utils.wechat_cloud_storage import delete_cloud_files
+                    result = delete_cloud_files(cloud_file_ids)
+                    if result['success']:
+                        logging.info(f"[Product Delete] ✓ 云存储文件删除成功: {result['deleted']}")
+                    else:
+                        logging.warning(f"[Product Delete] ⚠ 云存储文件删除部分失败: {result['message']}")
+                except Exception as e:
+                    logging.warning(f"[Product Delete] ⚠ 调用云存储删除API失败: {e}")
+            else:
+                logging.info("[Product Delete] 无云存储文件需要删除（可能都是本地文件）")
             
             # 从数据库删除图片记录
             self.session.query(ProductImage).filter_by(product_id=product_id).delete()
@@ -939,6 +1347,10 @@ class MiniprogramOrderConfirmHandler(tornado.web.RequestHandler):
             order.completed_at = datetime.datetime.now()
             self.session.commit()
             
+            # 发送订单状态通知给卖家
+            from utils.wechat_subscribe_service import send_order_status_notification
+            self._send_order_status_notification(order, '已完成')
+            
             self.write(json.dumps({'success': True, 'message': '确认收货成功'}))
             
         except Exception as e:
@@ -946,6 +1358,47 @@ class MiniprogramOrderConfirmHandler(tornado.web.RequestHandler):
             logging.error(f"确认收货异常: {e}")
             self.set_status(500)
             self.write(json.dumps({'success': False, 'error': str(e)}))
+    
+    def _send_order_status_notification(self, order, status_text):
+        """发送订单状态通知给卖家"""
+        try:
+            from models.product import Product
+            from utils.wechat_subscribe_service import send_order_status_notification, get_beijing_time_str
+            
+            # 获取卖家信息
+            seller = None
+            if order.seller_id:
+                seller = self.session.query(User).filter_by(id=order.seller_id).first()
+            if not seller:
+                product = self.session.query(Product).filter_by(id=order.product_id).first()
+                if product:
+                    seller = self.session.query(User).filter_by(id=product.user_id).first()
+            
+            if not seller or not seller.wechat_openid:
+                logging.info(f"卖家未设置openid，跳过通知: order_id={order.id}")
+                return
+            
+            # 获取商品名称
+            product = self.session.query(Product).filter_by(id=order.product_id).first()
+            product_name = product.name if product else '未知商品'
+            
+            # 发送通知 - 模板字段: character_string2(订单编号), thing7(备注), phrase10(订单状态), thing11(商品名称)
+            result = send_order_status_notification(
+                openid=seller.wechat_openid,
+                order_number=str(order.id),
+                product_name=product_name,
+                status_text=status_text,
+                remark='买家已确认收货',
+                page=f'pages/order/detail?id={order.id}'
+            )
+            
+            if result['success']:
+                logging.info(f"订单状态通知发送成功: order_id={order.id}, status={status_text}")
+            else:
+                logging.warning(f"订单状态通知发送失败: {result.get('error')}")
+                
+        except Exception as e:
+            logging.error(f"发送订单状态通知异常: {e}")
     
     def on_finish(self):
         self.session.close()
@@ -1071,7 +1524,7 @@ class MiniprogramMessagesHandler(tornado.web.RequestHandler):
                     'id': friend.id,
                     'username': friend.username,
                     'room_number': friend.room_number or '未设置',
-                    'avatar': friend.wechat_avatar or ''
+                    'avatar': convert_avatar_url(friend.wechat_avatar)
                 }
             }))
             
@@ -1143,7 +1596,28 @@ class MiniprogramMessagesHandler(tornado.web.RequestHandler):
             
             # 通过WebSocket推送给接收方（返回UTC时间，前端处理转换）
             from controllers.chat_controller import connections
-            if friend_id in connections and connections[friend_id].ws_connection:
+            
+            # 检查接收方是否在线（兼容 int/str 类型的 key，并安全访问ws_connection）
+            friend_id_int = int(friend_id)
+            friend_id_str = str(friend_id)
+            
+            friend_online = False
+            try:
+                if friend_id_int in connections:
+                    conn = connections.get(friend_id_int)
+                    if conn and hasattr(conn, 'ws_connection') and conn.ws_connection:
+                        friend_online = True
+                if not friend_online and friend_id_str in connections:
+                    conn = connections.get(friend_id_str)
+                    if conn and hasattr(conn, 'ws_connection') and conn.ws_connection:
+                        friend_online = True
+            except Exception as conn_err:
+                logging.warning(f"[MINIPROGRAM_MSG] 检查连接状态异常: {conn_err}")
+                friend_online = False
+            
+            logging.info(f"[MINIPROGRAM_MSG] 发送者: {user_id}, 接收者: {friend_id}, 在线状态: {friend_online}")
+            
+            if friend_online:
                 ws_message = {
                     'id': message_id,
                     '_id': message_id,
@@ -1159,9 +1633,22 @@ class MiniprogramMessagesHandler(tornado.web.RequestHandler):
                     'status': 'unread'
                 }
                 try:
-                    connections[friend_id].write_message(json.dumps(ws_message))
+                    target_conn = connections.get(friend_id_int) or connections.get(friend_id_str)
+                    if target_conn:
+                        target_conn.write_message(json.dumps(ws_message))
                 except Exception as ws_error:
                     logging.error(f"WebSocket推送失败: {ws_error}")
+            else:
+                # 对方不在线，发送订阅消息通知
+                logging.info(f"[MINIPROGRAM_MSG] 对方不在线，发送订阅通知: target={friend_id}")
+                sender_display = user.room_number if user.room_number else user.username
+                notification_info = {
+                    'target_user_id': friend_id,
+                    'target_openid': friend.wechat_openid,
+                    'sender_name': sender_display,
+                    'sender_id': user_id
+                }
+                IOLoop.current().spawn_callback(self._send_new_message_notification, notification_info)
             
             self.write(json.dumps({
                 'success': True,
@@ -1186,6 +1673,36 @@ class MiniprogramMessagesHandler(tornado.web.RequestHandler):
             logging.error(f"发送消息异常: {e}")
             self.set_status(500)
             self.write(json.dumps({'success': False, 'error': str(e)}))
+    
+    async def _send_new_message_notification(self, info):
+        """发送新消息订阅通知（异步）"""
+        try:
+            from utils.wechat_subscribe_service import send_new_message_notification, get_beijing_time_str
+            
+            target_user_id = info['target_user_id']
+            target_openid = info['target_openid']
+            sender_name = info['sender_name']
+            sender_id = info['sender_id']
+            
+            logging.info(f"[MINIPROGRAM_MSG] 异步通知开始: target={target_user_id}, sender={sender_name}")
+            
+            if not target_openid:
+                logging.info(f"[MINIPROGRAM_MSG] 接收方未设置openid，跳过: user_id={target_user_id}")
+                return
+            
+            time_str = get_beijing_time_str()
+            result = send_new_message_notification(
+                openid=target_openid,
+                sender_name=sender_name,
+                reminder_text='请点击查看详情查阅消息内容',
+                send_time=time_str,
+                page=f'pages/chat/room?friend_id={sender_id}'
+            )
+            
+            logging.info(f"[MINIPROGRAM_MSG] 通知发送结果: target={target_user_id}, result={result}")
+            
+        except Exception as e:
+            logging.error(f"[MINIPROGRAM_MSG] 发送通知异常: {e}")
     
     def on_finish(self):
         self.session.close()
@@ -1272,6 +1789,35 @@ class MiniprogramProductsListHandler(tornado.web.RequestHandler):
     def initialize(self):
         self.session = Session()
     
+    def _get_user_id(self):
+        """从Cookie或Authorization头获取用户ID"""
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    user_id = token.split('_')[-1]
+                    return user_id
+                except:
+                    pass
+        return None
+    
+    def _get_blocked_user_ids(self, current_user_id):
+        """获取当前用户拉黑的用户ID列表"""
+        from models.blacklist import Blacklist
+        try:
+            blocked_users = self.session.query(Blacklist.blocked_id).filter(
+                Blacklist.blocker_id == int(current_user_id)
+            ).all()
+            return [b[0] for b in blocked_users]
+        except Exception as e:
+            logging.error(f"获取黑名单失败: {e}")
+            return []
+    
     def get(self):
         """获取商品列表（支持分页、标签过滤、关键词搜索）"""
         from models.product import Product
@@ -1286,11 +1832,21 @@ class MiniprogramProductsListHandler(tornado.web.RequestHandler):
             keyword = self.get_argument('keyword', '')
             user_id = self.get_argument('user_id', '')
             
+            # 获取当前登录用户ID（用于黑名单过滤）
+            current_user_id = self._get_user_id()
+            blocked_user_ids = []
+            if current_user_id:
+                blocked_user_ids = self._get_blocked_user_ids(current_user_id)
+            
             # 构建查询
             query = self.session.query(Product).filter(
                 Product.status == '在售',
                 Product.quantity > 0
             )
+            
+            # 过滤被拉黑用户的商品
+            if blocked_user_ids:
+                query = query.filter(~Product.user_id.in_(blocked_user_ids))
             
             # 按标签过滤（支持逗号分隔的多标签模糊匹配）
             if tag and tag != '全部':
@@ -1321,12 +1877,24 @@ class MiniprogramProductsListHandler(tornado.web.RequestHandler):
             for product in products:
                 seller = self.session.query(User).filter_by(id=product.user_id).first()
                 
-                # 确保主图不为空：如果为空，使用第一张有效图片
+                # 获取主图（Product.image 字段存储的是主图文件名）
                 main_image = product.image
+                thumb_image = None
+                
+                # 如果主图为空，使用第一张图片
                 if not main_image:
-                    first_image = self.session.query(ProductImage).filter_by(product_id=product.id).first()
-                    if first_image:
-                        main_image = first_image.filename
+                    first_image_obj = self.session.query(ProductImage).filter_by(product_id=product.id).first()
+                    if first_image_obj:
+                        main_image = first_image_obj.filename
+                        thumb_image = first_image_obj.thumb_filename
+                else:
+                    # 根据主图文件名查找对应的缩略图
+                    main_image_obj = self.session.query(ProductImage).filter_by(
+                        product_id=product.id, 
+                        filename=main_image
+                    ).first()
+                    if main_image_obj and main_image_obj.thumb_filename:
+                        thumb_image = main_image_obj.thumb_filename
                 
                 products_list.append({
                     'id': product.id,
@@ -1336,7 +1904,8 @@ class MiniprogramProductsListHandler(tornado.web.RequestHandler):
                     'quantity': product.quantity,
                     'tag': product.tag,
                     'condition': product.condition or '九成新',
-                    'image': main_image,
+                    'image': thumb_image or main_image or '',  # 列表页优先使用缩略图
+                    'original_image': main_image or '',  # 原图URL（详情页使用）
                     'status': product.status,
                     'upload_time': product.upload_time.strftime('%Y-%m-%d %H:%M') if product.upload_time else '',
                     'seller_id': product.user_id,
@@ -1360,6 +1929,94 @@ class MiniprogramProductsListHandler(tornado.web.RequestHandler):
                 'success': False,
                 'error': str(e),
                 'products': []
+            }))
+    
+    def on_finish(self):
+        self.session.close()
+
+
+class MiniprogramProductsVersionHandler(tornado.web.RequestHandler):
+    """小程序商品列表版本检查接口 - 用于判断是否需要刷新缓存"""
+    
+    def check_xsrf_cookie(self):
+        pass
+    
+    def initialize(self):
+        self.session = Session()
+    
+    def _get_user_id(self):
+        """从Cookie或Authorization头获取用户ID"""
+        user_id = self.get_secure_cookie("user_id")
+        if user_id:
+            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
+        
+        auth_header = self.request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            if '_' in token:
+                try:
+                    user_id = token.split('_')[-1]
+                    return user_id
+                except:
+                    pass
+        return None
+    
+    def _get_blocked_user_ids(self, current_user_id):
+        """获取当前用户拉黑的用户ID列表"""
+        from models.blacklist import Blacklist
+        try:
+            blocked_users = self.session.query(Blacklist.blocked_id).filter(
+                Blacklist.blocker_id == int(current_user_id)
+            ).all()
+            return [b[0] for b in blocked_users]
+        except Exception as e:
+            logging.error(f"获取黑名单失败: {e}")
+            return []
+    
+    def get(self):
+        """获取商品列表版本信息（最新上传时间和总数）"""
+        from models.product import Product
+        
+        try:
+            tag = self.get_argument('tag', '')
+            
+            # 获取当前登录用户ID（用于黑名单过滤）
+            current_user_id = self._get_user_id()
+            blocked_user_ids = []
+            if current_user_id:
+                blocked_user_ids = self._get_blocked_user_ids(current_user_id)
+            
+            query = self.session.query(Product).filter(
+                Product.status == '在售',
+                Product.quantity > 0
+            )
+            
+            # 过滤被拉黑用户的商品
+            if blocked_user_ids:
+                query = query.filter(~Product.user_id.in_(blocked_user_ids))
+            
+            if tag and tag != '全部' and tag != '':
+                query = query.filter(Product.tag.ilike(f'%{tag}%'))
+            
+            total = query.count()
+            
+            latest_product = query.order_by(Product.upload_time.desc()).first()
+            latest_time = ''
+            if latest_product and latest_product.upload_time:
+                latest_time = latest_product.upload_time.strftime('%Y-%m-%d %H:%M:%S')
+            
+            self.write(json.dumps({
+                'success': True,
+                'total': total,
+                'latest_time': latest_time
+            }))
+            
+        except Exception as e:
+            logging.error(f"获取商品版本信息异常: {e}")
+            self.set_status(500)
+            self.write(json.dumps({
+                'success': False,
+                'error': str(e)
             }))
     
     def on_finish(self):
@@ -1467,6 +2124,17 @@ class MiniprogramChatListHandler(tornado.web.RequestHandler):
         
         user_id = int(user_id_str)
         
+        # 验证当前用户是否存在
+        current_user = self.session.query(User).filter_by(id=user_id).first()
+        if not current_user:
+            self.set_status(401)
+            self.write(json.dumps({
+                'success': False, 
+                'error': '用户不存在，请重新登录',
+                'need_relogin': True
+            }))
+            return
+        
         try:
             # 第一步：从MongoDB查询给当前用户发过消息的用户ID
             message_senders = set()
@@ -1479,6 +2147,11 @@ class MiniprogramChatListHandler(tornado.web.RequestHandler):
             
             for sender_id in message_senders:
                 if sender_id != user_id and sender_id not in existing_friend_ids:
+                    # 验证发送者是否存在于数据库中
+                    sender_exists = self.session.query(User).filter_by(id=sender_id).first()
+                    if not sender_exists:
+                        logging.warning(f"跳过不存在的用户ID {sender_id} 的好友关系")
+                        continue
                     try:
                         new_friendship = Friendship(user_id=user_id, friend_id=sender_id)
                         self.session.add(new_friendship)
@@ -1543,7 +2216,7 @@ class MiniprogramChatListHandler(tornado.web.RequestHandler):
                     "friend_id": friendship.friend_id,
                     "username": display_name,
                     "room_number": friend.room_number or "未设置",
-                    "avatar": friend.wechat_avatar or "",
+                    "avatar": convert_avatar_url(friend.wechat_avatar),
                     "last_message": last_message_content[:50] if last_message_content else "暂无消息",
                     "last_time": last_message_time,
                     "unread_count": unread_count
@@ -1837,6 +2510,17 @@ class MiniprogramOrdersHandler(tornado.web.RequestHandler):
         
         user_id = int(user_id_str)
         
+        # 验证用户是否存在于数据库中
+        current_user = self.session.query(User).filter_by(id=user_id).first()
+        if not current_user:
+            self.set_status(401)
+            self.write(json.dumps({
+                'success': False, 
+                'error': '用户不存在，请重新登录',
+                'need_relogin': True
+            }))
+            return
+        
         try:
             data = json.loads(self.request.body)
             product_id = int(data.get('product_id'))
@@ -1897,8 +2581,18 @@ class MiniprogramOrdersHandler(tornado.web.RequestHandler):
             
             self.session.commit()
             
+            # 获取发送通知需要的数据（在会话关闭前提取）
             buyer = self.session.query(User).filter_by(id=user_id).first()
-            IOLoop.current().spawn_callback(self._send_seller_notification, product, buyer, quantity, new_order.id)
+            notification_info = {
+                'seller_id': product.user_id,
+                'product_id': product.id,
+                'product_name': product.name,
+                'buyer_username': buyer.username if buyer else '买家',
+                'buyer_room_number': buyer.room_number if buyer else None,
+                'quantity': quantity,
+                'order_id': new_order.id
+            }
+            IOLoop.current().spawn_callback(self._send_seller_notification, notification_info)
             
             self.write(json.dumps({
                 'success': True,
@@ -1916,21 +2610,28 @@ class MiniprogramOrdersHandler(tornado.web.RequestHandler):
             self.set_status(500)
             self.write(json.dumps({'success': False, 'error': str(e)}))
     
-    async def _send_seller_notification(self, product, buyer, quantity, order_id):
+    async def _send_seller_notification(self, info):
         """发送订单通知给卖家（异步）"""
         try:
-            seller_id = product.user_id
+            seller_id = info['seller_id']
+            product_id = info['product_id']
+            product_name = info['product_name']
+            buyer_username = info['buyer_username']
+            buyer_room_number = info['buyer_room_number']
+            quantity = info['quantity']
+            order_id = info['order_id']
+            
             china_tz = datetime.timezone(datetime.timedelta(hours=8))
-            timestamp = datetime.datetime.now(china_tz).strftime("%Y-%m-%d %H:%M:%S")
+            timestamp = datetime.datetime.now(china_tz).strftime("%Y-%m-%d %H:%M")
             
             # 构建系统通知消息
             notification_data = {
                 "from_user_id": 0,
                 "from_username": "系统通知",
                 "to_user_id": seller_id,
-                "message": f"🔔 您有新订单！买家 {buyer.username} 购买了您的商品《{product.name}》，数量：{quantity}件。",
-                "product_id": product.id,
-                "product_name": product.name,
+                "message": f"您有新订单！买家{buyer_username}购买了您的商品《{product_name}》，数量：{quantity}件。",
+                "product_id": product_id,
+                "product_name": product_name,
                 "timestamp": timestamp,
                 "status": "unread",
                 "type": "order_notification",
@@ -1943,6 +2644,29 @@ class MiniprogramOrdersHandler(tornado.web.RequestHandler):
                 logging.info(f"订单通知已保存到数据库: 订单{order_id}, 卖家{seller_id}")
             except Exception as db_error:
                 logging.error(f"保存通知到数据库失败: {str(db_error)}")
+            
+            # 发送微信订阅消息通知卖家（商品售出通知）
+            try:
+                from utils.wechat_subscribe_service import send_product_sold_notification
+                db_session = Session()
+                try:
+                    seller = db_session.query(User).filter_by(id=seller_id).first()
+                    if seller and seller.wechat_openid:
+                        buyer_display = buyer_room_number if buyer_room_number else buyer_username
+                        result = send_product_sold_notification(
+                            openid=seller.wechat_openid,
+                            product_name=product_name,
+                            buyer_name=buyer_display,
+                            sold_time=timestamp,
+                            page=f'pages/order/detail?id={order_id}'
+                        )
+                        logging.info(f"商品售出订阅消息发送结果: 订单{order_id}, 结果={result}")
+                    else:
+                        logging.info(f"卖家未设置openid，跳过订阅消息: seller_id={seller_id}")
+                finally:
+                    db_session.close()
+            except Exception as subscribe_error:
+                logging.warning(f"发送订阅消息失败: {str(subscribe_error)}")
                 
         except Exception as notif_error:
             logging.error(f"发送卖家通知失败: {str(notif_error)}")
@@ -2269,6 +2993,10 @@ class MiniprogramOrderShipHandler(tornado.web.RequestHandler):
             order.shipped_at = datetime.datetime.now()
             self.session.commit()
             
+            # 发送订单状态通知给买家
+            from utils.wechat_subscribe_service import send_order_status_notification
+            self._send_order_status_notification(order, '已发货')
+            
             self.write(json.dumps({'success': True, 'message': '发货成功'}))
             
         except Exception as e:
@@ -2276,6 +3004,41 @@ class MiniprogramOrderShipHandler(tornado.web.RequestHandler):
             logging.error(f"发货异常: {e}")
             self.set_status(500)
             self.write(json.dumps({'success': False, 'error': str(e)}))
+    
+    def _send_order_status_notification(self, order, status_text):
+        """发送订单状态通知给买家"""
+        try:
+            from models.product import Product
+            from utils.wechat_subscribe_service import send_order_status_notification, get_beijing_time_str
+            
+            # 获取买家信息
+            buyer = self.session.query(User).filter_by(id=order.user_id).first()
+            
+            if not buyer or not buyer.wechat_openid:
+                logging.info(f"买家未设置openid，跳过通知: order_id={order.id}")
+                return
+            
+            # 获取商品名称
+            product = self.session.query(Product).filter_by(id=order.product_id).first()
+            product_name = product.name if product else '未知商品'
+            
+            # 发送通知 - 模板字段: character_string2(订单编号), thing7(备注), phrase10(订单状态), thing11(商品名称)
+            result = send_order_status_notification(
+                openid=buyer.wechat_openid,
+                order_number=str(order.id),
+                product_name=product_name,
+                status_text=status_text,
+                remark='卖家已发货，请注意查收',
+                page=f'pages/order/detail?id={order.id}'
+            )
+            
+            if result['success']:
+                logging.info(f"订单状态通知发送成功: order_id={order.id}, status={status_text}")
+            else:
+                logging.warning(f"订单状态通知发送失败: {result.get('error')}")
+                
+        except Exception as e:
+            logging.error(f"发送订单状态通知异常: {e}")
     
     def on_finish(self):
         self.session.close()
@@ -2342,7 +3105,7 @@ class MiniprogramMyProductsHandler(tornado.web.RequestHandler):
                     'status': product.status,
                     'condition': product.condition or '九成新',
                     'tag': product.tag,
-                    'image': product.image,
+                    'image': product.image or '',
                     'images': [img.filename for img in images],
                     'upload_time': product.upload_time.strftime('%Y-%m-%d %H:%M') if product.upload_time else ''
                 })
@@ -2405,10 +3168,39 @@ class MiniprogramProductDeleteImageHandler(tornado.web.RequestHandler):
             if image:
                 import os
                 upload_path = 'mystatics/images'
-                image_path = os.path.join(upload_path, image.filename)
-                if os.path.exists(image_path):
-                    os.remove(image_path)
-                    logging.info(f"已删除商品图片文件: {image_path}")
+                
+                # 检查是否是云存储文件（cloud://开头）
+                if image.filename and image.filename.startswith('cloud://'):
+                    # 调用微信云托管API删除云存储文件
+                    try:
+                        from utils.wechat_cloud_storage import delete_cloud_files
+                        result = delete_cloud_files([image.filename])
+                        if result['success']:
+                            logging.info(f"云存储文件删除成功: {image.filename}")
+                        else:
+                            logging.warning(f"云存储文件删除失败: {result['message']}")
+                    except Exception as e:
+                        logging.warning(f"调用云存储删除API失败: {e}")
+                else:
+                    # 本地文件：删除文件系统中的文件
+                    image_path = os.path.join(upload_path, image.filename)
+                    if os.path.exists(image_path):
+                        os.remove(image_path)
+                        logging.info(f"已删除商品图片文件: {image_path}")
+                    
+                    # 删除缩略图文件（如果存在）
+                    if image.thumb_filename and not image.thumb_filename.startswith('cloud://'):
+                        thumb_path = os.path.join(upload_path, image.thumb_filename)
+                        if os.path.exists(thumb_path):
+                            os.remove(thumb_path)
+                            logging.info(f"已删除商品缩略图文件: {thumb_path}")
+                    
+                    # 删除中等尺寸图（如果存在）
+                    if image.medium_filename and not image.medium_filename.startswith('cloud://'):
+                        medium_path = os.path.join(upload_path, image.medium_filename)
+                        if os.path.exists(medium_path):
+                            os.remove(medium_path)
+                            logging.info(f"已删除商品中等尺寸图: {medium_path}")
                 
                 # 检查删除的是否是主图
                 was_primary = (product.image == image.filename)
@@ -2590,8 +3382,15 @@ class MiniprogramAvatarUploadHandler(tornado.web.RequestHandler):
         return None
     
     def post(self):
-        """上传用户头像"""
+        """上传用户头像到微信云托管或本地存储
+        
+        优先使用微信云托管对象存储，否则回退到本地存储
+        """
         import os
+        import uuid
+        from utils.wechat_cloud_storage import upload_file_to_cloud, get_is_cloud_run
+        from utils.wechat_cloud_storage import delete_cloud_files
+        
         try:
             user_id = self._get_user_id()
             logging.info(f"头像上传请求: user_id={user_id}, files={list(self.request.files.keys())}")
@@ -2604,7 +3403,6 @@ class MiniprogramAvatarUploadHandler(tornado.web.RequestHandler):
                 }))
                 return
             
-            # 获取上传的文件
             avatar_files = self.request.files.get('avatar', [])
             logging.info(f"上传的文件数量: {len(avatar_files)}")
             if not avatar_files:
@@ -2616,33 +3414,54 @@ class MiniprogramAvatarUploadHandler(tornado.web.RequestHandler):
                 }))
                 return
             
-            # 取第一个文件
             avatar = avatar_files[0]
-            filename = avatar['filename']
+            orig_filename = avatar['filename']
+            image_body = avatar['body']
             
-            # 规范化文件名
-            import uuid
-            ext = os.path.splitext(filename)[1] or '.jpg'
-            filename = f"avatar_{user_id}_{uuid.uuid4().hex[:8]}{ext}"
-            
-            # 保存文件到 mystatics/avatars
-            upload_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mystatics', 'avatars')
-            os.makedirs(upload_path, exist_ok=True)
-            filepath = os.path.join(upload_path, filename)
-            
-            with open(filepath, 'wb') as f:
-                f.write(avatar['body'])
-            
-            # 返回完整的URL路径用于前端显示
-            avatar_url = f"/static/avatars/{filename}"
-            
-            # 更新用户头像信息到数据库
             user = self.session.query(User).filter_by(id=int(user_id)).first()
-            if user:
-                # 删除旧头像文件（如果存在）
-                old_avatar = user.wechat_avatar
-                if old_avatar and old_avatar.startswith('/static/avatars/'):
-                    # 从URL提取文件名
+            if not user:
+                self.set_status(404)
+                self.write(json.dumps({
+                    'success': False,
+                    'error': '用户不存在'
+                }))
+                return
+            
+            old_avatar = user.wechat_avatar
+            avatar_url = None
+            is_cloud = False
+            
+            # 优先尝试上传到微信云托管
+            if get_is_cloud_run():
+                cloud_result = upload_file_to_cloud(image_body, orig_filename, 'avatars')
+                if cloud_result['success']:
+                    avatar_url = cloud_result['file_id']
+                    is_cloud = True
+                    logging.info(f"头像已上传到微信云托管: {avatar_url}")
+                    
+                    if old_avatar and old_avatar.startswith('cloud://'):
+                        delete_cloud_files([old_avatar])
+                else:
+                    logging.warning(f"微信云托管上传失败，回退到本地存储: {cloud_result.get('message')}")
+            
+            # 云上传失败或非云环境时，使用本地存储
+            if not avatar_url:
+                ext = os.path.splitext(orig_filename)[1] or '.jpg'
+                filename = f"avatar_{user_id}_{uuid.uuid4().hex[:8]}{ext}"
+                
+                upload_base = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'mystatics', 'images')
+                upload_path = os.path.join(upload_base, 'avatars')
+                os.makedirs(upload_path, exist_ok=True)
+                filepath = os.path.join(upload_path, filename)
+                
+                with open(filepath, 'wb') as f:
+                    f.write(image_body)
+                
+                avatar_url = f"/images/avatars/{filename}"
+                is_cloud = False
+                logging.info(f"头像已保存到本地存储: {avatar_url}")
+                
+                if old_avatar and old_avatar.startswith('/images/avatars/'):
                     old_filename = old_avatar.split('/')[-1]
                     old_filepath = os.path.join(upload_path, old_filename)
                     try:
@@ -2651,24 +3470,61 @@ class MiniprogramAvatarUploadHandler(tornado.web.RequestHandler):
                             logging.info(f"已删除旧头像: {old_filepath}")
                     except Exception as e:
                         logging.warning(f"删除旧头像失败: {e}")
+            
+            user.wechat_avatar = avatar_url
+            user.avatar_security_status = 'pending'
+            
+            from models.image_verification import ImageVerification
+            from controllers.content_security_controller import check_media_security_async
+            
+            trace_id = None
+            if user.wechat_openid:
+                if is_cloud:
+                    full_url = avatar_url
+                else:
+                    host = self.request.headers.get('X-Forwarded-Host') or self.request.host
+                    protocol = self.request.headers.get('X-Forwarded-Proto', 'https')
+                    full_url = f"{protocol}://{host}{avatar_url}"
                 
-                user.wechat_avatar = avatar_url
-                self.session.commit()
+                logging.info(f"[AVATAR] 提交安全检测 URL: {full_url}")
+                result = check_media_security_async(full_url, user.wechat_openid, media_type=2, scene=1)
+                trace_id = result.get('trace_id')
                 
-                self.write(json.dumps({
-                    'success': True,
-                    'message': '头像上传成功',
-                    'avatar_url': avatar_url
-                }))
+                if trace_id:
+                    user.avatar_trace_id = trace_id
+                    
+                    verification = ImageVerification(
+                        owner_user_id=user.id,
+                        biz_type='avatar',
+                        file_url=avatar_url,
+                        image_url=avatar_url,
+                        trace_id=trace_id,
+                        status='pending'
+                    )
+                    self.session.add(verification)
+                    logging.info(f"[AVATAR] 创建验证记录: user={user.id}, trace_id={trace_id}")
+                else:
+                    logging.error(f"[AVATAR] 安全检测提交失败，无 trace_id，保持 pending 状态")
             else:
-                self.set_status(404)
-                self.write(json.dumps({
-                    'success': False,
-                    'error': '用户不存在'
-                }))
+                user.avatar_security_status = 'approved'
+                logging.warning(f"[AVATAR] 用户无 openid，跳过安全检测")
+            
+            self.session.commit()
+            
+            self.write(json.dumps({
+                'success': True,
+                'message': '头像上传成功',
+                'avatar_url': avatar_url,
+                'security_status': user.avatar_security_status,
+                'trace_id': trace_id,
+                'is_cloud': is_cloud
+            }))
+            
         except Exception as e:
             self.session.rollback()
             logging.error(f"头像上传异常: {e}")
+            import traceback
+            traceback.print_exc()
             self.set_status(500)
             self.write(json.dumps({
                 'success': False,
@@ -2707,6 +3563,7 @@ class MiniprogramProductStatsHandler(tornado.web.RequestHandler):
     def get(self):
         """获取用户商品统计数据"""
         from models.product import Product
+        from models.favorite import Favorite
         
         try:
             user_id = self._get_user_id()
@@ -2728,10 +3585,10 @@ class MiniprogramProductStatsHandler(tornado.web.RequestHandler):
                 Product.status == '已售'
             ).count()
             
-            # 统计收藏数量（从本地存储或返回0）
-            # 注：收藏功能应该存储在用户的favorite表中，这里暂时返回0
-            # 实际应该查询 SELECT COUNT(*) FROM user_favorites WHERE user_id = ?
-            favorites_count = 0
+            # 统计收藏数量（查询 xu_favorites 表）
+            favorites_count = self.session.query(Favorite).filter(
+                Favorite.user_id == int(user_id)
+            ).count()
             
             self.write(json.dumps({
                 'success': True,
@@ -2984,7 +3841,7 @@ class MiniprogramPhoneBindVerifyHandler(tornado.web.RequestHandler):
                     'phone': user.phone,
                     'room_number': user.room_number,
                     'wechat_nickname': user.wechat_nickname,
-                    'wechat_avatar': user.wechat_avatar
+                    'wechat_avatar': convert_avatar_url(user.wechat_avatar)
                 }
             }))
             

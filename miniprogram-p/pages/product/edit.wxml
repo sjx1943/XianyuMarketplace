@@ -1,0 +1,149 @@
+<!--编辑物品页-->
+<view class="page" wx:if="{{!loading}}">
+  <form bindsubmit="onSubmit">
+    <!-- 物品图片 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="required">*</text>
+        <text class="section-title">物品图片</text>
+        <text class="section-hint">(最多9张)</text>
+      </view>
+      <view class="image-upload">
+        <!-- 已有图片 -->
+        <view class="image-item" wx:for="{{images}}" wx:key="index">
+          <image src="{{item}}" mode="aspectFill" class="uploaded-image"></image>
+          <view class="image-delete" bindtap="deleteOldImage" data-index="{{index}}">
+            <text>✕</text>
+          </view>
+          <!-- 设为主图按钮（仅当有有效imageId且不是第一张时显示） -->
+          <view class="image-primary" wx:if="{{imageIds.length > index && imageIds[index] > 0 && index > 0}}" bindtap="setPrimaryImage" data-index="{{index}}" data-image-id="{{imageIds[index]}}">
+            <text>设为主图</text>
+          </view>
+          <!-- 主图标记（仅第一张且有有效imageId时显示） -->
+          <view class="primary-badge" wx:if="{{index === 0 && imageIds.length > 0 && imageIds[0] > 0}}">
+            <text>主图</text>
+          </view>
+        </view>
+        <!-- 新上传图片 -->
+        <view class="image-item" wx:for="{{newImages}}" wx:key="index">
+          <image src="{{item}}" mode="aspectFill" class="uploaded-image"></image>
+          <view class="image-delete" bindtap="deleteNewImage" data-index="{{index}}">
+            <text>✕</text>
+          </view>
+        </view>
+        <!-- 添加按钮 -->
+        <view class="image-add" wx:if="{{images.length + newImages.length < 9}}" bindtap="chooseImage">
+          <text class="add-icon">+</text>
+          <text class="add-text">添加图片</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 物品名称 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="required">*</text>
+        <text class="section-title">物品名称</text>
+      </view>
+      <input 
+        class="input" 
+        placeholder="请输入物品名称" 
+        value="{{form.name}}"
+        bindinput="onInputChange"
+        data-field="name"
+        maxlength="50"
+      />
+    </view>
+
+    <!-- 物品价格 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="required">*</text>
+        <text class="section-title">物品价格</text>
+      </view>
+      <view class="price-input">
+        <text class="currency">¥</text>
+        <input 
+          class="input" 
+          type="digit"
+          placeholder="请输入价格" 
+          value="{{form.price}}"
+          bindinput="onInputChange"
+          data-field="price"
+        />
+      </view>
+    </view>
+
+    <!-- 物品数量 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="required">*</text>
+        <text class="section-title">物品数量</text>
+      </view>
+      <input 
+        class="input" 
+        type="digit"
+        placeholder="请输入物品数量" 
+        value="{{form.quantity}}"
+        bindinput="onInputChange"
+        data-field="quantity"
+      />
+    </view>
+
+    <!-- 物品分类 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="required">*</text>
+        <text class="section-title">物品分类</text>
+      </view>
+      <picker mode="selector" range="{{categories}}" value="{{categoryIndex}}" bindchange="onCategoryChange">
+        <view class="picker">
+          <text class="{{categoryIndex >= 0 ? '' : 'placeholder'}}">
+            {{categoryIndex >= 0 ? categories[categoryIndex] : '请选择分类'}}
+          </text>
+          <text class="arrow">></text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 物品成色 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">物品成色</text>
+      </view>
+      <picker mode="selector" range="{{conditions}}" value="{{conditionIndex}}" bindchange="onConditionChange">
+        <view class="picker">
+          <text>{{conditions[conditionIndex]}}</text>
+          <text class="arrow">></text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 物品描述 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">物品描述</text>
+      </view>
+      <textarea 
+        class="textarea" 
+        placeholder="请输入物品描述（选填）" 
+        value="{{form.description}}"
+        bindinput="onInputChange"
+        data-field="description"
+        maxlength="500"
+      />
+    </view>
+
+    <!-- 提交按钮 -->
+    <view class="button-group">
+      <button class="submit-btn" formType="submit" disabled="{{submitting}}">
+        {{submitting ? '保存中...' : '保存修改'}}
+      </button>
+    </view>
+  </form>
+</view>
+
+<!-- 加载状态 -->
+<view class="loading" wx:if="{{loading}}">
+  <text>加载中...</text>
+</view>

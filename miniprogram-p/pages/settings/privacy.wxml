@@ -1,0 +1,183 @@
+<!--隐私政策页面-->
+<view class="page">
+  <scroll-view class="content-scroll" scroll-y="true">
+    <view class="privacy-content">
+      <view class="intro">
+        <view class="intro-text">
+          "翠友雅集"邻里闲置信息展示平台（以下简称"本平台"或"我们"）深知个人信息对您的重要性，我们将按照法律法规要求，采取相应安全保护措施，尽力保护您的个人信息安全可控。
+        </view>
+        <view class="intro-text">
+          在使用本平台服务前，请您仔细阅读并理解本《隐私政策》。当您通过微信授权登录或使用本平台任何服务时，即表示您已充分阅读、理解并同意本隐私政策。
+        </view>
+      </view>
+
+      <view class="section">
+        <view class="section-title">一、我们收集的信息</view>
+        <view class="section-text">
+          为了向您提供服务，我们会收集以下类型的个人信息：
+        </view>
+        
+        <view class="subsection">
+          <view class="subsection-title">1. 账号注册信息</view>
+          <view class="section-text">
+            - 微信授权信息：包括微信昵称、头像、OpenID等，用于创建和识别您的账号。
+          </view>
+          <view class="section-text">
+            - 房间号：用于验证您的小区居民身份，确保平台服务的社区属性。
+          </view>
+        </view>
+
+        <view class="subsection">
+          <view class="subsection-title">2. 可选绑定信息</view>
+          <view class="section-text highlight">
+            - 手机号码：当您选择绑定手机号时收集，用于微信账号关联绑定和密码重置。
+          </view>
+          <view class="section-text highlight">
+            - 电子邮箱：当您选择绑定邮箱时收集，用于微信账号关联绑定和密码重置。
+          </view>
+          <view class="section-text">
+            以上信息均为可选项，您可以自主决定是否提供。我们仅在您主动勾选同意本隐私政策并授权后，才会收集上述信息。
+          </view>
+        </view>
+
+        <view class="subsection">
+          <view class="subsection-title">3. 物品发布信息</view>
+          <view class="section-text">
+            - 您发布的物品名称、描述、图片、分类、成色、价格等信息。
+          </view>
+          <view class="section-text">
+            - 这些信息将公开展示，用于帮助其他用户了解您发布的物品。
+          </view>
+        </view>
+
+        <view class="subsection">
+          <view class="subsection-title">4. 通讯信息</view>
+          <view class="section-text">
+            - 您与其他用户之间的聊天消息内容，用于提供即时通讯服务。
+          </view>
+        </view>
+
+        <view class="subsection">
+          <view class="subsection-title">5. 设备和日志信息</view>
+          <view class="section-text">
+            - 设备型号、操作系统版本、网络状态等技术信息，用于优化服务体验和排查问题。
+          </view>
+          <view class="section-text">
+            - 服务日志信息，包括访问时间、功能使用情况等，用于服务分析和改进。
+          </view>
+        </view>
+      </view>
+
+      <view class="section">
+        <view class="section-title">二、信息使用目的</view>
+        <view class="section-text">
+          我们收集的信息将用于以下目的：
+        </view>
+        <view class="section-text">
+          1. 提供、维护和改进本平台的各项服务功能；
+        </view>
+        <view class="section-text">
+          2. 验证用户身份，确保账号安全；
+        </view>
+        <view class="section-text">
+          3. 处理用户的服务请求和反馈；
+        </view>
+        <view class="section-text">
+          4. 发送与服务相关的重要通知（如账号安全提醒、服务变更等）；
+        </view>
+        <view class="section-text">
+          5. 进行数据分析，优化用户体验；
+        </view>
+        <view class="section-text">
+          6. 防范和处理欺诈、违规行为；
+        </view>
+        <view class="section-text">
+          7. 遵守适用的法律法规要求。
+        </view>
+      </view>
+
+      <view class="section">
+        <view class="section-title">三、信息存储与保护</view>
+        <view class="section-text">
+          1. 存储地点：您的个人信息将存储于中华人民共和国境内的服务器。
+        </view>
+        <view class="section-text">
+          2. 存储期限：我们仅在为您提供服务所必需的期限内保留您的个人信息。当您注销账号或主动删除相关信息后，我们将在合理期限内删除或匿名化处理您的个人信息。
+        </view>
+        <view class="section-text">
+          3. 安全措施：我们采取了业界标准的安全技术措施保护您的个人信息，包括但不限于数据加密传输、访问权限控制、安全审计等。
+        </view>
+      </view>
+
+      <view class="section">
+        <view class="section-title">四、信息共享与披露</view>
+        <view class="section-text">
+          我们承诺不会将您的个人信息出售或出租给任何第三方。除以下情况外，我们不会向第三方共享您的个人信息：
+        </view>
+        <view class="section-text">
+          1. 获得您的明确同意或授权；
+        </view>
+        <view class="section-text">
+          2. 根据法律法规的要求或司法、行政机关的强制性要求；
+        </view>
+        <view class="section-text">
+          3. 为保护我们、其他用户或公众的人身财产安全免遭侵害；
+        </view>
+        <view class="section-text">
+          4. 与关联公司共享，但仅限于提供本平台服务所必需，且受本隐私政策约束。
+        </view>
+      </view>
+
+      <view class="section">
+        <view class="section-title">五、您的权利</view>
+        <view class="section-text">
+          根据适用的法律法规，您对个人信息享有以下权利：
+        </view>
+        <view class="section-text">
+          1. 访问权：您可以在"我的"页面查看和访问您的个人信息。
+        </view>
+        <view class="section-text">
+          2. 更正权：您可以在"个人资料"页面修改您的昵称、头像、房间号等信息。
+        </view>
+        <view class="section-text">
+          3. 删除权：您可以删除您发布的物品信息；如需删除账号，请联系我们的客服。
+        </view>
+        <view class="section-text">
+          4. 撤回同意权：您可以通过关闭相关功能或联系我们撤回对某些信息收集的同意。
+        </view>
+      </view>
+
+      <view class="section">
+        <view class="section-title">六、未成年人保护</view>
+        <view class="section-text">
+          本平台主要面向成年人提供服务。如果您是未满18周岁的未成年人，请在父母或监护人的指导下使用本平台服务，并请父母或监护人帮助您阅读和理解本隐私政策。
+        </view>
+      </view>
+
+      <view class="section">
+        <view class="section-title">七、隐私政策的变更</view>
+        <view class="section-text">
+          我们可能会适时更新本隐私政策。更新后的隐私政策将在平台上公布，重大变更我们会通过平台通知等方式告知您。您继续使用本平台服务即表示您同意接受更新后的隐私政策。
+        </view>
+      </view>
+
+      <view class="section">
+        <view class="section-title">八、联系我们</view>
+        <view class="section-text">
+          如您对本隐私政策有任何疑问、意见或建议，或需要行使您的个人信息权利，请通过以下方式联系我们：
+        </view>
+        <view class="section-text">
+          邮箱：sjx18094552@gmail.com
+        </view>
+        <view class="section-text">
+          我们将在收到您的请求后15个工作日内予以回复。
+        </view>
+      </view>
+
+      <view class="footer">
+        <text class="update-time">最后更新日期：2026年12月12日</text>
+        <text class="update-time">生效日期：2026年12月12日</text>
+      </view>
+    </view>
+  </scroll-view>
+</view>

@@ -21,9 +21,7 @@ class Comment(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
-    # 关系定义（需要在User和Product模型中添加对应的back_populates）
-    # user = relationship('User', back_populates='comments')
-    # product = relationship('Product', back_populates='comments')
+    user = relationship('User', foreign_keys=[user_id])
 
     def __init__(self, user_id, product_id, text, rating=5.0):
         self.user_id = user_id

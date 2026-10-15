@@ -1,0 +1,131 @@
+<!--发布物品页-->
+<view class="page">
+  <form bindsubmit="onSubmit">
+    <!-- 物品图片 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="required">*</text>
+        <text class="section-title">物品图片</text>
+        <text class="section-hint">(最多9张)</text>
+      </view>
+      <view class="image-upload">
+        <view class="image-item" wx:for="{{images}}" wx:key="index">
+          <image src="{{item}}" mode="aspectFill" class="uploaded-image"></image>
+          <view class="image-delete" bindtap="deleteImage" data-index="{{index}}">
+            <text>✕</text>
+          </view>
+        </view>
+        <view class="image-add" wx:if="{{images.length < 9}}" bindtap="chooseImage">
+          <text class="add-icon">+</text>
+          <text class="add-text">添加图片</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 物品名称 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="required">*</text>
+        <text class="section-title">物品名称</text>
+      </view>
+      <input 
+        class="input" 
+        placeholder="请输入物品名称" 
+        value="{{form.name}}"
+        bindinput="onInputChange"
+        data-field="name"
+        maxlength="50"
+      />
+    </view>
+
+    <!-- 出手价 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="required">*</text>
+        <text class="section-title">出手价（填0表示免费）</text>
+      </view>
+      <view class="price-input">
+        <input 
+          class="input" 
+          type="digit"
+          placeholder="请输入期望价格" 
+          value="{{form.price}}"
+          bindinput="onInputChange"
+          data-field="price"
+        />
+      </view>
+    </view>
+
+    <!-- 物品数量 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="required">*</text>
+        <text class="section-title">物品数量</text>
+      </view>
+      <input 
+        class="input" 
+        type="digit"
+        placeholder="请输入物品数量" 
+        value="{{form.quantity}}"
+        bindinput="onInputChange"
+        data-field="quantity"
+      />
+    </view>
+
+    <!-- 物品分类 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="required">*</text>
+        <text class="section-title">物品分类</text>
+      </view>
+      <picker mode="selector" range="{{categories}}" value="{{categoryIndex}}" bindchange="onCategoryChange">
+        <view class="picker">
+          <text class="{{categoryIndex >= 0 ? '' : 'placeholder'}}">
+            {{categoryIndex >= 0 ? categories[categoryIndex] : '请选择分类'}}
+          </text>
+          <text class="arrow">></text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 物品成色 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="required">*</text>
+        <text class="section-title">物品成色</text>
+      </view>
+      <picker mode="selector" range="{{conditions}}" value="{{conditionIndex}}" bindchange="onConditionChange">
+        <view class="picker">
+          <text class="{{conditionIndex >= 0 ? '' : 'placeholder'}}">
+            {{conditionIndex >= 0 ? conditions[conditionIndex] : '请选择成色'}}
+          </text>
+          <text class="arrow">></text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 物品描述 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">物品描述</text>
+      </view>
+      <textarea 
+        class="textarea" 
+        placeholder="请详细描述物品的使用情况、入手时间、新旧程度等"
+        value="{{form.description}}"
+        bindinput="onInputChange"
+        data-field="description"
+        maxlength="500"
+        auto-height
+      />
+      <text class="char-count">{{form.description.length}}/500</text>
+    </view>
+
+    <!-- 提交按钮 -->
+    <view class="submit-section">
+      <button class="submit-btn" formType="submit" loading="{{submitting}}">
+        {{submitting ? '发布中...' : '发布物品'}}
+      </button>
+    </view>
+  </form>
+</view>

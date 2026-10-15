@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from sqlalchemy import Sequence, Column, DateTime
+from sqlalchemy import Column, DateTime
 from sqlalchemy.types import Integer, String
 from sqlalchemy.sql import func
 from base.base import Base
@@ -10,7 +10,7 @@ from base.base import Base
 class VerificationCode(Base):
     __tablename__ = 'xu_verification_code'
     
-    id = Column(Integer, Sequence('verification_code_id_seq'), primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     phone = Column(String(20), nullable=False, index=True)
     code = Column(String(10), nullable=False)
     created_at = Column(DateTime, server_default=func.now())

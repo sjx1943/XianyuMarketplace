@@ -29,6 +29,10 @@ def filter_sensitive_words(content):
 class CommentHandler(tornado.web.RequestHandler):
     """评价管理处理器"""
     
+    def check_xsrf_cookie(self):
+        """禁用XSRF检查（小程序无法携带XSRF token）"""
+        pass
+    
     def initialize(self):
         self.session = Session()
 
@@ -61,14 +65,19 @@ class CommentHandler(tornado.web.RequestHandler):
         return None
 
     def get(self, product_id=None):
-        """获取商品评价列表"""
+        """获取商品评价列表 - 使用eager loading优化N+1查询"""
         try:
             if product_id:
-                comments = self.session.query(Comment).filter_by(product_id=product_id).order_by(desc(Comment.created_at)).all()
+                # 使用joinedload进行eager loading，一次查询获取所有评论和对应用户
+                from sqlalchemy.orm import joinedload
+                comments = self.session.query(Comment).options(
+                    joinedload(Comment.user)
+                ).filter_by(product_id=product_id).order_by(desc(Comment.created_at)).all()
                 
                 comments_data = []
                 for comment in comments:
-                    user = self.session.query(User).filter_by(id=comment.user_id).first()
+                    # 使用已加载的关系，不再需要额外查询
+                    user = comment.user
                     # 修复：使用 comment.text 并进行敏感词过滤
                     filtered_content = filter_sensitive_words(comment.text)
                     # 优先显示房间号，如果没有则显示用户名
@@ -324,7 +333,7 @@ class ProductRatingHandler(tornado.web.RequestHandler):
                 'comment_count': comment_count,
                 'rating_distribution': rating_distribution
             }))
-            
+
         except Exception as e:
             self.write(json.dumps({'success': False, 'error': str(e)}))
 

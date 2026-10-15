@@ -1,0 +1,132 @@
+.page {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding: 40rpx 30rpx;
+  box-sizing: border-box;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40rpx 0;
+  background-color: #fff;
+  border-radius: 20rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.logo {
+  width: 280rpx;
+  height: 280rpx;
+  border-radius: 20rpx;
+  background-color: #f5f5f5;
+  margin-bottom: 30rpx;
+  overflow: hidden;
+}
+
+.app-name {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.version {
+  font-size: 26rpx;
+  color: #999;
+}
+
+.info-section {
+  background-color: #fff;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+}
+
+.info-item {
+  padding: 30rpx 0;
+  border-bottom: 1rpx solid #eee;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 16rpx;
+}
+
+.info-content {
+  display: block;
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.8;
+}
+
+.footer {
+  text-align: center;
+  padding: 40rpx 0;
+}
+
+.copyright {
+  display: block;
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 10rpx;
+}
+
+.slogan {
+  display: block;
+  font-size: 26rpx;
+  color: #ff6b35;
+  font-style: italic;
+}
+
+/* AI 特色功能区块 */
+.ai-highlight {
+  background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+  border-radius: 16rpx;
+  padding: 30rpx !important;
+  border-left: 6rpx solid #16a34a;
+}
+
+.ai-intro {
+  color: #166534 !important;
+  font-size: 26rpx !important;
+  margin-bottom: 20rpx;
+}
+
+.ai-feature-list {
+  margin-top: 16rpx;
+}
+
+.ai-feature-row {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 18rpx;
+}
+
+.ai-dot {
+  color: #16a34a;
+  font-size: 22rpx;
+  margin-right: 12rpx;
+  margin-top: 4rpx;
+  flex-shrink: 0;
+}
+
+.ai-feature-text {
+  font-size: 26rpx;
+  color: #374151;
+  line-height: 1.7;
+  flex: 1;
+}
+
+.ai-label {
+  font-weight: bold;
+  color: #15803d;
+}

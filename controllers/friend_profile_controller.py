@@ -286,6 +286,7 @@ class DeleteFriendHandler(tornado.web.RequestHandler):
             # 单向删除好友关系
             friendship_to_delete = self.session.query(Friendship).filter(
                 (Friendship.user_id == user_id) & (Friendship.friend_id == friend_id)
+
             ).first()
 
             if friendship_to_delete:

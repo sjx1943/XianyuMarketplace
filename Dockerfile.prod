@@ -14,11 +14,11 @@ ENV PYTHONUNBUFFERED=1 \
     TZ=Asia/Shanghai
 
 # 安装系统依赖
+# 注: 不安装mongodb-clients因为使用MongoDB Atlas云服务
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     build-essential \
     postgresql-client \
-    mongodb-clients \
     curl \
     && rm -rf /var/lib/apt/lists/*
 

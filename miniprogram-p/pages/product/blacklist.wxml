@@ -1,0 +1,43 @@
+<!--已拉黑用户页-->
+<view class="page">
+  <!-- 黑名单列表 -->
+  <view class="blacklist-container" wx:if="{{!loading && blacklist.length > 0}}">
+    <view 
+      class="blacklist-item"
+      wx:for="{{blacklist}}"
+      wx:key="id"
+    >
+      <view class="user-info">
+        <image 
+          class="user-avatar" 
+          src="{{item.avatarUrl}}" 
+          mode="aspectFill"
+        ></image>
+        
+        <view class="user-details">
+          <text class="user-name">{{item.wechat_nickname || item.username || '未知用户'}}</text>
+          <text class="user-room">🏠 {{item.room_number || '未设置'}}</text>
+        </view>
+      </view>
+      
+      <view class="user-actions">
+        <button class="action-btn unblock-btn" catchtap="unblockUser" data-id="{{item.id}}" data-name="{{item.wechat_nickname || item.username}}">
+          取消拉黑
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{!loading && blacklist.length === 0}}">
+    <text class="empty-icon">🚫</text>
+    <text class="empty-text">暂无拉黑用户</text>
+    <text class="empty-hint">你可以在邻居主页或聊天页拉黑用户</text>
+    <button class="back-btn" bindtap="goToList">返回物品列表</button>
+  </view>
+
+  <!-- 加载中 -->
+  <view class="loading-state" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+</view>

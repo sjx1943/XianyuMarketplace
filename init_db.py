@@ -13,6 +13,7 @@ from models.friendship import Friendship
 from models.blacklist import Blacklist
 from models.chat_message import ChatMessage
 from models.verification_code import VerificationCode
+from models.favorite import Favorite
 
 print("=" * 60)
 print("🗄️  数据库初始化中...")
@@ -24,12 +25,13 @@ try:
     print("✅ 数据库表初始化成功！")
     print("\n📋 已创建的表:")
     print("  - xu_user (用户)")
-    print("  - xu_product (商品)")
-    print("  - xu_product_image (商品图片)")
+    print("  - xu_product (物品)")
+    print("  - xu_product_image (物品图片)")
     print("  - xu_order (订单)")
     print("  - xu_comment (评论)")
     print("  - xu_friendship (好友关系)")
     print("  - xu_blacklist (黑名单)")
+    print("  - xu_favorites (收藏)")
     print("  - xu_chat_message (聊天消息)")
     print("  - xu_verification_code (验证码)")
     print("=" * 60)

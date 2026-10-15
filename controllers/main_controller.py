@@ -10,8 +10,16 @@ import urllib.parse
 import tornado.web
 import logging
 import os
+from utils.wechat_cloud_storage import convert_image_url
 
 class MyStaticFileHandler(tornado.web.StaticFileHandler):
+    def set_extra_headers(self, path):
+        """设置图片缓存头"""
+        # 缓存静态资源 30 天
+        self.set_header("Cache-Control", "public, max-age=2592000, immutable")
+        # 允许跨域请求
+        self.set_header("Access-Control-Allow-Origin", "*")
+    
     def validate_absolute_path(self, root, absolute_path):
         # URL 解码处理，支持多层编码和中文字符
         decoded_path = urllib.parse.unquote(absolute_path)
@@ -108,7 +116,7 @@ class MainHandler(tornado.web.RequestHandler):
                     "quantity": product.quantity,
                     "tag": product.tag,
                     "status": product.status,
-                    "image": product.image,
+                    "image": convert_image_url(product.image),
                     "user_id": str(product.user_id)
                 }
                 for product in products
@@ -120,11 +128,7 @@ class MainHandler(tornado.web.RequestHandler):
             return []
 
     def get(self):
-        # 未登录用户跳转到登录页
-        if not self.current_user:
-            self.redirect("/login")
-            return
-        
+        # 游客模式：允许未登录用户浏览商品列表
         try:
             current_user = self.get_current_user()
             user_id = str(current_user.id) if current_user else None

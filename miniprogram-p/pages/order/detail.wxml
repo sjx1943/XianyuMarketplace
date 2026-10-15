@@ -1,0 +1,117 @@
+<view class="container">
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <block wx:if="{{!loading && order}}">
+    <view class="order-status">
+      <text class="status-text {{order.status}}">
+        {{order.status === 'pending' ? '待交付' : order.status === 'shipped' ? '交付中' : order.status === 'completed' ? '已完成' : order.status}}
+      </text>
+      <!-- 显示自动确认倒计时 -->
+      <text wx:if="{{countdownText}}" class="countdown-text">{{countdownText}}</text>
+    </view>
+
+    <view class="product-card" bindtap="goToProduct">
+      <image class="product-image" src="{{productImage}}" mode="aspectFill" />
+      <view class="product-info">
+        <text class="product-name">{{order.product_name}}</text>
+      </view>
+    </view>
+
+    <view class="order-info">
+      <view class="info-row">
+        <text class="label">记录编号</text>
+        <text class="value">{{order.id}}</text>
+      </view>
+      <view class="info-row">
+        <text class="label">发起时间</text>
+        <text class="value">{{order.created_at}}</text>
+      </view>
+      <view class="info-row" wx:if="{{order.shipped_at}}">
+        <text class="label">交付时间</text>
+        <text class="value">{{order.shipped_at}}</text>
+      </view>
+      <view class="info-row" wx:if="{{order.completed_at}}">
+        <text class="label">完成时间</text>
+        <text class="value">{{order.completed_at}}</text>
+      </view>
+      <view class="info-row" wx:if="{{order.order_note}}">
+        <text class="label">留言备注</text>
+        <text class="value">{{order.order_note}}</text>
+      </view>
+    </view>
+
+    <view class="seller-info">
+      <text class="section-title">发布者信息</text>
+      <view class="info-row">
+        <text class="label">发布者</text>
+        <text class="value">{{order.seller_name || '未知'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="label">所在位置</text>
+        <text class="value">{{order.seller_room || '未设置'}}</text>
+      </view>
+    </view>
+
+    <view class="buyer-info" wx:if="{{isSeller}}">
+      <text class="section-title">想要的人</text>
+      <view class="info-row">
+        <text class="label">邻居</text>
+        <text class="value">{{order.buyer_name || '未知'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="label">所在位置</text>
+        <text class="value">{{order.buyer_room || '未设置'}}</text>
+      </view>
+    </view>
+
+    <!-- 订阅消息提示 -->
+    <view class="subscribe-tip" wx:if="{{order.status === 'pending' || order.status === 'shipped'}}">
+      <text class="tip-text">订阅消息通知，及时获取动态更新</text>
+      <button class="subscribe-btn" size="mini" bindtap="subscribeOrderMessage">订阅通知</button>
+    </view>
+
+    <view class="action-bar">
+      <!-- 想要的人按钮 -->
+      <button wx:if="{{isBuyer}}" class="action-btn secondary" bindtap="contactSeller">联系对方</button>
+      
+      <!-- 发布者按钮 -->
+      <button wx:if="{{isSeller}}" class="action-btn secondary" bindtap="contactBuyer">联系对方</button>
+      
+      <!-- 想要的人操作 -->
+      <block wx:if="{{isBuyer}}">
+        <button 
+          wx:if="{{order.status === 'pending'}}" 
+          class="action-btn danger" 
+          bindtap="cancelOrder"
+        >取消</button>
+        
+        <button 
+          wx:if="{{order.status === 'shipped'}}" 
+          class="action-btn primary" 
+          bindtap="confirmOrder"
+        >确认收到</button>
+        
+        <button 
+          wx:if="{{order.status === 'completed'}}" 
+          class="action-btn primary" 
+          bindtap="writeReview"
+        >评价物品</button>
+      </block>
+      
+      <!-- 发布者操作 -->
+      <block wx:if="{{isSeller}}">
+        <button 
+          wx:if="{{order.status === 'pending'}}" 
+          class="action-btn primary" 
+          bindtap="shipOrder"
+        >确认交付</button>
+      </block>
+    </view>
+  </block>
+
+  <view class="empty" wx:if="{{!loading && !order}}">
+    <text>记录不存在</text>
+  </view>
+</view>

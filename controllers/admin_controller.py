@@ -198,9 +198,62 @@ class AdminUserManagementHandler(AdminBaseHandler):
                 self.write({'success': True, 'message': f'用户已{status}'})
             
             elif action == 'delete':
-                self.session.delete(user)
-                self.session.commit()
-                self.write({'success': True, 'message': '用户已删除'})
+                # 级联删除商品及其关联项
+                from models.order import Order
+                from models.favorite import Favorite
+                from models.blacklist import Blacklist
+                from models.friendship import Friendship
+                from models.product import ProductImage
+                from models.comment import Comment
+                
+                try:
+                    with self.session.no_autoflush:
+                        # 1. 先获取该用户的所有商品ID
+                        user_product_ids = [p.id for p in self.session.query(Product.id).filter_by(user_id=user_id).all()]
+                        
+                        # 2. 删除所有引用这些商品的收藏记录（必须在删除商品前）
+                        if user_product_ids:
+                            self.session.query(Favorite).filter(Favorite.product_id.in_(user_product_ids)).delete(synchronize_session=False)
+                        
+                        # 3. 删除该用户自己的收藏记录
+                        self.session.query(Favorite).filter_by(user_id=user_id).delete(synchronize_session=False)
+                        
+                        # 4. 删除引用这些商品的评价/留言
+                        if user_product_ids:
+                            self.session.query(Comment).filter(Comment.product_id.in_(user_product_ids)).delete(synchronize_session=False)
+                        
+                        # 5. 删除该用户发表的评价/留言
+                        self.session.query(Comment).filter_by(user_id=user_id).delete(synchronize_session=False)
+                        
+                        # 6. 删除与该用户相关的订单（作为买家或卖家）
+                        self.session.query(Order).filter(or_(Order.seller_id == user_id, Order.user_id == user_id)).delete(synchronize_session=False)
+                        
+                        # 7. 删除引用这些商品的订单
+                        if user_product_ids:
+                            self.session.query(Order).filter(Order.product_id.in_(user_product_ids)).delete(synchronize_session=False)
+                        
+                        # 8. 删除商品图片（必须在删除商品前，bulk delete 不触发 cascade）
+                        if user_product_ids:
+                            self.session.query(ProductImage).filter(ProductImage.product_id.in_(user_product_ids)).delete(synchronize_session=False)
+                        
+                        # 9. 删除该用户的商品
+                        self.session.query(Product).filter_by(user_id=user_id).delete(synchronize_session=False)
+                        
+                        # 10. 删除黑名单记录（使用正确的列名 blocker_id/blocked_id）
+                        self.session.query(Blacklist).filter(or_(Blacklist.blocker_id == user_id, Blacklist.blocked_id == user_id)).delete(synchronize_session=False)
+                        
+                        # 11. 删除好友关系
+                        self.session.query(Friendship).filter(or_(Friendship.user_id == user_id, Friendship.friend_id == user_id)).delete(synchronize_session=False)
+                        
+                        # 12. 最后删除用户
+                        self.session.delete(user)
+                    
+                    self.session.commit()
+                    self.write({'success': True, 'message': '用户及其关联数据（包括留言评价）已删除'})
+                except Exception as del_err:
+                    self.session.rollback()
+                    logging.error(f"级联删除用户失败: {del_err}")
+                    self.write({'success': False, 'message': f'删除失败: {str(del_err)}'})
             
             else:
                 self.write({'success': False, 'message': '未知操作'})

@@ -4,7 +4,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from sqlalchemy import Sequence,create_engine, desc, Column, text, ForeignKey,and_
+from sqlalchemy import create_engine, desc, Column, text, ForeignKey, and_, Sequence
 from sqlalchemy.orm import declarative_base, sessionmaker,joinedload
 from sqlalchemy.types import Integer, String, DateTime, Float
 from sqlalchemy.sql import func
@@ -13,7 +13,7 @@ from base.base import Base, engine
 
 class User(Base):
     __tablename__ = 'xu_user'
-    id = Column(Integer, Sequence('user_id_seq'),primary_key=True)
+    id = Column(Integer, Sequence('xu_user_id_seq'), primary_key=True, autoincrement=True)
     username = Column(String(255), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
     email = Column(String(255), unique=True, nullable=False)
@@ -25,6 +25,8 @@ class User(Base):
     wechat_openid = Column(String(255), unique=True, nullable=True)
     wechat_nickname = Column(String(255), nullable=True)
     wechat_avatar = Column(String(500), nullable=True)
+    avatar_security_status = Column(String(20), nullable=True, default='approved')
+    avatar_trace_id = Column(String(100), nullable=True)
 
     def __init__(self, username, password, email, room_number=None, phone=None, is_admin=0, wechat_openid=None):
         self.username = username

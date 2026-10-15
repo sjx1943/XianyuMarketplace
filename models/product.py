@@ -68,12 +68,16 @@ class ProductImage(Base):
     __tablename__ = 'product_images'
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String(255), nullable=False)
+    thumb_filename = Column(String(255), nullable=True)
+    medium_filename = Column(String(255), nullable=True)
     product_id = Column(Integer, ForeignKey('products.id'), nullable=False)
     product = relationship("Product", back_populates="images")
 
-    def __init__(self, filename, product_id):
+    def __init__(self, filename, product_id, thumb_filename=None, medium_filename=None):
         self.filename = filename
         self.product_id = product_id
+        self.thumb_filename = thumb_filename
+        self.medium_filename = medium_filename
 
 # Create the products table after xu_user table
 #if __name__ == '__main__':

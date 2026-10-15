@@ -1,0 +1,46 @@
+<!--我的收藏页-->
+<view class="page">
+  <!-- 收藏列表 -->
+  <view class="product-list" wx:if="{{!loading && favorites.length > 0}}">
+    <view 
+      class="product-item"
+      wx:for="{{favorites}}"
+      wx:key="id"
+      bindtap="viewDetail"
+      data-id="{{item.id}}"
+    >
+      <image 
+        class="product-image" 
+        src="{{item.imageUrl}}" 
+        mode="aspectFill"
+      ></image>
+      
+      <view class="product-info">
+        <text class="product-name">{{item.name}}</text>
+        <view class="product-meta">
+          <text class="product-transfer-price">{{item.price > 0 ? '出手价 ' + item.price : (item.price === 0 || item.price === '0' ? '免费' : '面议')}}</text>
+          <text class="product-room">📍 {{item.seller_room || '未设置'}}</text>
+        </view>
+      </view>
+      
+      <view class="product-actions">
+        <button class="action-btn cancel-btn" catchtap="cancelFavorite" data-id="{{item.id}}" data-name="{{item.name}}">
+          取消标记
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{!loading && favorites.length === 0}}">
+    <text class="empty-icon">❤️</text>
+    <text class="empty-text">暂无标记</text>
+    <text class="empty-hint">去发现更多闲置物品吧</text>
+    <button class="browse-btn" bindtap="goToList">去看看</button>
+  </view>
+
+  <!-- 加载中 -->
+  <view class="loading-state" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+</view>

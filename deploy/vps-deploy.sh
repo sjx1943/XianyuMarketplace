@@ -17,6 +17,7 @@ set -e
 # 配置
 APP_DIR="/opt/secondhand-platform"
 COMPOSE_FILE="deploy/docker-compose-vps.yml"
+ENV_FILE="deploy/.env.prod"
 NGINX_CONF="deploy/nginx_secondhand_8543.conf"
 
 # 颜色输出
@@ -92,13 +93,13 @@ init_deploy() {
     
     # 检查环境配置
     echo -e "\n${BLUE}[4/6] 检查环境配置...${NC}"
-    if [ ! -f "$APP_DIR/.env.prod" ]; then
-        echo -e "${YELLOW}未找到.env.prod，从模板创建...${NC}"
+    if [ ! -f "$APP_DIR/$ENV_FILE" ]; then
+        echo -e "${YELLOW}未找到$ENV_FILE，从模板创建...${NC}"
         if [ -f "$APP_DIR/deploy/.env.prod.template" ]; then
-            cp "$APP_DIR/deploy/.env.prod.template" "$APP_DIR/.env.prod"
-            chmod 600 "$APP_DIR/.env.prod"
-            echo -e "${RED}重要: 请编辑 $APP_DIR/.env.prod 填入实际配置${NC}"
-            echo -e "${YELLOW}nano $APP_DIR/.env.prod${NC}"
+            cp "$APP_DIR/deploy/.env.prod.template" "$APP_DIR/$ENV_FILE"
+            chmod 600 "$APP_DIR/$ENV_FILE"
+            echo -e "${RED}重要: 请编辑 $APP_DIR/$ENV_FILE 填入实际配置${NC}"
+            echo -e "${YELLOW}nano $APP_DIR/$ENV_FILE${NC}"
             exit 1
         else
             echo -e "${RED}错误: 未找到环境变量模板${NC}"
@@ -126,7 +127,7 @@ init_deploy() {
     # 启动服务
     echo -e "\n${BLUE}[6/6] 启动Docker服务...${NC}"
     cd "$APP_DIR"
-    docker compose -f "$COMPOSE_FILE" up -d --build
+    docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --build
     
     # 等待服务启动
     echo -e "\n${YELLOW}等待服务启动 (30秒)...${NC}"
@@ -165,11 +166,11 @@ update_deploy() {
     
     # 重建镜像
     echo -e "\n${BLUE}[2/3] 重建应用镜像...${NC}"
-    docker compose -f "$COMPOSE_FILE" build app --no-cache
+    docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" build app --no-cache
     
     # 重启应用
     echo -e "\n${BLUE}[3/3] 重启应用...${NC}"
-    docker compose -f "$COMPOSE_FILE" up -d app
+    docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d app
     
     sleep 10
     check_status
@@ -183,9 +184,10 @@ restart_app() {
     echo -e "${YELLOW}重启应用...${NC}"
     
     cd "$APP_DIR"
-    docker compose -f "$COMPOSE_FILE" restart app
+    docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" restart app
     
-    sleep 10
+    echo -e "${YELLOW}等待应用启动 (45秒)...${NC}"
+    sleep 45
     check_status
     
     echo -e "\n${GREEN}重启完成!${NC}"
@@ -194,7 +196,7 @@ restart_app() {
 # 查看日志
 view_logs() {
     cd "$APP_DIR"
-    docker compose -f "$COMPOSE_FILE" logs -f --tail=100 app
+    docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" logs -f --tail=100 app
 }
 
 # 检查状态
@@ -203,7 +205,7 @@ check_status() {
     echo -e "${BLUE}服务状态:${NC}\n"
     
     cd "$APP_DIR"
-    docker compose -f "$COMPOSE_FILE" ps
+    docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" ps
     
     echo -e "\n${BLUE}健康检查:${NC}"
     if curl -s http://127.0.0.1:8100/health | grep -q "ok"; then
@@ -232,7 +234,7 @@ backup_database() {
     mkdir -p "$BACKUP_DIR"
     
     cd "$APP_DIR"
-    docker compose -f "$COMPOSE_FILE" exec -T postgres \
+    docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T postgres \
         pg_dump -U secondhand_user secondhand_db > "$BACKUP_FILE"
     
     gzip "$BACKUP_FILE"
@@ -250,7 +252,7 @@ stop_services() {
     echo -e "${YELLOW}停止所有服务...${NC}"
     
     cd "$APP_DIR"
-    docker compose -f "$COMPOSE_FILE" down
+    docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" down
     
     echo -e "${GREEN}服务已停止${NC}"
 }

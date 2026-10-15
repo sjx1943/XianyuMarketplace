@@ -50,8 +50,8 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# SSH选项 (包含端口和密钥)
-SSH_OPTS="-p $SSH_PORT"
+# SSH选项 (包含端口、密钥和主机密钥验证)
+SSH_OPTS="-p $SSH_PORT -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=~/.ssh/known_hosts"
 if [ -n "$SSH_KEY" ]; then
     SSH_OPTS="$SSH_OPTS -i $SSH_KEY"
 fi
@@ -62,6 +62,41 @@ echo -e "${GREEN}========================================${NC}"
 echo -e "${BLUE}目标服务器: ${VPS_USER}@${VPS_HOST}${NC}"
 echo -e "${BLUE}目标目录: ${VPS_APP_DIR}${NC}"
 
+# 使用已有的SSH密钥，如果不存在则从秘钥恢复
+if [ ! -f ~/.ssh/id_ed25519 ] && [ -n "$DEPLOY_SSH_KEY" ]; then
+    echo -e "\n${YELLOW}SSH密钥不存在，从秘钥环境变量恢复...${NC}"
+    mkdir -p ~/.ssh
+    chmod 700 ~/.ssh
+    
+    # 方法1: 如果是Base64编码（不含BEGIN/END标记），则先解码
+    if [[ "$DEPLOY_SSH_KEY" =~ ^[A-Za-z0-9+/]*={0,2}$ ]]; then
+        echo "$DEPLOY_SSH_KEY" | base64 -d > ~/.ssh/id_ed25519
+    # 方法2: 如果包含BEGIN/END标记，则提取Base64部分后解码
+    elif [[ "$DEPLOY_SSH_KEY" =~ BEGIN\ OPENSSH\ PRIVATE\ KEY ]]; then
+        base64_content=$(echo "$DEPLOY_SSH_KEY" | sed 's/-----BEGIN OPENSSH PRIVATE KEY----- //g' | sed 's/ -----END OPENSSH PRIVATE KEY-----//g' | tr -d ' ' | tr -d '\n')
+        echo "$base64_content" | base64 -d > ~/.ssh/id_ed25519
+    # 方法3: 直接使用（假设是PEM格式）
+    else
+        echo -e "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+    fi
+    
+    chmod 600 ~/.ssh/id_ed25519
+    
+    # 验证密钥格式
+    if head -1 ~/.ssh/id_ed25519 | grep -q "BEGIN"; then
+        echo -e "${GREEN}SSH密钥已恢复 (PEM格式)${NC}"
+    elif head -1 ~/.ssh/id_ed25519 | grep -q "openssh-key-v1"; then
+        echo -e "${GREEN}SSH密钥已恢复 (OpenSSH格式)${NC}"
+    else
+        echo -e "${RED}警告: 密钥格式可能不正确${NC}"
+    fi
+fi
+
+# 设置SSH密钥路径
+if [ -z "$SSH_KEY" ] && [ -f ~/.ssh/id_ed25519 ]; then
+    SSH_KEY=~/.ssh/id_ed25519
+fi
+
 # 要排除的文件/目录
 # 注意: 不排除 mystatics/images，因为VPS使用Docker Volume持久化图片
 # 首次部署时需要手动上传已有图片到VPS
@@ -69,6 +104,7 @@ EXCLUDE_LIST=(
     ".git"
     ".replit"
     "replit.nix"
+    "replit.md"
     ".env"
     ".env.prod"
     "__pycache__"
@@ -76,13 +112,25 @@ EXCLUDE_LIST=(
     ".pytest_cache"
     "node_modules"
     "miniprogram/node_modules"
-    "logs/*.log"
+    "logs"
+    "*.log"
     "*.sql"
     "backup_*.sql"
     ".upm"
     ".cache"
     "venv"
     ".pythonlibs"
+    ".breakpoints"
+    ".config"
+    "attached_assets"
+    "/tmp"
+    "*.tmp"
+    "*.bak"
+    ".nix-*"
+    "mystatics/images/avatars"
+    "mystatics/images/products"
+    "mystatics/images/thumbnails"
+    "mystatics/images/medium"
 )
 
 # 构建rsync排除参数
@@ -99,26 +147,28 @@ if ! ssh $SSH_OPTS -o ConnectTimeout=10 -o BatchMode=yes ${VPS_USER}@${VPS_HOST}
     echo -e "  3. 防火墙是否允许SSH (端口22)"
     echo -e "\n${YELLOW}提示: 首次连接需要配置SSH密钥${NC}"
     echo -e "  ssh-keygen -t ed25519 -C 'replit-deploy'"
-    echo -e "  ssh-copy-id ${VPS_USER}@${VPS_HOST}"
+    echo -e "  ssh-copy-id -p 4222 ${VPS_USER}@${VPS_HOST}"
     exit 1
 fi
 echo -e "${GREEN}SSH连接正常${NC}"
 
-echo -e "\n${YELLOW}[2/4] 同步代码文件...${NC}"
+echo -e "\n${YELLOW}[2/4] 同步代码文件 (1:1 完全同步，删除远端多余文件)...${NC}"
 
-# 使用rsync同步
-rsync -avz --progress \
+# 使用rsync同步，添加 --delete 实现1:1完全同步
+# --delete: 删除远端存在但本地不存在的文件
+# --delete-excluded: 同时删除被排除规则匹配的远端文件
+rsync -avz --progress --delete --delete-excluded \
     $EXCLUDE_ARGS \
     -e "ssh $SSH_OPTS" \
     ./ ${VPS_USER}@${VPS_HOST}:${VPS_APP_DIR}/
 
-echo -e "${GREEN}代码同步完成${NC}"
+echo -e "${GREEN}代码同步完成 (远端多余文件已清理)${NC}"
 
 echo -e "\n${YELLOW}[3/4] 同步部署配置...${NC}"
 
 # 确保deploy目录存在并同步
 ssh $SSH_OPTS ${VPS_USER}@${VPS_HOST} "mkdir -p ${VPS_APP_DIR}/deploy"
-rsync -avz --progress \
+rsync -avz --progress --delete \
     -e "ssh $SSH_OPTS" \
     ./deploy/ ${VPS_USER}@${VPS_HOST}:${VPS_APP_DIR}/deploy/
 

@@ -1,0 +1,57 @@
+<!--关于我们页面-->
+<view class="page">
+  <view class="header">
+    <image class="logo" src="/images/logo.jpeg" mode="aspectFit"></image>
+    <text class="app-name">翠友雅集</text>
+    <text class="version">版本 2.2.2</text>
+  </view>
+
+ <view class="info-section">
+    <view class="info-item">
+      <text class="info-title">关于我们</text>
+      <text class="info-content">翠友雅集平台致力于为同小区居民提供便捷、安全的闲置物品信息展示平台。通过这个平台，您可以轻松分享闲置物品信息，与邻居进行沟通交流，让资源得到更好的循环利用。我们致力于打造社区内最值得信赖的闲置信息分享平台，促进邻里互助，践行绿色环保的生活方式。</text>
+    </view>
+
+    <view class="info-item">
+      <text class="info-title">注意事项⚠️</text>
+      <text class="info-content">▶️ 禁止发布违禁物品或讨论无关敏感话题</text>
+      <text class="info-content">▶️ 杜绝恶意灌水</text>
+      <text class="info-content">▶️ **禁止商业**：平台仅供个人闲置物品展示，禁止发布任何形式的商业广告、团购信息或代购服务</text>
+      <text class="info-content">▶️ **文明交流**：友好沟通，诚信对话。如物品已转让完毕，请及时删除或更新物品状态。</text>
+      
+    </view>
+
+    <view class="info-item ai-highlight">
+      <text class="info-title">🤖 AI 特色功能</text>
+      <text class="info-content ai-intro">翠友雅集深度融合人工智能技术，与AI共生，让邻里共享更智慧、更高效。</text>
+      <view class="ai-feature-list">
+        <view class="ai-feature-row">
+          <text class="ai-dot">●</text>
+          <text class="ai-feature-text"><text class="ai-label">智能分类推荐</text> — AI自动识别物品类别，精准推荐感兴趣的闲置内容</text>
+        </view>
+        <view class="ai-feature-row">
+          <text class="ai-dot">●</text>
+          <text class="ai-feature-text"><text class="ai-label">AI内容审核</text> — 自动检测违规发布，维护社区安全健康的交流环境</text>
+        </view>
+        <view class="ai-feature-row">
+          <text class="ai-dot">●</text>
+          <text class="ai-feature-text"><text class="ai-label">智能定价参考</text> — 结合物品成色与市场数据，辅助合理定价</text>
+        </view>
+        <view class="ai-feature-row">
+          <text class="ai-dot">●</text>
+          <text class="ai-feature-text"><text class="ai-label">邻里互动洞察</text> — AI分析社区活跃度，助力邻里关系更紧密</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="info-item">
+      <text class="info-title">联系方式</text>
+      <text class="info-content">如有任何问题或建议，欢迎通过小程序内的"意见反馈"功能联系我们。</text>
+    </view>
+  </view>
+
+  <view class="footer">
+    <text class="copyright">© 2026 翠友雅集</text>
+    <text class="slogan">让闲置流动，让邻里更亲近</text>
+  </view>
+</view>

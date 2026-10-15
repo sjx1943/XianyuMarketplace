@@ -229,10 +229,10 @@
         </div>
         <div class="product-main">
             <div class="product-image-container">
-                <img src="{{ static_url('images/' + product.image) if product.image else '' }}" alt="{{ product.name }}" id="main-image" class="main-image">
+                <img src="{% if main_image and '://' in main_image %}{{ main_image }}{% elif main_image and main_image.startswith('/') %}{{ main_image }}{% else %}{{ static_url('images/' + main_image) if main_image else '' }}{% end %}" alt="{{ product.name }}" id="main-image" class="main-image">
                 <div class="thumbnails">
                     {% for i, img in enumerate(images) %}
-                    <img src="{{ static_url('images/' + img.filename) }}" alt="Thumbnail {{ i + 1 }}" class="thumb {% if i == 0 %}active{% end %}" onclick="changeImage('{{ static_url('images/' + img.filename) }}', this)">
+                    <img src="{% if img['filename'] and '://' in img['filename'] %}{{ img['filename'] }}{% elif img['filename'] and img['filename'].startswith('/') %}{{ img['filename'] }}{% else %}{{ static_url('images/' + img['filename']) }}{% end %}" alt="Thumbnail {{ i + 1 }}" class="thumb {% if i == 0 %}active{% end %}" onclick="changeImage('{% if img['filename'] and ('://' in img['filename'] or img['filename'].startswith('/')) %}{{ img['filename'] }}{% else %}{{ static_url('images/' + img['filename']) }}{% end %}', this)">
                     {% end %}
                 </div>
             </div>

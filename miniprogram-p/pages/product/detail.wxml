@@ -1,0 +1,183 @@
+<!--物品详情页-->
+<view class="page">
+  <!-- 图片轮播 -->
+  <view class="swiper-container" wx:if="{{product.images && product.images.length > 0}}">
+    <swiper class="product-swiper" indicator-dots="{{true}}" autoplay="{{false}}" circular="{{true}}" bindchange="onSwiperChange">
+      <swiper-item wx:for="{{product.imageDetails}}" wx:key="id" data-index="{{index}}">
+        <view class="swiper-item-wrapper">
+          <image src="{{item.url}}" mode="aspectFill" class="swiper-image" bindtap="previewImage" data-url="{{item.url}}" binderror="onAvatarError"></image>
+          <!-- 发布者可以删除和设置主图 -->
+          <view class="image-controls" wx:if="{{isOwner && product.imageDetails.length > 1}}">
+            <button class="img-btn delete-btn" bindtap="deleteImage" data-image-id="{{item.id}}" data-index="{{index}}" size="mini">🗑️ 删除</button>
+            <button class="img-btn primary-btn" bindtap="setPrimaryImage" data-image-id="{{item.id}}" data-filename="{{item.filename}}" size="mini" wx:if="{{product.image !== item.filename}}">⭐ 设为主图</button>
+            <text class="primary-badge" wx:if="{{product.image === item.filename}}">★ 主图</text>
+          </view>
+        </view>
+      </swiper-item>
+    </swiper>
+    <!-- 自己的物品时显示"我的物品"按钮 -->
+    <view class="image-control-bar" wx:if="{{isOwner}}">
+      <button class="control-btn" bindtap="goToMyProducts">
+        📦 我的物品
+      </button>
+    </view>
+  </view>
+  <view class="no-image" wx:else>
+    <text>暂无物品图片</text>
+  </view>
+
+  <!-- 物品信息 -->
+  <view class="product-info">
+    <view class="product-header">
+      <text class="product-name">{{product.name}}</text>
+      <view class="product-price-row">
+        <text class="product-transfer-price">{{product.price > 0 ? '出手价 ' + product.price : (product.price === 0 || product.price === '0' ? '免费' : '面议')}}</text>
+        <text class="original-price-hint" wx:if="{{product.original_price}}">原值 {{product.original_price}}</text>
+      </view>
+    </view>
+
+    <view class="product-meta">
+      <view class="meta-item clickable" bindtap="goToSellerShop" wx:if="{{!isOwner}}">
+        <text class="meta-icon">📍</text>
+        <text class="meta-text link-text">{{product.seller_room || '未设置'}}</text>
+        <text class="meta-arrow">></text>
+      </view>
+      <view class="meta-item" wx:else>
+        <text class="meta-icon">📍</text>
+        <text class="meta-text">{{product.seller_room || '未设置'}}</text>
+      </view>
+      <view class="meta-item">
+        <text class="meta-icon">🕐</text>
+        <text class="meta-text">{{product.created_at}}</text>
+      </view>
+    </view>
+
+    <view class="product-tags-row">
+      <view class="product-tags">
+        <text class="tag tag-condition">{{product.condition || '九成新'}}</text>
+        <text class="tag" wx:for="{{product.tags}}" wx:key="index">{{item}}</text>
+      </view>
+      <!-- 我想要按钮（仅他人物品显示，与成色标签同行） -->
+      <button class="inline-want-btn" bindtap="onWant" wx:if="{{!isOwner}}">我想要</button>
+    </view>
+  </view>
+
+  <!-- 物品描述 -->
+  <view class="product-description">
+    <view class="section-title">📝 物品描述</view>
+    <text class="description-text">{{product.description || '暂无描述'}}</text>
+  </view>
+
+  <!-- 发布者信息 -->
+  <view class="seller-info" bindtap="viewSellerProfile">
+    <image class="seller-avatar" src="{{product.seller_avatar}}" binderror="onSellerAvatarError"></image>
+    <view class="seller-details">
+      <text class="seller-name">{{product.seller_name || '匿名邻居'}}</text>
+      <text class="seller-room">所在位置：{{product.seller_room}}</text>
+    </view>
+    <text class="arrow">></text>
+  </view>
+
+  <!-- 物品评价区域 -->
+  <view class="review-section">
+    <view class="section-header" bindtap="toggleComments">
+      <text class="section-title">📝 物品评价 ({{comments.length}})</text>
+      <text class="toggle-arrow">{{showComments ? '▲' : '▼'}}</text>
+    </view>
+    
+    <!-- 评价按钮 -->
+    <view class="review-action" wx:if="{{canReview}}" bindtap="openReviewModal">
+      <text class="review-btn">✍️ 写评价</text>
+    </view>
+    
+    <!-- 评论列表 -->
+    <view class="comments-list" wx:if="{{showComments && comments.length > 0}}">
+      <view class="comment-item" wx:for="{{comments}}" wx:key="id">
+        <view class="comment-header">
+          <text class="comment-user">{{item.user_name}}</text>
+          <view class="comment-rating">
+            <text wx:for="{{5}}" wx:for-item="star" wx:key="star">{{star < item.rating ? '⭐' : '☆'}}</text>
+          </view>
+        </view>
+        <text class="comment-content">{{item.content}}</text>
+        <text class="comment-time">{{item.created_at}}</text>
+      </view>
+    </view>
+    
+    <view class="no-comments" wx:if="{{showComments && comments.length === 0}}">
+      <text>暂无评价</text>
+    </view>
+  </view>
+
+  <!-- 评价弹框 -->
+  <view class="review-modal" wx:if="{{showReviewModal}}">
+    <view class="modal-mask" bindtap="closeReviewModal"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text class="modal-title">评价物品</text>
+        <text class="modal-close" bindtap="closeReviewModal">✕</text>
+      </view>
+      
+      <view class="rating-section">
+        <text class="rating-label">评分：</text>
+        <view class="rating-stars">
+          <text 
+            wx:for="{{[1,2,3,4,5]}}" 
+            wx:key="*this" 
+            class="star {{reviewRating >= item ? 'active' : ''}}"
+            bindtap="setRating"
+            data-rating="{{item}}"
+          >{{reviewRating >= item ? '⭐' : '☆'}}</text>
+        </view>
+      </view>
+      
+      <textarea 
+        class="review-textarea" 
+        placeholder="请输入您的评价内容..."
+        value="{{reviewContent}}"
+        bindinput="onReviewInput"
+        maxlength="500"
+      />
+      
+      <button class="submit-review-btn" bindtap="submitReview">提交评价</button>
+    </view>
+  </view>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-bar">
+    <button class="action-btn" open-type="share">
+      <text class="btn-icon">📤</text>
+      <text class="btn-text">分享</text>
+    </button>
+    
+    <!-- 他人物品：显示标记、咨询按钮 -->
+    <block wx:if="{{!isOwner}}">
+      <button class="action-btn" bindtap="onFavorite">
+        <text class="btn-icon">{{product.is_favorited ? '❤️' : '🤍'}}</text>
+        <text class="btn-text">标记</text>
+      </button>
+      <button class="action-btn" bindtap="onChat">
+        <text class="btn-icon">💬</text>
+        <text class="btn-text">咨询</text>
+      </button>
+    </block>
+    
+    <!-- 自己的物品：显示编辑、删除按钮 -->
+    <block wx:else>
+      <button class="action-btn" bindtap="onEdit">
+        <text class="btn-icon">✏️</text>
+        <text class="btn-text">编辑</text>
+      </button>
+      <button class="action-btn delete-btn" bindtap="onDelete">
+        <text class="btn-icon">🗑️</text>
+        <text class="btn-text">删除</text>
+      </button>
+    </block>
+
+    <!-- 返回主页按钮（所有用户都显示） -->
+    <button class="action-btn" bindtap="goToHome">
+      <text class="btn-icon">🏠</text>
+      <text class="btn-text">返回</text>
+    </button>
+  </view>
+</view>

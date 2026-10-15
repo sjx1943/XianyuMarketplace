@@ -1,0 +1,117 @@
+// 配置文件
+// ⚠️ 部署前必须修改 production.host 为您的实际后端域名
+const isDev = true // 生产环境设为 false，开发调试设为 true
+
+// API配置
+const config = {
+  isDev: isDev,
+  
+  // API域名配置
+  api: {
+    // 生产环境 - VPS服务器 (RackNerd)
+    production: {
+      host: 'https://happepls.pics:8543',  // VPS生产环境，端口8543
+      apiBase: '',  // 后端路由不需要 /api 前缀
+      wsBase: '/ws'
+    },
+    // 开发环境（Replit 调试用）
+    development: {
+      host: 'https://a150b5ca-a58b-4dc4-89b0-68930565b5a5-00-e3vx0z9fny4f.riker.replit.dev',
+      apiBase: '',  // 后端路由不需要 /api 前缀
+      wsBase: '/ws'
+    }
+  },
+
+  // 应用配置
+  app: {
+    name: '翠友雅集',
+    version: '2.2.2',
+    platform: 'WeChat MiniProgram'
+  },
+
+  // 请求超时配置（毫秒）
+  timeout: {
+    request: 10000,
+    upload: 30000,
+    download: 10000
+  },
+
+  // 重试配置
+  retry: {
+    maxAttempts: 3,
+    delay: 1000 // 初始延迟时间
+  },
+
+  // 缓存配置
+  cache: {
+    enabled: true,
+    ttl: 3600000 // 1小时（毫秒）
+  },
+
+  // 分页配置
+  pagination: {
+    pageSize: 20,
+    maxPages: 100
+  }
+}
+
+// 获取API基础URL
+function getApiBase() {
+  const env = isDev ? 'development' : 'production'
+  const apiConfig = config.api[env]
+  return apiConfig.host + apiConfig.apiBase
+}
+
+// 获取WebSocket基础URL
+function getWsBase() {
+  const env = isDev ? 'development' : 'production'
+  const apiConfig = config.api[env]
+  return apiConfig.host.replace(/^http/, 'ws') + apiConfig.wsBase
+}
+
+// 导出 API_BASE 供 api.js 使用
+const API_BASE = getApiBase()
+const WS_BASE = getWsBase()
+
+// 获取图片完整URL（用于小程序 image 标签）
+// 注意：cloud:// 格式的 fileID 需要异步调用 getTempFileURL 转换，此函数不处理
+function getImageUrl(filename) {
+  if (!filename) return ''
+  // 如果已经是完整URL，直接返回
+  if (filename.startsWith('http://') || filename.startsWith('https://')) {
+    return filename
+  }
+  // 如果是云存储 fileID（cloud://xxx），直接返回
+  // 调用方需要异步处理这种格式
+  if (filename.startsWith('cloud://')) {
+    return filename
+  }
+  // 如果已经是绝对路径（/images/...），拼接host
+  if (filename.startsWith('/images/')) {
+    const env = isDev ? 'development' : 'production'
+    const host = config.api[env].host
+    return `${host}${filename}`
+  }
+  // 否则拼接完整URL到 /images/（Tornado路由）
+  const env = isDev ? 'development' : 'production'
+  const host = config.api[env].host
+  return `${host}/images/${filename}`
+}
+
+// 获取默认头像URL
+function getDefaultAvatarUrl() {
+  const env = isDev ? 'development' : 'production'
+  const host = config.api[env].host
+  return `${host}/images/default-avatar.png`
+}
+
+module.exports = {
+  config,
+  getApiBase,
+  getWsBase,
+  getImageUrl,
+  getDefaultAvatarUrl,
+  isDev,
+  API_BASE,
+  WS_BASE
+}

@@ -10,13 +10,13 @@
 # MongoDB: 使用 MongoDB Atlas 云服务
 # ==========================================
 
-version: '3.8'
-
 services:
   # PostgreSQL 数据库 (自部署)
   postgres:
     image: postgres:15-alpine
     container_name: secondhand-postgres
+    env_file:
+      - .env.prod
     environment:
       POSTGRES_DB: ${PGDATABASE:-secondhand_db}
       POSTGRES_USER: ${PGUSER:-secondhand_user}
@@ -73,7 +73,7 @@ services:
         - PYTHON_VERSION=3.11
     container_name: secondhand-app
     env_file:
-      - ../.env.prod
+      - .env.prod
     environment:
       # 数据库配置 (覆盖.env.prod，使用Docker内部网络)
       DATABASE_URL: postgresql://${PGUSER:-secondhand_user}:${PGPASSWORD}@postgres:5432/${PGDATABASE:-secondhand_db}
@@ -125,19 +125,9 @@ services:
         echo '========================================' &&
         echo '⏳ 等待数据库就绪...' &&
         sleep 5 &&
-        echo '📦 检查数据库表...' &&
-        python -c \"
-from models.database import engine
-from sqlalchemy import inspect
-inspector = inspect(engine)
-tables = inspector.get_table_names()
-if not tables:
-    print('首次启动，创建数据库表...')
-    import init_db
-else:
-    print(f'数据库已有 {len(tables)} 个表，跳过初始化')
-\" &&
-        echo '✅ 数据库检查完成' &&
+        echo '📦 初始化数据库...' &&
+        python init_db.py &&
+        echo '✅ 数据库初始化完成' &&
         echo '🌐 启动Tornado应用 (端口8000)...' &&
         python app.py --port=8000
       "

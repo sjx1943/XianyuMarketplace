@@ -20,8 +20,10 @@ from models.blacklist import Blacklist
 Session = sessionmaker(bind=engine)
 connections = {}
 
+
 #ws类方法
 class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
+
     def initialize(self, mongo):
         self.mongo = mongo
         self.session = None  # 先设为None，在open时创建
@@ -30,38 +32,48 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
         try:
             # 在连接打开时创建Session
             self.session = Session()
-            
+
             # 从route参数获取friend_id
             if not friend_id or not friend_id.isdigit():
-                logging.warning("WebSocket connection opened with invalid friend_id, connection closed.")
+                logging.warning(
+                    "WebSocket connection opened with invalid friend_id, connection closed."
+                )
                 self.close()
                 return
-            
+
             self.friend_id = int(friend_id)
-            
+
             # 从query参数获取token并提取user_id
             token = self.get_argument("token", None)
             if not token:
-                logging.warning("WebSocket connection opened without token, connection closed.")
+                logging.warning(
+                    "WebSocket connection opened without token, connection closed."
+                )
                 self.close()
                 return
-            
+
             # token格式: session_key_user_id，提取user_id（最后一个_后面的部分）
             if '_' in token:
                 try:
                     self.user_id = int(token.split('_')[-1])
                 except (ValueError, IndexError):
-                    logging.warning("WebSocket connection opened with invalid token format, connection closed.")
+                    logging.warning(
+                        "WebSocket connection opened with invalid token format, connection closed."
+                    )
                     self.close()
                     return
             else:
-                logging.warning("WebSocket connection opened with invalid token format, connection closed.")
+                logging.warning(
+                    "WebSocket connection opened with invalid token format, connection closed."
+                )
                 self.close()
                 return
-            
+
             # 在connections字典中存储此连接（使用user_id作为key）
             connections[self.user_id] = self
-            logging.warning(f"WebSocket connection established, user_id: {self.user_id}, friend_id: {self.friend_id}")
+            logging.warning(
+                f"WebSocket connection established, user_id: {self.user_id}, friend_id: {self.friend_id}"
+            )
             # 异步发送存储的消息
             self.send_stored_messages()
         except Exception as e:
@@ -69,7 +81,6 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
             if self.session:
                 self.session.close()
             self.close()
-
 
     @coroutine
     def send_stored_messages(self):
@@ -86,8 +97,11 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
                 "status": "unread"
             }
 
-            messages = yield self.mongo.chat_messages.find(query).to_list(length=None)
-            logging.info(f"Found {len(messages)} unread messages for user_id: {user_id}")
+            messages = yield self.mongo.chat_messages.find(query).to_list(
+                length=None)
+            logging.info(
+                f"Found {len(messages)} unread messages for user_id: {user_id}"
+            )
 
             china_tz = datetime.timezone(datetime.timedelta(hours=8))
             for message in messages:
@@ -107,16 +121,20 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
                             # MongoDB存储UTC并返回UTC naive datetime
                             ts_utc = ts.replace(tzinfo=datetime.timezone.utc)
                             ts_beijing = ts_utc.astimezone(china_tz)
-                        message['timestamp'] = ts_beijing.strftime("%Y-%m-%d %H:%M:%S")
-                        message['timestamp_ms'] = int(ts_beijing.timestamp() * 1000)
+                        message['timestamp'] = ts_beijing.strftime(
+                            "%Y-%m-%d %H:%M:%S")
+                        message['timestamp_ms'] = int(ts_beijing.timestamp() *
+                                                      1000)
                         message['time'] = ts_beijing.strftime('%H:%M')
                     elif isinstance(ts, str):
                         # 字符串格式 "YYYY-MM-DD HH:MM:SS" - 假设为北京时间
                         try:
-                            dt = datetime.datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
+                            dt = datetime.datetime.strptime(
+                                ts, "%Y-%m-%d %H:%M:%S")
                             dt_beijing = dt.replace(tzinfo=china_tz)
                             message['timestamp'] = ts
-                            message['timestamp_ms'] = int(dt_beijing.timestamp() * 1000)
+                            message['timestamp_ms'] = int(
+                                dt_beijing.timestamp() * 1000)
                             message['time'] = dt_beijing.strftime('%H:%M')
                         except ValueError:
                             logging.error(f"Invalid timestamp format: {ts}")
@@ -132,7 +150,8 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
                 if message['isSelf']:
 
                     # 修改为"我（房间号）"格式，优先显示房间号
-                    from_user_pg = self.session.query(User).filter_by(id=message['from_user_id']).first()
+                    from_user_pg = self.session.query(User).filter_by(
+                        id=message['from_user_id']).first()
                     if from_user_pg and from_user_pg.room_number:
                         display_name = from_user_pg.room_number
                     elif from_user_pg:
@@ -142,7 +161,8 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
                     message['from_username'] = f'我({display_name})'
                 else:
                     # 获取发送方房间号，优先显示房间号
-                    from_user_pg = self.session.query(User).filter_by(id=message['from_user_id']).first()
+                    from_user_pg = self.session.query(User).filter_by(
+                        id=message['from_user_id']).first()
                     if from_user_pg and from_user_pg.room_number:
                         message['from_username'] = from_user_pg.room_number
                     elif from_user_pg:
@@ -155,8 +175,9 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
                     # 更新消息状态为已读
                     yield self.mongo.chat_messages.update_one(
                         {"_id": ObjectId(message['_id'])},
-                        {"$set": {"status": "read"}}
-                    )
+                        {"$set": {
+                            "status": "read"
+                        }})
                 else:
                     break
 
@@ -181,22 +202,35 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
                 return
 
             # 获取发送者信息，优先使用房间号
-            from_user = self.session.query(User).filter_by(id=from_user_id).first()
+            from_user = self.session.query(User).filter_by(
+                id=from_user_id).first()
             if from_user and from_user.room_number:
                 from_display_name = from_user.room_number
             elif from_user:
                 from_display_name = from_user.username
             else:
                 from_display_name = '未知用户'
-            
+
             # 检查发送方是否已拉黑接收方
-            if self.session.query(Blacklist).filter_by(blocker_id=from_user_id, blocked_id=target_user_id).first():
-                self.write_message(json.dumps({"status": "error", "error": "您已将对方拉黑，无法发送消息"}))
+            if self.session.query(Blacklist).filter_by(
+                    blocker_id=from_user_id,
+                    blocked_id=target_user_id).first():
+                self.write_message(
+                    json.dumps({
+                        "status": "error",
+                        "error": "您已将对方拉黑，无法发送消息"
+                    }))
                 return
 
             # 检查接收方是否已拉黑发送方
-            if self.session.query(Blacklist).filter_by(blocker_id=target_user_id, blocked_id=from_user_id).first():
-                self.write_message(json.dumps({"status": "error", "error": "您已被对方拉黑，无法发送消息"}))
+            if self.session.query(Blacklist).filter_by(
+                    blocker_id=target_user_id,
+                    blocked_id=from_user_id).first():
+                self.write_message(
+                    json.dumps({
+                        "status": "error",
+                        "error": "您已被对方拉黑，无法发送消息"
+                    }))
                 return
 
             # 使用中国时区
@@ -239,11 +273,34 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
             }
 
             # 如果目标用户在线，发送消息
-            if target_user_id in connections:
-                connections[target_user_id].write_message(json.dumps(push_data))
+            # 确保类型一致（connections的key可能是int或str）
+            target_id_int = int(target_user_id) if isinstance(target_user_id, str) else target_user_id
+            target_id_str = str(target_user_id)
+            
+            # 使用全局 connections
+            global connections
+            target_online = target_id_int in connections or target_id_str in connections
+            
+            logging.info(f"[NEW_MESSAGE] 发送者: {from_user_id}, 接收者: {target_user_id}, 在线状态: {target_online}")
+            
+            if target_online:
+                target_conn = connections.get(target_id_int) or connections.get(target_id_str)
+                if target_conn:
+                    target_conn.write_message(json.dumps(push_data))
+            else:
+                # 对方不在线时，发送订阅消息通知
+                logging.info(f"[NEW_MESSAGE] 对方不在线，准备发送订阅通知: target={target_user_id}")
+                IOLoop.current().spawn_callback(self._send_new_message_notification, 
+                                                target_user_id,
+                                                from_display_name,
+                                                message_content, timestamp)
 
             # 发送成功的响应
-            self.write_message(json.dumps({"status": "success", "message": "消息已发送"}))
+            self.write_message(
+                json.dumps({
+                    "status": "success",
+                    "message": "消息已发送"
+                }))
 
             # 也发回给发送者 - 显示为"我(房间号)"格式
             if from_user_id in connections and from_user_id != target_user_id:
@@ -251,24 +308,69 @@ class ChatWebSocketHandler(tornado.websocket.WebSocketHandler):
                 sender_data["status"] = "read"
                 sender_data["from_username"] = f'我({from_display_name})'
                 sender_data["isSelf"] = True
-                connections[from_user_id].write_message(json.dumps(sender_data))
+                connections[from_user_id].write_message(
+                    json.dumps(sender_data))
         except Exception as e:
             logging.error(f"WebSocket on_message error: {e}")
             self.write_message(json.dumps({"error": str(e)}))
-    
+
+    async def _send_new_message_notification(self, target_user_id, sender_name,
+                                             message_content, send_time):
+        """发送新消息订阅通知（仅当对方不在线时调用）"""
+        try:
+            from utils.wechat_subscribe_service import send_new_message_notification, get_beijing_time_str
+            from models.user import User
+            from database import Session
+            
+            logging.info(f"[NEW_MESSAGE] 异步回调开始: target_user_id={target_user_id}, sender={sender_name}")
+
+            # 使用新的 session
+            db_session = Session()
+            try:
+                # 获取接收方用户信息
+                target_user = db_session.query(User).filter_by(
+                    id=target_user_id).first()
+
+                if not target_user:
+                    logging.info(f"[NEW_MESSAGE] 接收方用户不存在: user_id={target_user_id}")
+                    return
+                    
+                if not target_user.wechat_openid:
+                    logging.info(f"[NEW_MESSAGE] 接收方未设置openid，跳过: user_id={target_user_id}")
+                    return
+
+                # 发送通知
+                time_str = get_beijing_time_str()
+                result = send_new_message_notification(
+                    openid=target_user.wechat_openid,
+                    sender_name=sender_name,
+                    reminder_text='请点击查看详情查阅消息内容',
+                    send_time=time_str,
+                    page=f'pages/chat/room?friend_id={self.user_id}')
+
+                logging.info(f"[NEW_MESSAGE] 发送结果: to_user={target_user_id}, result={result}")
+            finally:
+                db_session.close()
+
+        except Exception as e:
+            logging.error(f"[NEW_MESSAGE] 发送异常: {e}")
+
     def on_close(self):
         """WebSocket连接关闭时清理资源"""
         try:
             if hasattr(self, 'user_id') and self.user_id in connections:
                 del connections[self.user_id]
-                logging.warning(f"WebSocket connection closed for user_id: {self.user_id}")
+                logging.warning(
+                    f"WebSocket connection closed for user_id: {self.user_id}")
         finally:
             # 确保Session总是被关闭，即使有异常
             if hasattr(self, 'session'):
                 self.session.close()
 
+
 ##渲染加载聊天页面
 class ChatHandler(tornado.web.RequestHandler):
+
     def initialize(self, mongo):
         self.mongo = mongo
         self.session = Session()
@@ -286,34 +388,48 @@ class ChatHandler(tornado.web.RequestHandler):
 
         # 获取系统广播消息 - 异步处理
 
-        broadcast_cursor = self.mongo.broadcast_messages.find().sort([('timestamp', -1)]).limit(5)
+        broadcast_cursor = self.mongo.broadcast_messages.find().sort([
+            ('timestamp', -1)
+        ]).limit(5)
         broadcasts = []
-        recent_products = self.session.query(Product).order_by(Product.id.desc()).limit(10).all()
+        recent_products = self.session.query(Product).order_by(
+            Product.id.desc()).limit(10).all()
         for p in recent_products:
             uploader = self.session.query(User).filter_by(id=p.user_id).first()
             # 优先显示房间号，如果没有则显示用户名
-            display_name = uploader.room_number if (uploader and uploader.room_number) else (uploader.username if uploader else "Unknown")
+            display_name = uploader.room_number if (
+                uploader and uploader.room_number) else (
+                    uploader.username if uploader else "Unknown")
             broadcasts.append({
-                "product_id": p.id,
-                "product_name": p.name,
-                "uploader": display_name,
-                "time": p.upload_time.strftime("%Y-%m-%d %H:%M:%S") if p.upload_time else "",
-                "image": "/mystatics/images/c.png"
+                "product_id":
+                p.id,
+                "product_name":
+                p.name,
+                "uploader":
+                display_name,
+                "time":
+                p.upload_time.strftime("%Y-%m-%d %H:%M:%S")
+                if p.upload_time else "",
+                "image":
+                "/mystatics/images/c.png"
             })
 
         # 获取MongoDB中的广播消息，并转换uploader为房间号
-        broadcast_cursor = self.mongo.broadcast_messages.find().sort([('timestamp', -1)]).limit(5)
+        broadcast_cursor = self.mongo.broadcast_messages.find().sort([
+            ('timestamp', -1)
+        ]).limit(5)
         async for broadcast in broadcast_cursor:
             if '_id' in broadcast:
                 broadcast['_id'] = str(broadcast['_id'])
-            
+
             # 尝试根据uploader（可能是username）查找用户并获取房间号
             uploader_display = broadcast.get('uploader', '未知用户')
             if uploader_display and uploader_display != '未知用户':
-                user = self.session.query(User).filter_by(username=uploader_display).first()
+                user = self.session.query(User).filter_by(
+                    username=uploader_display).first()
                 if user and user.room_number:
                     uploader_display = user.room_number
-            
+
             broadcasts.append({
                 'product_id': broadcast.get('product_id', ''),
                 'uploader': uploader_display,
@@ -323,17 +439,23 @@ class ChatHandler(tornado.web.RequestHandler):
 
         # 第一步：从MongoDB查询给当前用户发过消息的用户ID
         message_senders = set()
-        async for message in self.mongo.chat_messages.find({"to_user_id": user_id}):
+        async for message in self.mongo.chat_messages.find(
+            {"to_user_id": user_id}):
             message_senders.add(message.get("from_user_id"))
 
         # 第二步：将这些用户添加为好友（如果还不是好友）
-        existing_friendships = self.session.query(Friendship).filter_by(user_id=user_id).all()
-        existing_friend_ids = {friendship.friend_id for friendship in existing_friendships}
+        existing_friendships = self.session.query(Friendship).filter_by(
+            user_id=user_id).all()
+        existing_friend_ids = {
+            friendship.friend_id
+            for friendship in existing_friendships
+        }
 
         for sender_id in message_senders:
             if sender_id != user_id and sender_id not in existing_friend_ids:
                 try:
-                    new_friendship = Friendship(user_id=user_id, friend_id=sender_id)
+                    new_friendship = Friendship(user_id=user_id,
+                                                friend_id=sender_id)
                     self.session.add(new_friendship)
                     self.session.flush()
                 except Exception as e:
@@ -348,13 +470,17 @@ class ChatHandler(tornado.web.RequestHandler):
 
         # Step 3: Query the updated friend list
         friends = []
-        friendships = self.session.query(Friendship).filter_by(user_id=user_id).all()
+        friendships = self.session.query(Friendship).filter_by(
+            user_id=user_id).all()
 
         for friendship in friendships:
-            friend = self.session.query(User).filter_by(id=friendship.friend_id).first()
+            friend = self.session.query(User).filter_by(
+                id=friendship.friend_id).first()
             if friend:
                 # Check if the friend is blocked by the current user
-                is_blocked = self.session.query(Blacklist).filter_by(blocker_id=user_id, blocked_id=friend.id).first() is not None
+                is_blocked = self.session.query(Blacklist).filter_by(
+                    blocker_id=user_id,
+                    blocked_id=friend.id).first() is not None
                 # 优先显示房间号，如果没有则显示用户名
                 display_name = friend.room_number if friend.room_number else friend.username
                 friends.append({
@@ -372,8 +498,10 @@ class ChatHandler(tornado.web.RequestHandler):
     def on_finish(self):
         self.session.close()
 
+
 #标记消息为已读
 class MarkMessagesReadHandler(tornado.web.RequestHandler):
+
     def initialize(self, mongo):
         self.mongo = mongo
 
@@ -390,18 +518,21 @@ class MarkMessagesReadHandler(tornado.web.RequestHandler):
                     "from_user_id": friend_id,
                     "to_user_id": user_id,
                     "status": "unread"
-                },
-                {"$set": {"status": "read"}}
-            )
+                }, {"$set": {
+                    "status": "read"
+                }})
 
-            self.write({"status": "success", "updated_count": result.modified_count})
+            self.write({
+                "status": "success",
+                "updated_count": result.modified_count
+            })
         except Exception as e:
             self.write({"status": "error", "error": str(e)})
 
 
-
 #加载对应好友的聊天记录
 class MessageAPIHandler(tornado.web.RequestHandler):
+
     def initialize(self, mongo):
         self.mongo = mongo
 
@@ -411,8 +542,9 @@ class MessageAPIHandler(tornado.web.RequestHandler):
     def _get_user_id(self):
         user_id = self.get_secure_cookie("user_id")
         if user_id:
-            return user_id.decode('utf-8') if isinstance(user_id, bytes) else user_id
-        
+            return user_id.decode('utf-8') if isinstance(user_id,
+                                                         bytes) else user_id
+
         auth_header = self.request.headers.get('Authorization', '')
         if auth_header.startswith('Bearer '):
             token = auth_header[7:]
@@ -438,10 +570,13 @@ class MessageAPIHandler(tornado.web.RequestHandler):
         friend_id = int(friend_id)
 
         messages = yield self.mongo.chat_messages.find({
-            "$or": [
-                {"from_user_id": user_id, "to_user_id": friend_id},
-                {"from_user_id": friend_id, "to_user_id": user_id}
-            ]
+            "$or": [{
+                "from_user_id": user_id,
+                "to_user_id": friend_id
+            }, {
+                "from_user_id": friend_id,
+                "to_user_id": user_id
+            }]
         }).sort("timestamp", 1).to_list(length=None)
 
         china_tz = datetime.timezone(datetime.timedelta(hours=8))
@@ -449,7 +584,7 @@ class MessageAPIHandler(tornado.web.RequestHandler):
             msg['_id'] = str(msg['_id'])
             msg['id'] = msg['_id']
             msg['isSelf'] = msg['from_user_id'] == user_id
-            
+
             ts = msg.get('timestamp')
             if isinstance(ts, datetime.datetime):
                 if ts.tzinfo is not None:
@@ -479,8 +614,10 @@ class MessageAPIHandler(tornado.web.RequestHandler):
 
         self.write(json.dumps(messages))
 
+
 #点击发送按钮后，实现消息的发送
 class SendMessageAPIHandler(tornado.web.RequestHandler):
+
     def initialize(self, mongo):
         self.mongo = mongo
         self.session = Session()
@@ -494,32 +631,38 @@ class SendMessageAPIHandler(tornado.web.RequestHandler):
 
             # 定向检查拉黑状态
             # 检查发送方是否已拉黑接收方
-            if self.session.query(Blacklist).filter_by(blocker_id=user_id, blocked_id=friend_id).first():
+            if self.session.query(Blacklist).filter_by(
+                    blocker_id=user_id, blocked_id=friend_id).first():
                 self.write({"status": "error", "error": "您已将对方拉黑，无法发送消息"})
                 return
 
             # 检查接收方是否已拉黑发送方
-            if self.session.query(Blacklist).filter_by(blocker_id=friend_id, blocked_id=user_id).first():
+            if self.session.query(Blacklist).filter_by(
+                    blocker_id=friend_id, blocked_id=user_id).first():
                 self.write({"status": "error", "error": "您已被对方拉黑，无法发送消息"})
                 return
-            
+
             # 检查对方是否已将自己删除，如果是，则恢复好友关系并清空聊天记录
             reverse_friendship = self.session.query(Friendship).filter(
-                (Friendship.user_id == friend_id) & (Friendship.friend_id == user_id)
-            ).first()
+                (Friendship.user_id == friend_id)
+                & (Friendship.friend_id == user_id)).first()
 
             if not reverse_friendship:
                 # 恢复好友关系
-                new_friendship = Friendship(user_id=friend_id, friend_id=user_id)
+                new_friendship = Friendship(user_id=friend_id,
+                                            friend_id=user_id)
                 self.session.add(new_friendship)
                 self.session.commit()
-                
+
                 # 同时清空双方的聊天记录
                 yield self.mongo.chat_messages.delete_many({
-                    "$or": [
-                        {"from_user_id": user_id, "to_user_id": friend_id},
-                        {"from_user_id": friend_id, "to_user_id": user_id}
-                    ]
+                    "$or": [{
+                        "from_user_id": user_id,
+                        "to_user_id": friend_id
+                    }, {
+                        "from_user_id": friend_id,
+                        "to_user_id": user_id
+                    }]
                 })
 
             temp_id = data.get("tempId")
@@ -529,10 +672,11 @@ class SendMessageAPIHandler(tornado.web.RequestHandler):
             now_beijing = datetime.datetime.now(china_tz)
             timestamp = now_beijing.strftime("%Y-%m-%d %H:%M:%S")
             timestamp_ms = int(now_beijing.timestamp() * 1000)
-            
+
             message = {
                 "from_user_id": user_id,
-                "from_username": self.get_secure_cookie("username").decode("utf-8"),
+                "from_username":
+                self.get_secure_cookie("username").decode("utf-8"),
                 "to_user_id": friend_id,
                 "message": data["message"],
                 "timestamp": now_beijing,
@@ -549,7 +693,8 @@ class SendMessageAPIHandler(tornado.web.RequestHandler):
                 "_id": message_id,
                 "id": message_id,
                 "from_user_id": user_id,
-                "from_username": self.get_secure_cookie("username").decode("utf-8"),
+                "from_username":
+                self.get_secure_cookie("username").decode("utf-8"),
                 "to_user_id": friend_id,
                 "message": data["message"],
                 "content": data["message"],
@@ -561,8 +706,10 @@ class SendMessageAPIHandler(tornado.web.RequestHandler):
 
             # 检查目标用户是否在线且WebSocket连接正常
             target_user_id = friend_id
-            if target_user_id in connections and connections[target_user_id].ws_connection:
-                connections[target_user_id].write_message(json.dumps(push_data))
+            if target_user_id in connections and connections[
+                    target_user_id].ws_connection:
+                connections[target_user_id].write_message(
+                    json.dumps(push_data))
 
             # 也发回给发送者
             if user_id in connections and connections[user_id].ws_connection:
@@ -570,17 +717,16 @@ class SendMessageAPIHandler(tornado.web.RequestHandler):
                 sender_data["status"] = "read"
                 connections[user_id].write_message(json.dumps(sender_data))
 
-            self.write({
-                "status": "success",
-                "messageId": message_id
-            })
+            self.write({"status": "success", "messageId": message_id})
         except Exception as e:
             self.write({"status": "error", "error": str(e)})
         finally:
             self.session.close()
 
+
 #点击感兴趣的商品，触发聊天
 class InitiateChatHandler(tornado.web.RequestHandler):
+
     def initialize(self, mongo):
         self.mongo = mongo
         self.session = Session()
@@ -594,16 +740,18 @@ class InitiateChatHandler(tornado.web.RequestHandler):
                 return
 
             seller_id = int(seller_id_str)
-            current_user_id = int(self.get_secure_cookie("user_id").decode("utf-8"))
+            current_user_id = int(
+                self.get_secure_cookie("user_id").decode("utf-8"))
 
             if seller_id == current_user_id:
                 self.redirect("/chat_room")
                 return
 
             friendship_model = FriendshipModel(self.session)
-            
+
             # 使用 add_friend_if_not_exists 确保双向好友关系
-            success = friendship_model.add_friend_if_not_exists(current_user_id, seller_id)
+            success = friendship_model.add_friend_if_not_exists(
+                current_user_id, seller_id)
 
             if success:
                 # 重定向到聊天室并附带friend_id，以便JS自动选择
@@ -614,7 +762,7 @@ class InitiateChatHandler(tornado.web.RequestHandler):
 
         except Exception as e:
             logging.error(f"发起聊天失败: {e}")
-            self.redirect("/chat_room") # 出错时重定向到主聊天页
+            self.redirect("/chat_room")  # 出错时重定向到主聊天页
         finally:
             self.session.close()
 
@@ -624,6 +772,7 @@ class InitiateChatHandler(tornado.web.RequestHandler):
 
 
 class DeleteMessagesHandler(tornado.web.RequestHandler):
+
     def initialize(self, mongo):
         self.mongo = mongo
 
@@ -636,7 +785,7 @@ class DeleteMessagesHandler(tornado.web.RequestHandler):
         user_id_cookie = self.get_secure_cookie("user_id")
         if user_id_cookie:
             return int(user_id_cookie.decode("utf-8"))
-        
+
         auth_header = self.request.headers.get('Authorization', '')
         if auth_header.startswith('Bearer '):
             token = auth_header[7:]
@@ -645,7 +794,7 @@ class DeleteMessagesHandler(tornado.web.RequestHandler):
                     return int(token.split('_')[-1])
                 except:
                     pass
-        
+
         raise ValueError("未认证")
 
     @tornado.gen.coroutine
@@ -662,25 +811,30 @@ class DeleteMessagesHandler(tornado.web.RequestHandler):
 
             # 验证用户是否有权限删除这些消息
             query = {
-                "_id": {"$in": [ObjectId(msg_id) for msg_id in message_ids]},
-                "$or": [
-                    {"from_user_id": user_id},
-                    {"to_user_id": user_id}
-                ]
+                "_id": {
+                    "$in": [ObjectId(msg_id) for msg_id in message_ids]
+                },
+                "$or": [{
+                    "from_user_id": user_id
+                }, {
+                    "to_user_id": user_id
+                }]
             }
 
             if friend_id:
                 query["$or"].append({
-                    "$and": [
-                        {"from_user_id": int(friend_id)},
-                        {"to_user_id": user_id}
-                    ]
+                    "$and": [{
+                        "from_user_id": int(friend_id)
+                    }, {
+                        "to_user_id": user_id
+                    }]
                 })
                 query["$or"].append({
-                    "$and": [
-                        {"from_user_id": user_id},
-                        {"to_user_id": int(friend_id)}
-                    ]
+                    "$and": [{
+                        "from_user_id": user_id
+                    }, {
+                        "to_user_id": int(friend_id)
+                    }]
                 })
 
             # 删除消息
@@ -697,8 +851,10 @@ class DeleteMessagesHandler(tornado.web.RequestHandler):
             logging.error(f"删除消息失败: {e}")
             self.write({"status": "error", "error": str(e)})
 
+
 # 获取未读消息数量
 class UnreadCountHandler(tornado.web.RequestHandler):
+
     def initialize(self, mongo):
         self.mongo = mongo
 
@@ -711,14 +867,24 @@ class UnreadCountHandler(tornado.web.RequestHandler):
                 return
 
             user_id = int(user_id_cookie.decode("utf-8"))
-            
-            pipeline = [
-                {"$match": {"to_user_id": user_id, "status": "unread"}},
-                {"$group": {"_id": "$from_user_id", "count": {"$sum": 1}}}
-            ]
 
-            results = yield self.mongo.chat_messages.aggregate(pipeline).to_list(length=None)
-            
+            pipeline = [{
+                "$match": {
+                    "to_user_id": user_id,
+                    "status": "unread"
+                }
+            }, {
+                "$group": {
+                    "_id": "$from_user_id",
+                    "count": {
+                        "$sum": 1
+                    }
+                }
+            }]
+
+            results = yield self.mongo.chat_messages.aggregate(
+                pipeline).to_list(length=None)
+
             counts_by_friend = {res["_id"]: res["count"] for res in results}
             total_count = sum(counts_by_friend.values())
 

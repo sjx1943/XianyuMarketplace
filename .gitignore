@@ -1,3 +1,6 @@
+# 应用配置（不忽略）
+# config.ini 应该被追踪
+
 # Python
 __pycache__/
 *.py[cod]
@@ -16,8 +19,6 @@ parts/
 sdist/
 var/
 wheels/
-pip-wheel-metadata/
-share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -26,12 +27,11 @@ MANIFEST
 .coverage
 htmlcov/
 
-# Virtual environments
+# 环境和依赖
 venv/
-env/
 ENV/
-env.bak/
-venv.bak/
+env/
+.venv
 
 # IDE
 .vscode/
@@ -40,97 +40,60 @@ venv.bak/
 *.swo
 *~
 .DS_Store
-.env.local
-.env.*.local
 
-# 环境变量文件 (敏感信息)
-.env
-.env.prod
-.env.*.prod
-.env.development.local
-.env.test.local
-.env.production.local
-
-# 配置文件敏感部分 (仅.env.prod)
-deploy/.env.prod
-
-# 日志文件
-*.log
+# 日志
 logs/
-*.log.gz
-deploy.log
+*.log
+
+# 上传的文件目录
+# 仅保留应用内置图片；用户原图、缩略图和头像不加入仓库。
+mystatics/images/*
+!mystatics/images/account.png
+!mystatics/images/default-avatar.png
+!mystatics/images/main.png
+!mystatics/images/message.png
+!mystatics/images/upload.png
+
+# 生产数据（不上传）
+.env.prod
+deploy_key*
+!deploy_key.pub
+
+# Authentication source is tracked only after removing private defaults.
+
+# 数据库
+*.sqlite3
+*.db
 
 # 临时文件
-*.tmp
-*.temp
-.tmp/
-temp/
-
-# Node modules (如果有前端)
-node_modules/
-npm-debug.log
-yarn-error.log
-package-lock.json
-
-# Docker
-.dockerignore
-docker-compose.override.yml
-
-# 数据库备份
-db_backups/
-*.sql
-*.sql.gz
-mongo_backup/
-
-# 上传的文件 (用户生成内容)
-mystatics/images/uploads/
-mystatics/images/*.jpg
-mystatics/images/*.jpeg
-mystatics/images/*.png
-mystatics/images/*.gif
-
-# 数据库文件 (本地开发)
-*.db
-*.sqlite
-*.sqlite3
-
-# 缓存
 .cache/
-.pytest_cache/
-__pycache__/
-*.pyc
-*.pyo
+*.tmp
+/generated-artifacts/
+/attached_assets/
+/competition_docs/
+/.agents/agent_assets_metadata.toml
+/.replit
+/.env
+.env.*
+!deploy/.env.prod.template
 
-# IDE特定文件
-.vscode/*
-!.vscode/settings.json
-!.vscode/extensions.json
-.idea/*
-*.iml
-*.sublime-project
-*.sublime-workspace
+# WeChat小程序
+miniprogram/node_modules/
+miniprogram/dist/
+miniprogram/.wechat-ide
 
-# 系统文件
-.DS_Store
-Thumbs.db
-.env~
+# 追踪数据库结构初始化脚本等；不追踪用户头像
+!init-db.sql
+!base/
 
-# Replit特定
-.replit
-.upm
-
-# VPS备份
-/var/backups/secondhand-platform/
-/var/lib/secondhand-platform/
-
-# CI/CD
-.github/workflows/*.local.yml
-
-# 不要忽略的文件 (明确声明)
-!.gitkeep
-!.github/
-!.github/workflows/
-!deploy/
-!requirements.txt
-!config.ini
-!replit.md
+# Private local tooling and historical generated reports
+/ADMIN_TESTING_REPORT.md
+/DEPLOYMENT_GUIDE.md
+/DEPLOY_TO_PRODUCTION.md
+/MINIPROGRAM_SUMMARY.md
+/admin_test.md
+/create_admin.py
+/create_test_data.py
+/mediaCheckAsync接口替换.md
+/scripts/add_admin_prod.py
+/test_admin_e2e.py

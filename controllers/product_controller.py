@@ -9,6 +9,7 @@ import json
 import re
 from models.comment import Comment
 from models.order import Order
+from utils.wechat_cloud_storage import convert_image_url, convert_images_batch
 
 Session = sessionmaker(bind=engine)
 
@@ -35,20 +36,39 @@ class ProductDetailHandler(tornado.web.RequestHandler):
         images = self.session.query(ProductImage).filter_by(product_id=product_id).all()
 
         # 确保主图不为空：如果为空，使用第一张有效图片
-        if not product.image and images:
-            product.image = images[0].filename
+        main_image = product.image
+        if not main_image and images:
+            main_image = images[0].filename
+
+        # 转换cloud://格式的图片URL（用于Web端）- 使用临时变量，不修改ORM对象
+        display_main_image = convert_image_url(main_image) if main_image else ''
+        
+        # 转换所有图片的URL为显示用URL（不修改ORM对象）
+        display_images = []
+        for img in images:
+            display_images.append({
+                'id': img.id,
+                'filename': convert_image_url(img.filename) if img.filename else '',
+                'thumb_filename': convert_image_url(img.thumb_filename) if img.thumb_filename else '',
+                'medium_filename': convert_image_url(img.medium_filename) if img.medium_filename else '',
+                'product_id': img.product_id
+            })
 
         if user:
             user_id = user.id
         else:
             user_id = None
 
+        # 确保不会意外提交任何更改
+        self.session.rollback()
+
         self.render('product_detail.html', 
                   product=product, 
                   uploader=uploader, 
                   user_id=user_id, 
                   product_id=product_id,
-                  images=images)
+                  images=display_images,
+                  main_image=display_main_image)
 
 class ProductUploadHandler(tornado.web.RequestHandler):
     def initialize(self, app_settings):
@@ -292,8 +312,11 @@ class ProductListHandler(tornado.web.RequestHandler):
     def get(self):
         from models.product import ProductImage
         from sqlalchemy import or_
+        from sqlalchemy.orm import joinedload
         tags = self.get_arguments("tag")
-        query = self.session.query(Product).filter(
+        query = self.session.query(Product).options(
+            joinedload(Product.images)
+        ).filter(
             Product.status == '在售',
             Product.quantity > 0
         )
@@ -309,10 +332,8 @@ class ProductListHandler(tornado.web.RequestHandler):
         for product in products:
             # 确保主图不为空：如果为空，使用第一张有效图片
             main_image = product.image
-            if not main_image:
-                first_image = self.session.query(ProductImage).filter_by(product_id=product.id).first()
-                if first_image:
-                    main_image = first_image.filename
+            if not main_image and product.images:
+                main_image = product.images[0].filename
             
             products_list.append({
                 'id': product.id,
@@ -320,7 +341,7 @@ class ProductListHandler(tornado.web.RequestHandler):
                 "description": product.description,
                 "price": product.price,
                 "tag": product.tag,
-                "image": main_image,
+                "image": convert_image_url(main_image) if main_image else '',
                 "quantity": product.quantity,
                 "user_id": product.user_id
             })

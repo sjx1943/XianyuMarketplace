@@ -21,6 +21,8 @@ from controllers.miniprogram_auth_controller import (
     MiniprogramUpdateProfileHandler,
     MiniprogramUnreadCountHandler,
     MiniprogramProductUploadHandler,
+    MiniprogramProductCreateHandler,
+    MiniprogramProductAddCloudImagesHandler,
     MiniprogramChatListHandler,
     MiniprogramClearChatHandler,
     MiniprogramProductDetailHandler,
@@ -29,6 +31,7 @@ from controllers.miniprogram_auth_controller import (
     MiniprogramOrderConfirmHandler,
     MiniprogramMessagesHandler,
     MiniprogramProductsListHandler,
+    MiniprogramProductsVersionHandler,
     MiniprogramMarkMessagesReadHandler,
     MiniprogramBroadcastsHandler,
     MiniprogramOrdersHandler,
@@ -46,6 +49,23 @@ from controllers.miniprogram_auth_controller import (
     MiniprogramPhoneUnbindHandler
 )
 from controllers.miniprogram_set_image_handler import MiniprogramProductSetImagePrimaryHandler
+from controllers.miniprogram_extended_controller import (
+    MiniprogramFavoriteListHandler,
+    MiniprogramFavoriteHandler,
+    MiniprogramFavoriteCheckHandler,
+    MiniprogramSellerInfoHandler,
+    MiniprogramSellerProductsHandler,
+    MiniprogramBlacklistHandler,
+    MiniprogramBlacklistItemHandler,
+    MiniprogramBlacklistCheckHandler
+)
+from controllers.content_security_controller import (
+    TextSecurityCheckHandler,
+    MediaSecurityCheckHandler,
+    VerificationStatusHandler,
+    MediaSecurityCallbackHandler,
+    MediaSecurityTestCallbackHandler
+)
 from controllers.product_controller import ProductUploadHandler, HomePageHandler, ProductDetailHandler, ProductListHandler, ElseHomePageHandler, UpdateProductStatusHandler, DeleteProductHandler, PhysicalDeleteProductHandler, AdminDashboardHandler, ProductEditHandler
 from controllers.admin_controller import AdminLoginHandler, AdminDashboardHandler as NewAdminDashboardHandler, AdminUserManagementHandler, AdminProductManagementHandler, AdminOrderManagementHandler, AdminOrderDetailHandler
 from controllers.chat_controller import ChatWebSocketHandler, ChatHandler, MessageAPIHandler, SendMessageAPIHandler, MarkMessagesReadHandler, DeleteMessagesHandler, UnreadCountHandler
@@ -76,7 +96,7 @@ settings = {
     'upload_path': os.path.join(os.path.dirname(__file__), "mystatics/images"),
     'max_file_size': 10 * 1024 * 1024,  # 10MB
     "login_url": "/login",
-    'cookie_secret': 'sjxxxx',
+    'cookie_secret': os.environ['SESSION_SECRET'],
     'xsrf_cookies': True
 }
 
@@ -144,7 +164,8 @@ def make_app():
         
         # 微信OAuth登录
         (r"/wechat/login", WeChatLoginHandler),
-        (r"/wechat/callback", WeChatCallbackHandler),
+        (r"/wechat/oauth_callback", WeChatCallbackHandler),
+        (r"/wechat/callback", MediaSecurityCallbackHandler),
         (r"/api/wechat/unbind", WeChatUnbindHandler),
         
         # 微信小程序API（禁用XSRF保护）
@@ -155,6 +176,8 @@ def make_app():
         (r"/api/miniprogram/user/upload-avatar", MiniprogramAvatarUploadHandler, dict(app_settings=settings)),
         (r"/api/miniprogram/unread_count", MiniprogramUnreadCountHandler),
         (r"/api/miniprogram/product/upload", MiniprogramProductUploadHandler, dict(app_settings=settings)),
+        (r"/api/miniprogram/product/create", MiniprogramProductCreateHandler),
+        (r"/api/miniprogram/product/add-cloud-images", MiniprogramProductAddCloudImagesHandler),
         (r"/api/miniprogram/product/update", MiniprogramProductUpdateHandler),
         (r"/api/miniprogram/product/(\d+)", MiniprogramProductDetailHandler),
         (r"/api/miniprogram/product/(\d+)/delete", MiniprogramProductDeleteHandler),
@@ -164,6 +187,7 @@ def make_app():
         (r"/api/miniprogram/chat/list", MiniprogramChatListHandler, dict(mongo=mongo)),
         (r"/api/miniprogram/clear_chat/(\d+)", MiniprogramClearChatHandler, dict(mongo=mongo)),
         (r"/api/miniprogram/products", MiniprogramProductsListHandler),
+        (r"/api/miniprogram/products/version", MiniprogramProductsVersionHandler),
         (r"/api/miniprogram/broadcasts", MiniprogramBroadcastsHandler),
         (r"/api/miniprogram/orders", MiniprogramOrdersHandler),
         (r"/api/miniprogram/order/(\d+)", MiniprogramOrderDetailHandler),
@@ -180,6 +204,27 @@ def make_app():
         (r"/api/miniprogram/phone/send_code", MiniprogramPhoneBindSendCodeHandler),
         (r"/api/miniprogram/phone/bind", MiniprogramPhoneBindVerifyHandler),
         (r"/api/miniprogram/phone/unbind", MiniprogramPhoneUnbindHandler),
+        
+        # 小程序收藏API
+        (r"/api/miniprogram/favorites", MiniprogramFavoriteListHandler),
+        (r"/api/miniprogram/favorites/(\d+)", MiniprogramFavoriteHandler),
+        (r"/api/miniprogram/favorites/(\d+)/check", MiniprogramFavoriteCheckHandler),
+        
+        # 小程序卖家店铺API
+        (r"/api/miniprogram/seller/(\d+)", MiniprogramSellerInfoHandler),
+        (r"/api/miniprogram/seller/(\d+)/products", MiniprogramSellerProductsHandler),
+        
+        # 小程序黑名单API
+        (r"/api/miniprogram/blacklist", MiniprogramBlacklistHandler),
+        (r"/api/miniprogram/blacklist/(\d+)", MiniprogramBlacklistItemHandler),
+        (r"/api/miniprogram/blacklist/(\d+)/check", MiniprogramBlacklistCheckHandler),
+        
+        # 内容安全检测API (微信审核必需)
+        (r"/api/miniprogram/security/text-check", TextSecurityCheckHandler),
+        (r"/api/miniprogram/security/media-check", MediaSecurityCheckHandler),
+        (r"/api/miniprogram/security/verification-status", VerificationStatusHandler),
+        (r"/api/miniprogram/security/media-callback", MediaSecurityCallbackHandler),
+        (r"/api/miniprogram/security/test-callback", MediaSecurityTestCallbackHandler),
         
         # 管理员路由
         (r"/admin/login", AdminLoginHandler),
@@ -249,12 +294,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     print("=" * 60)
-    print("🚀 Tornado应用启动中...")
+    print("🚀 Tornado二手应用启动中...")
     print("=" * 60)
     print(f"📦 环境: {'Production' if os.environ.get('ENV') == 'prod' else 'Development'}")
     print(f"🌐 端口: {args.port}")
-    print(f"🗄️  数据库: {os.environ.get('DATABASE_URL', 'SQLite (Local)')}")
-    print(f"📊 MongoDB: {os.environ.get('MONGODB_URI', 'Local (Replit)')}")
+    print(f"🗄️  数据库连接串: {'已配置' if os.environ.get('DATABASE_URL') else '未配置（使用历史回退）'}")
+    print(f"📊 MongoDB连接串: {'已配置' if os.environ.get('MONGODB_URI') else '未配置（使用本地配置）'}")
     print("=" * 60)
     
     try:

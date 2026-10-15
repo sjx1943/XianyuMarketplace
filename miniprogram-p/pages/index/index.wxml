@@ -1,0 +1,109 @@
+<!--pages/index/index.wxml-->
+<view class="container">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <view class="search-input-container">
+      <input
+        class="search-input"
+        placeholder="搜索闲置物品"
+        value="{{searchValue}}"
+        bindinput="onSearchInput"
+        bindconfirm="onSearch"
+      />
+      <view class="search-btn" bindtap="onSearch">
+        <text class="search-icon">🔍</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 分类导航 -->
+  <view class="categories">
+    <scroll-view class="categories-scroll" scroll-x="true">
+      <view class="category-list">
+        <view
+          class="category-item"
+          wx:for="{{categories}}"
+          wx:key="id"
+          data-category="{{item}}"
+          bindtap="onCategoryTap"
+        >
+          <view class="category-icon">{{item.icon}}</view>
+          <view class="category-name">{{item.name}}</view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 热门物品 -->
+  <view class="section" wx:if="{{hotProducts.length > 0}}">
+    <view class="section-header">
+      <view class="section-title">🔥 热门闲置</view>
+      <view class="section-more" bindtap="onMoreHotTap">更多</view>
+    </view>
+    <view class="hot-products">
+      <view class="hot-grid">
+        <view
+          class="hot-product-item"
+          wx:for="{{hotProducts}}"
+          wx:key="id"
+          data-product="{{item}}"
+          bindtap="onProductTap"
+        >
+          <image class="hot-product-image" src="{{item.image || item.images[0]}}" mode="aspectFill" />
+          <view class="hot-product-info">
+            <view class="hot-product-name">{{item.name || item.title}}</view>
+            <view class="hot-product-transfer-price">{{item.price > 0 ? '出手价 ' + item.price : (item.price === 0 || item.price === '0' ? '免费' : '面议')}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 最新物品 -->
+  <view class="section">
+    <view class="section-header">
+      <view class="section-title">🆕 最新发布</view>
+      <view class="publish-btn" bindtap="onPublishTap">
+        <text>+</text> 分享
+      </view>
+    </view>
+    
+    <view class="product-list" wx:if="{{recentProducts.length > 0}}">
+      <view
+        class="product-item"
+        wx:for="{{recentProducts}}"
+        wx:key="id"
+        data-product="{{item}}"
+        bindtap="onProductTap"
+      >
+        <image class="product-image" src="{{item.image || item.images[0]}}" mode="aspectFill" />
+        <view class="product-info">
+          <view class="product-name">{{item.name || item.title}}</view>
+          <view class="product-desc">{{item.description}}</view>
+          <view class="product-meta">
+            <view class="product-transfer-price">{{item.price > 0 ? '出手价 ' + item.price : (item.price === 0 || item.price === '0' ? '免费' : '面议')}}</view>
+            <view class="product-location">{{item.location || '本小区'}}</view>
+          </view>
+          <view class="product-tags" wx:if="{{item.tag || item.condition}}">
+            <view class="tag">{{item.tag || item.condition}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{!loading && recentProducts.length === 0}}">
+      <view class="empty-icon">📦</view>
+      <view class="empty-text">暂无闲置物品</view>
+      <view class="empty-action">
+        <button class="btn-primary" bindtap="onPublishTap">分享第一件闲置</button>
+      </view>
+    </view>
+
+    <!-- 加载状态 -->
+    <view class="loading-section" wx:if="{{loading}}">
+      <view class="loading-spinner"></view>
+      <view class="loading-text">加载中...</view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,60 @@
+<view class="container">
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <block wx:if="{{!loading && product}}">
+    <view class="product-card">
+      <image class="product-image" src="{{productImage}}" mode="aspectFill" wx:if="{{productImage}}" />
+      <view class="no-image" wx:else><text>无图片</text></view>
+      <view class="product-info">
+        <text class="product-name">{{product.name}}</text>
+        <text class="product-transfer-price">出手价 {{product.price}}</text>
+        <text class="product-status">状态: {{product.quantity > 0 ? '可交流' : '已结束'}}</text>
+      </view>
+    </view>
+
+    <view class="order-form">
+      <view class="form-item">
+        <text class="label">意向数量</text>
+        <view class="quantity-control">
+          <button class="qty-btn" bindtap="decreaseQuantity" disabled="{{quantity <= 1}}">-</button>
+          <input 
+            class="qty-input" 
+            type="number" 
+            value="{{quantity}}" 
+            bindinput="onQuantityChange"
+          />
+          <button class="qty-btn" bindtap="increaseQuantity" disabled="{{quantity >= product.quantity}}">+</button>
+          <text class="qty-hint">（可选 {{product.quantity}} 件）</text>
+        </view>
+      </view>
+
+      <view class="form-item">
+        <text class="label">留言备注</text>
+        <textarea 
+          class="note-input" 
+          placeholder="请输入您想说的话（选填）" 
+          value="{{note}}"
+          bindinput="onNoteInput"
+          maxlength="200"
+        />
+      </view>
+
+      <view class="hint-section">
+        <text class="hint-text">💡 提示：发起互动后，请通过聊天与对方沟通交流细节</text>
+      </view>
+    </view>
+
+    <view class="action-bar">
+      <button class="action-btn secondary" bindtap="contactSeller">先聊一聊</button>
+      <button class="action-btn primary" bindtap="submitOrder" disabled="{{submitting}}">
+        {{submitting ? '提交中...' : '我想要'}}
+      </button>
+    </view>
+  </block>
+
+  <view class="empty" wx:if="{{!loading && !product}}">
+    <text>物品不存在</text>
+  </view>
+</view>
